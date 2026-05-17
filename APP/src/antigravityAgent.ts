@@ -13,13 +13,32 @@ export class AntigravityAgent {
   }
 
   /**
+   * Evaluates financial wins and grants Action Points (AP).
+   */
+  evaluateFinancialWin(expenses: Expense[]): { apGained: number; reason: string } {
+    // Simple logic: If latest expense is low amount, or if total today is low.
+    const today = new Date().setHours(0, 0, 0, 0);
+    const todayExpenses = expenses.filter(e => e.timestamp >= today);
+    const totalToday = todayExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+    if (totalToday < 50) {
+      return { apGained: 5, reason: 'Frugal Day! You stayed under $50.' };
+    } else if (totalToday < 100) {
+      return { apGained: 2, reason: 'Moderate spending. Small AP boost.' };
+    }
+    return { apGained: 0, reason: 'High spending day. No AP earned.' };
+  }
+
+  /**
    * Generates a new quest based on player financial behavior and stats.
    */
-  async generateQuest(expenses: Expense[], stats: PlayerStats): Promise<{ quest: Quest; trace: AntigravityTrace }> {
+  async generateQuest(expenses: Expense[], stats: PlayerStats): Promise<{ quest: Quest; trace: AntigravityTrace; rewardNotification?: string }> {
     // 1. OBSERVE
+    const financialWin = this.evaluateFinancialWin(expenses);
     const observation = {
       recentExpenses: expenses.slice(-5),
-      currentStats: stats
+      currentStats: stats,
+      financialWin
     };
 
     // 2. INFER (Logic to be replaced by actual AI/Antigravity call)

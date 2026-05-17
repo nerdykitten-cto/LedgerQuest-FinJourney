@@ -2,6 +2,7 @@
 ## Just make sure to keep the stuff listed here in mind
 - We have to submit our project, at around 20th of May 2026. So please keep this in mind.
 - I have been provided with a Biling account containing only TryGCP 5$ Free Credits. So please keep that in mind when building around Google Cloud Platforms APIs and Services.
+- I have a project connected to the provided billing account. So keep that in mind.
 
 ## References to account for:
 ### Finance Management side

@@ -37,6 +37,24 @@ h3 {
   padding-bottom: 0.5rem;
 }
 
+.notification {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: #646cff;
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
 .expense-form {
   display: flex;
   flex-direction: column;
@@ -62,27 +80,73 @@ h3 {
   border-bottom: 1px solid #333;
 }
 
-.player-dashboard {
-  margin-bottom: 2rem;
-}
-
-.stat-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.quest-container {
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
 }
 
-.stat {
+.quest-card {
+  background: #2a2a2a;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #444;
+  border-left: 4px solid #646cff;
+}
+
+.quest-card.active { border-left-color: #f57c00; }
+.quest-card.completed { border-left-color: #2e7d32; }
+.quest-card.failed { border-left-color: #c62828; }
+
+.quest-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.status-badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
   font-weight: bold;
 }
 
-.quest-item {
-  background: #2a2a2a;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 4px;
-  border-left: 4px solid #646cff;
+.status-badge.available { background: #1976d2; }
+.status-badge.active { background: #f57c00; }
+.status-badge.completed { background: #2e7d32; }
+.status-badge.failed { background: #c62828; }
+
+.quest-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: #aaa;
+  margin: 1rem 0;
 }
+
+.quest-actions {
+  margin-top: 1rem;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  background: #646cff;
+  color: white;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #747bff;
+}
+
+.complete-btn { background: #2e7d32; }
+.complete-btn:hover { background: #388e3c; }
 
 .trace-logs {
   margin-top: 2rem;
@@ -96,6 +160,7 @@ h3 {
   border-radius: 4px;
   font-family: monospace;
   font-size: 0.8rem;
+  text-align: left;
 }
 
 details {

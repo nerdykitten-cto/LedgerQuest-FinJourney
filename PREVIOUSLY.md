@@ -55,14 +55,35 @@
    - Verified production build success.
 
 ## Current State
-- **UI:** Functional dashboard with expense logging and quest list.
-- **Logic:** O-I-D-A loop fully operational and visible in UI.
-- **Trace:** Traces being captured and logged to console/UI.
+- **UI:** Functional dashboard with expense logging, quest management, and real-time notifications.
+- **Logic:** O-I-D-A loop fully operational with AP engine for financial wins.
+- **Persistence:** Firestore integration for expenses, quests, stats, and traces.
 
-## Next Steps (Session 4)
+## Session Summary (Session 4)
+
+## Progress Made
 1. **Firestore Persistence:**
-   - Replace local state with Firestore for expenses and player stats.
+   - Implemented `firestoreService.ts` for real-time sync and data persistence.
+   - Replaced local state with Firestore for `expenses`, `quests`, `stats`, and `traces`.
 2. **AP Engine (Phase 2.1):**
-   - Implement "Financial Win" detection (e.g., staying under budget) to grant Action Points (AP).
+   - Implemented `evaluateFinancialWin` in `AntigravityAgent`.
+   - Automated Action Point (AP) rewards based on frugal spending habits.
 3. **Quest Actions:**
-   - Implement "Start Quest" button and completion logic using AP.
+   - Added ability to "Start" quests (costs AP) and "Complete" quests (rewards Gold/EXP).
+   - Implemented success/failure logic based on player level vs quest difficulty.
+4. **UI/UX Enhancements:**
+   - Added notification system for AP gains and quest results.
+   - Refined quest cards with status badges and action buttons.
+
+## Current State
+- **Branch:** `feature/firestore-ap-engine`.
+- **Logic:** Full O-I-D-A loop with financial habit reinforcement (AP).
+- **UI:** Interactive quest management and financial dashboard.
+
+## Next Steps (Session 5)
+1. **Narrative Depth:**
+   - Enhance the `AntigravityAgent` inference logic to generate more varied quests.
+2. **Difficulty Scaling:**
+   - Implement the "Difficulty Agent" logic to adjust quest difficulty dynamically.
+3. **Party Members:**
+   - Add ability to "Recruit" party members using Gold/Quest rewards.
