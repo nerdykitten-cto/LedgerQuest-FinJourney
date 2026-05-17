@@ -1,4 +1,4 @@
-import { Expense, PlayerStats, Quest, AntigravityTrace } from './types/schemas';
+import type { Expense, PlayerStats, Quest, AntigravityTrace } from './types/schemas';
 import { v4 as uuidv4 } from 'uuid';
 
 /**

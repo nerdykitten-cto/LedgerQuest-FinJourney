@@ -1,5 +1,5 @@
 import { AntigravityAgent } from './antigravityAgent';
-import { Expense, PlayerStats } from './types/schemas';
+import type { Expense, PlayerStats } from './types/schemas';
 
 async function testAgent() {
   const agent = new AntigravityAgent('narrative-agent-001');
