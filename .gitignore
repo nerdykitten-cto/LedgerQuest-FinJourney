@@ -1,0 +1,32 @@
+# Ignore everything by default
+/*
+
+# Whitelist core files
+!/.gitignore
+!/PLANS/
+!/APP/
+!/README.md
+!/PREVIOUSLY.md
+
+# Specifically ignore GEMINI.md and CUSTOM_SKILLS folder
+/GEMINI.md
+/CUSTOM_SKILLS/
+
+# General ignores for subdirectories (node, mobile, OS)
+**/node_modules/
+**/dist/
+**/build/
+**/.env
+**/.DS_Store
+**/Thumbs.db
+
+# React Native / Flutter specific ignores
+**/.expo/
+**/ios/Pods/
+**/ios/build/
+**/android/app/build/
+**/android/.gradle/
+**/.dart_tool/
+**/pubspec.lock
+**/.packages
+**/generated/
