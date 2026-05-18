@@ -3,8 +3,8 @@ import type { Quest } from '../types/schemas';
 
 interface Props {
   quests: Quest[];
-  onStartQuest: (id: string) => void;
-  onCompleteQuest: (id: string) => void;
+  onStartQuest?: (id: string) => void;
+  onCompleteQuest?: (id: string) => void;
 }
 
 const QuestList: React.FC<Props> = ({ quests, onStartQuest, onCompleteQuest }) => {
@@ -12,13 +12,13 @@ const QuestList: React.FC<Props> = ({ quests, onStartQuest, onCompleteQuest }) =
     <div className="quest-list">
       <h3>Quests</h3>
       {quests.length === 0 ? (
-        <p>No quests available. Log expenses to trigger quests!</p>
+        <p>No quests active in this area.</p>
       ) : (
         <div className="quest-container">
           {quests.map((q) => (
             <div key={q.id} className={`quest-card ${q.status}`}>
               <div className="quest-header">
-                <h4>{q.title}</h4>
+                <h4>[{q.type.toUpperCase()}] {q.title}</h4>
                 <span className={`status-badge ${q.status}`}>{q.status}</span>
               </div>
               <p>{q.description}</p>
@@ -28,18 +28,15 @@ const QuestList: React.FC<Props> = ({ quests, onStartQuest, onCompleteQuest }) =
               </div>
               
               <div className="quest-actions">
-                {q.status === 'available' && (
+                {q.status === 'available' && onStartQuest && (
                   <button onClick={() => onStartQuest(q.id)} className="start-btn">
-                    Start Quest (5 AP)
+                    Start Quest
                   </button>
                 )}
-                {q.status === 'active' && (
+                {q.status === 'active' && onCompleteQuest && (
                   <button onClick={() => onCompleteQuest(q.id)} className="complete-btn">
-                    Attempt Completion
+                    Attempt
                   </button>
-                )}
-                {(q.status === 'completed' || q.status === 'failed') && (
-                  <span className="final-status">Result: {q.status.toUpperCase()}</span>
                 )}
               </div>
             </div>

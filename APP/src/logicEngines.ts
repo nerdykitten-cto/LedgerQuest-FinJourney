@@ -1,10 +1,7 @@
 import type { 
-  Expense, 
-  PlayerStats, 
   FinanceTask, 
   Habit, 
   LogicEngineTrace,
-  Quest,
   Encounter
 } from './types/schemas';
 
@@ -61,20 +58,20 @@ export class ValueAdjuster {
     // Incentive Loop: Increase reward if skipped
     if (habit.skipCount > 0) {
       multiplier += (habit.skipCount * 0.2);
-      rationale = \`Incentive: Reward increased by \${habit.skipCount * 20}% due to skips. \`;
+      rationale = `Incentive: Reward increased by ${habit.skipCount * 20}% due to skips. `;
     }
 
     // Momentum Loop: Lower difficulty if skipping too much
     if (habit.skipCount >= 3) {
       newDifficulty = Math.max(1, habit.difficulty - 1);
-      rationale += \`Momentum: Difficulty lowered to help you restart. \`;
+      rationale += `Momentum: Difficulty lowered to help you restart. `;
     }
 
     // Challenge Loop: Increase difficulty for high streaks
     if (habit.streak >= 5) {
       newDifficulty = Math.min(10, habit.difficulty + 1);
       multiplier += 0.1;
-      rationale += \`Challenge: Difficulty increased for your \${habit.streak}-day streak! \`;
+      rationale += `Challenge: Difficulty increased for your ${habit.streak}-day streak! `;
     }
 
     const baseReward = 10; // Default base for habits

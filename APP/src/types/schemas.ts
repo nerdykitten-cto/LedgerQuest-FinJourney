@@ -108,6 +108,7 @@ export interface Encounter {
  */
 
 export interface LogicEngineTrace {
+  id?: string;
   timestamp: number;
   type: 'AP_EVALUATOR' | 'VALUE_ADJUSTER';
   input: any;

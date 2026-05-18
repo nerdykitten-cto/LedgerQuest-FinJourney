@@ -1,152 +1,220 @@
 import { useState, useEffect } from 'react';
 import './App.css';
-import type { Expense, PlayerStats, Quest, AntigravityTrace } from './types/schemas';
-import { AntigravityAgent } from './antigravityAgent';
+import type { 
+  Expense, 
+  PlayerStats, 
+  Quest, 
+  LogicEngineTrace, 
+  FinanceTask, 
+  CampaignState,
+  Habit 
+} from './types/schemas';
+import { APEvaluator, ValueAdjuster } from './logicEngines';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import QuestList from './components/QuestList';
 import PlayerDashboard from './components/PlayerDashboard';
 import * as dbService from './persistenceService';
 
-const agent = new AntigravityAgent('narrative-agent-01');
+const evaluator = new APEvaluator();
+const adjuster = new ValueAdjuster();
 
 function App() {
-  // Stats
-  const [stats, setStats] = useState<PlayerStats>({
-    level: 1,
-    exp: 0,
-    ap: 10,
-    gold: 0
+  const [viewMode, setViewMode] = useState<'finance' | 'rpg'>('finance');
+  const [stats, setStats] = useState<PlayerStats>({ level: 1, exp: 0, ap: 10, gold: 0 });
+  const [campaign, setCampaign] = useState<CampaignState>({ 
+    currentLocation: 'Start Town', 
+    progressPercentage: 0, 
+    worldState: 'peace' 
   });
 
-  // Data
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [quests, setQuests] = useState<Quest[]>([]);
-  const [traces, setTraces] = useState<AntigravityTrace[]>([]);
+  const [tasks, setTasks] = useState<FinanceTask[]>([]);
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [traces, setTraces] = useState<LogicEngineTrace[]>([]);
   const [notification, setNotification] = useState<string | null>(null);
 
   // Persistence Sync
   useEffect(() => {
-    const sync = () => {
-      dbService.subscribeExpenses(setExpenses);
-      dbService.subscribeQuests(setQuests);
-      dbService.subscribeStats(setStats);
+    dbService.initializeLocalData();
+    const unsubExpenses = dbService.subscribeExpenses(setExpenses);
+    const unsubQuests = dbService.subscribeQuests(setQuests);
+    const unsubStats = dbService.subscribeStats(setStats);
+    const unsubCampaign = dbService.subscribeCampaign(setCampaign);
+    const unsubTasks = dbService.subscribeTasks(setTasks);
+    const unsubHabits = dbService.subscribeHabits(setHabits);
+    const unsubTraces = dbService.subscribeTraces(setTraces);
+
+    return () => {
+      unsubExpenses();
+      unsubQuests();
+      unsubStats();
+      unsubCampaign();
+      unsubTasks();
+      unsubHabits();
+      unsubTraces();
     };
-
-    sync();
-
-    // Listen for local storage changes (for local mode)
-    window.addEventListener('storage', sync);
-    return () => window.removeEventListener('storage', sync);
   }, []);
 
-  // Add Expense & AP Engine
+  // Finance Actions
   const handleAddExpense = async (expense: Expense) => {
-    // 1. Save expense
     await dbService.addExpenseDB(expense);
+    const reward = 2;
+    await dbService.updateStatsDB({ ap: stats.ap + reward });
+    showNotify(`+${reward} AP for logging expense!`);
+  };
 
-    // 2. AP Engine check (Evaluate Financial Win)
-    const allExpenses = [expense, ...expenses];
-    const { apGained, reason } = agent.evaluateFinancialWin(allExpenses);
-    
-    if (apGained > 0) {
-      const newAp = stats.ap + apGained;
-      await dbService.updateStatsDB({ ap: newAp });
-      setNotification(`+${apGained} AP: ${reason}`);
-      setTimeout(() => setNotification(null), 3000);
+  const handleCompleteTask = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      const reward = evaluator.evaluateTaskReward(task);
+      await dbService.updateTaskDB(taskId, { isCompleted: true });
+      await dbService.updateStatsDB({ ap: stats.ap + reward });
+      showNotify(`+${reward} AP: Task "${task.title}" completed!`);
+      
+      const trace = adjuster.generateTrace('AP_EVALUATOR', task, 'Task reward evaluation', { reward });
+      await dbService.addTraceDB(trace);
     }
   };
 
-  // Trigger Agent when expenses change
-  useEffect(() => {
-    if (expenses.length > 0) {
-      const runAgent = async () => {
-        const { quest, trace } = await agent.generateQuest(expenses, stats);
-        
-        // Only add if not already there
-        if (!quests.find(q => q.title === quest.title)) {
-          await dbService.addQuestDB(quest);
-          await dbService.addTraceDB(trace);
-          setTraces((prev) => [trace, ...prev]);
-        }
-      };
-      runAgent();
+  const handleCompleteHabit = async (habitId: string) => {
+    const habit = habits.find(h => h.id === habitId);
+    if (habit) {
+      const { adjustedAP, newDifficulty, rationale } = adjuster.adjustHabit(habit);
+      await dbService.updateHabitDB(habitId, { 
+        streak: habit.streak + 1, 
+        lastCompleted: Date.now(),
+        skipCount: 0,
+        difficulty: newDifficulty
+      });
+      await dbService.updateStatsDB({ ap: stats.ap + adjustedAP });
+      showNotify(`+${adjustedAP} AP: Habit "${habit.name}" updated!`);
+      
+      const trace = adjuster.generateTrace('VALUE_ADJUSTER', habit, rationale, { adjustedAP, newDifficulty });
+      await dbService.addTraceDB(trace);
     }
-  }, [expenses]);
+  };
 
-  // Quest Actions
-  const handleStartQuest = async (questId: string) => {
-    const quest = quests.find(q => q.id === questId);
-    if (quest && stats.ap >= 5) {
-      await dbService.updateQuestDB(questId, { status: 'active' });
-      await dbService.updateStatsDB({ ap: stats.ap - 5 });
+  // RPG Actions
+  const handleTravel = async (destination: string) => {
+    const cost = evaluator.calculateTravelCost(20);
+    if (stats.ap >= cost) {
+      await dbService.updateStatsDB({ ap: stats.ap - cost });
+      await dbService.updateCampaign({ 
+        currentLocation: destination, 
+        progressPercentage: Math.min(100, campaign.progressPercentage + 5) 
+      });
+      showNotify(`Traveled to ${destination}. Cost: ${cost} AP`);
     } else {
-      alert('Not enough AP to start this quest! Cost: 5 AP');
+      showNotify('Not enough AP to travel!');
     }
   };
 
-  const handleCompleteQuest = async (questId: string) => {
-    const quest = quests.find(q => q.id === questId);
-    if (quest) {
-      // Logic: Success based on difficulty vs level (simple random for demo)
-      const successChance = Math.min(0.5 + (stats.level / quest.difficulty) * 0.1, 0.95);
-      const isSuccess = Math.random() < successChance;
-
-      if (isSuccess) {
-        const newExp = stats.exp + quest.reward.exp;
-        const newGold = stats.gold + quest.reward.gold;
-        const newLevel = Math.floor(newExp / 1000) + 1;
-
-        await dbService.updateQuestDB(questId, { status: 'completed' });
-        await dbService.updateStatsDB({ 
-          exp: newExp, 
-          gold: newGold, 
-          level: newLevel 
-        });
-        setNotification(`Quest Completed! Gained ${quest.reward.exp} EXP and ${quest.reward.gold} Gold.`);
-      } else {
-        await dbService.updateQuestDB(questId, { status: 'failed' });
-        setNotification(`Quest Failed! The menace was too strong.`);
-      }
-      setTimeout(() => setNotification(null), 4000);
-    }
+  const showNotify = (msg: string) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(null), 3000);
   };
 
   return (
     <div className="container">
       {notification && <div className="notification">{notification}</div>}
-      <header>
-        <h1>FinJourney</h1>
-        <p>Your Finance RPG Adventure</p>
+      
+      <header className="main-header">
+        <div className="title-area">
+          <h1>FinJourney</h1>
+          <p>{viewMode === 'finance' ? 'Finance Office' : 'Adventure World'}</p>
+        </div>
+        <nav className="mode-switcher">
+          <button 
+            className={viewMode === 'finance' ? 'active' : ''} 
+            onClick={() => setViewMode('finance')}
+          >
+            Finance
+          </button>
+          <button 
+            className={viewMode === 'rpg' ? 'active' : ''} 
+            onClick={() => setViewMode('rpg')}
+          >
+            RPG
+          </button>
+        </nav>
       </header>
 
-      <main className="dashboard-grid">
-        <section className="finance-section">
-          <PlayerDashboard stats={stats} />
-          <ExpenseForm onAddExpense={handleAddExpense} />
-          <ExpenseList expenses={expenses} />
-        </section>
+      <PlayerDashboard stats={stats} />
 
-        <section className="rpg-section">
-          <QuestList 
-            quests={quests} 
-            onStartQuest={handleStartQuest} 
-            onCompleteQuest={handleCompleteQuest} 
-          />
-          
-          <div className="trace-logs">
-            <h3>Agent Traces (O-I-D-A)</h3>
-            <div className="trace-container">
-              {traces.map((t, i) => (
-                <details key={i}>
-                  <summary>Trace {new Date(t.timestamp).toLocaleTimeString()}</summary>
-                  <pre>{JSON.stringify(t, null, 2)}</pre>
-                </details>
-              ))}
-            </div>
+      <main className="view-container">
+        {viewMode === 'finance' ? (
+          <div className="finance-layout">
+            <section className="tasks-section">
+              <h3>Commitment Bridge</h3>
+              <div className="task-group">
+                <h4>Daily Tasks</h4>
+                {tasks.filter(t => !t.isCompleted).map(t => (
+                  <div key={t.id} className="task-card">
+                    <div>
+                      <strong>{t.title}</strong>
+                      <p>{t.description}</p>
+                    </div>
+                    <button onClick={() => handleCompleteTask(t.id)}>
+                      Complete ({evaluator.evaluateTaskReward(t)} AP)
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="task-group">
+                <h4>Financial Habits</h4>
+                {habits.map(h => {
+                  const { adjustedAP } = adjuster.adjustHabit(h);
+                  return (
+                    <div key={h.id} className="task-card habit">
+                      <div>
+                        <strong>{h.name}</strong>
+                        <p>Streak: {h.streak} | Skip Count: {h.skipCount}</p>
+                      </div>
+                      <button onClick={() => handleCompleteHabit(h.id)}>
+                        Log ({adjustedAP} AP)
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+            <section className="input-section">
+              <ExpenseForm onAddExpense={handleAddExpense} />
+              <ExpenseList expenses={expenses} />
+            </section>
           </div>
-        </section>
+        ) : (
+          <div className="rpg-layout">
+            <section className="narrative-section">
+              <h3>Current Location: {campaign.currentLocation}</h3>
+              <div className="story-text">
+                <p>The path ahead is clear. You feel the weight of your decisions in your pouch.</p>
+                <p>Progress: {campaign.progressPercentage}%</p>
+              </div>
+              <div className="rpg-actions">
+                <button onClick={() => handleTravel('Deep Woods')}>Travel to Woods (2 AP)</button>
+                <button onClick={() => showNotify('Talking to NPC costs 1 AP...')}>Talk to Elder (1 AP)</button>
+              </div>
+            </section>
+            <QuestList quests={quests} onStartQuest={() => {}} onCompleteQuest={() => {}} />
+          </div>
+        )}
       </main>
+
+      <footer className="audit-footer">
+        <details>
+          <summary>Logic Engine Traces (Audit)</summary>
+          <div className="trace-container">
+            {traces.slice(0, 10).map((t, i) => (
+              <div key={i} className="trace-item">
+                <code>[{new Date(t.timestamp).toLocaleTimeString()}] {t.type}: {t.rationale}</code>
+              </div>
+            ))}
+          </div>
+        </details>
+      </footer>
     </div>
   );
 }
