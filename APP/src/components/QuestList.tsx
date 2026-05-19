@@ -3,25 +3,45 @@ import type { Quest } from '../types/schemas';
 
 interface Props {
   quests: Quest[];
+  onStartQuest?: (id: string) => void;
+  onCompleteQuest?: (id: string) => void;
 }
 
-const QuestList: React.FC<Props> = ({ quests }) => {
+const QuestList: React.FC<Props> = ({ quests, onStartQuest, onCompleteQuest }) => {
   return (
     <div className="quest-list">
-      <h3>Available Quests</h3>
+      <h3>Quests</h3>
       {quests.length === 0 ? (
-        <p>No quests available. Log expenses to trigger quests!</p>
+        <p>No quests active in this area.</p>
       ) : (
-        <ul>
+        <div className="quest-container">
           {quests.map((q) => (
-            <li key={q.id} className={`quest-item ${q.status}`}>
-              <h4>{q.title}</h4>
+            <div key={q.id} className={`quest-card ${q.status}`}>
+              <div className="quest-header">
+                <h4>[{q.type.toUpperCase()}] {q.title}</h4>
+                <span className={`status-badge ${q.status}`}>{q.status}</span>
+              </div>
               <p>{q.description}</p>
-              <div>Difficulty: {q.difficulty}</div>
-              <div>Reward: {q.reward.exp} EXP, {q.reward.gold} Gold</div>
-            </li>
+              <div className="quest-meta">
+                <span>Difficulty: {q.difficulty}</span>
+                <span>Reward: {q.reward.exp} EXP / {q.reward.gold} G</span>
+              </div>
+              
+              <div className="quest-actions">
+                {q.status === 'available' && onStartQuest && (
+                  <button onClick={() => onStartQuest(q.id)} className="start-btn">
+                    Start Quest
+                  </button>
+                )}
+                {q.status === 'active' && onCompleteQuest && (
+                  <button onClick={() => onCompleteQuest(q.id)} className="complete-btn">
+                    Attempt
+                  </button>
+                )}
+              </div>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

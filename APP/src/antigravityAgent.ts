@@ -53,6 +53,7 @@ export class AntigravityAgent {
       id: uuidv4(),
       title: questTitle,
       description: questDescription,
+      type: 'side',
       difficulty: difficulty,
       reward: {
         exp: difficulty * 100,

@@ -1,0 +1,84 @@
+{
+  "chapters": [
+    {
+      "id": "ch0",
+      "title": "Beginnings: The Dusty Ledger",
+      "minProgress": 0,
+      "location": "Starting Village",
+      "mainQuests": [
+        {
+          "id": "q0_main",
+          "title": "The Ledger of the Lost Town",
+          "description": "You wake up in a village where memory is currency. The Elder hands you a dusty ledger. 'To see the path ahead, you must first record where you stand.' Log your first expense in the Finance Office to clear the fog around the village gates.",
+          "difficulty": 1,
+          "reward": { "exp": 150, "gold": 100 }
+        }
+      ],
+      "sideQuests": []
+    },
+    {
+      "id": "ch1",
+      "title": "Chapter 1: The Copper Marshes",
+      "minProgress": 10,
+      "location": "Copper Town",
+      "mainQuests": [
+        {
+          "id": "q1_main",
+          "title": "The Toll of the Glutton",
+          "description": "Gorgos the Swallower, a massive toad-like beast, blocks the bridge to the mainland. He demands a 'memory toll' from all travelers. Defeat him to re-open the Trade Routes of Copper.",
+          "difficulty": 3,
+          "reward": { "exp": 400, "gold": 250 }
+        }
+      ],
+      "sideQuests": [
+        {
+          "id": "q1_side1",
+          "title": "The Impulse Kraken",
+          "description": "A sea beast made of 'Wasted Gold' is harrying the coast. Drive it back to find the Aegis of the Reserve.",
+          "difficulty": 2,
+          "reward": { "exp": 150, "gold": 100 }
+        }
+      ]
+    },
+    {
+      "id": "ch2",
+      "title": "Chapter 2: The Silver Peaks",
+      "minProgress": 40,
+      "location": "Silver City",
+      "mainQuests": [
+        {
+          "id": "q2_main",
+          "title": "The Contract of the Frost-Wraith",
+          "description": "Sanguis the Creditor haunts the mountains with 'Eternal Interest' contracts. Burn his book of contracts to restore the world's flow of magic.",
+          "difficulty": 6,
+          "reward": { "exp": 800, "gold": 600 }
+        }
+      ],
+      "sideQuests": [
+        {
+          "id": "q2_side1",
+          "title": "The Audit of the Innkeeper",
+          "description": "The local innkeeper's 'Seeds of Future Growth' have been stolen. Help him find them to earn the Staff of Compound Clarity.",
+          "difficulty": 4,
+          "reward": { "exp": 300, "gold": 200 }
+        }
+      ]
+    },
+    {
+      "id": "ch3",
+      "title": "Chapter 3: The Citadel of Iron",
+      "minProgress": 75,
+      "location": "Iron Citadel",
+      "mainQuests": [
+        {
+          "id": "q3_main",
+          "title": "The Auditor's Final Judgment",
+          "description": "The Iron Sentinel stands before the Gilded Spire, judging every soul's 'worth.' Use the Ledger of Truth to override its logic and open the Vault Gates.",
+          "difficulty": 10,
+          "reward": { "exp": 2000, "gold": 1500 }
+        }
+      ],
+      "sideQuests": []
+    }
+  ]
+}

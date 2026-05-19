@@ -10,10 +10,39 @@ export interface Expense {
   timestamp: number;
 }
 
-export interface Budget {
-  category: string;
-  limit: number;
-  spent: number;
+export interface Subscription {
+  id: string;
+  name: string;
+  cost: number;
+  type: 'digital' | 'physical';
+  frequency: 'monthly' | 'yearly';
+  nextBillingDate: number;
+}
+
+export interface Earning {
+  id: string;
+  source: string;
+  amount: number;
+  timestamp: number;
+}
+
+export interface FinanceTask {
+  id: string;
+  title: string;
+  description: string;
+  isNecessity: boolean; // e.g., Grocery shopping
+  baseAPReward: number;
+  isCompleted: boolean;
+  deadline?: number;
+}
+
+export interface Habit {
+  id: string;
+  name: string;
+  streak: number;
+  lastCompleted: number; // Timestamp
+  skipCount: number; // Used by Value Adjuster to increase rewards
+  difficulty: number; // 1-10
 }
 
 /**
@@ -23,7 +52,7 @@ export interface Budget {
 export interface PlayerStats {
   level: number;
   exp: number;
-  ap: number; // Action Points (earned from finance habits)
+  ap: number; // Action Points (Earned via Finance Tasks/Habits)
   gold: number;
 }
 
@@ -31,13 +60,39 @@ export interface PartyMember {
   id: string;
   name: string;
   role: string;
+  hp: number;
+  maxHp: number;
+  mp: number;
+  maxMp: number;
   level: number;
+  equipment: {
+    weapon?: string;
+    armor?: string;
+  };
+}
+
+export interface Enemy {
+  id: string;
+  name: string;
+  hp: number;
+  maxHp: number;
+  attack: number;
+  defense: number;
+}
+
+export interface CampaignState {
+  currentLocation: string;
+  progressPercentage: number;
+  activeQuestId?: string;
+  worldState: 'peace' | 'battle' | 'puzzle';
+  activeEnemy?: Enemy;
 }
 
 export interface Quest {
   id: string;
   title: string;
   description: string;
+  type: 'main' | 'side';
   difficulty: number;
   reward: {
     exp: number;
@@ -47,15 +102,63 @@ export interface Quest {
   status: 'available' | 'active' | 'completed' | 'failed';
 }
 
+export interface QuestTemplate {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: number;
+  reward: {
+    exp: number;
+    gold: number;
+    items?: string[];
+  };
+}
+
+export interface Chapter {
+  id: string;
+  title: string;
+  minProgress: number;
+  location: string;
+  mainQuests: QuestTemplate[];
+  sideQuests: QuestTemplate[];
+}
+
+export interface StoryManifest {
+  chapters: Chapter[];
+}
+
+export interface Encounter {
+  id: string;
+  type: 'dialogue' | 'battle' | 'puzzle' | 'minigame';
+  description: string; // The situation text
+  options: {
+    text: string;
+    apCost: number;
+    action: string; // Reference to a result or state change
+  }[];
+}
+
+/**
+ * LOGIC ENGINE TRACES
+ */
+
+export interface LogicEngineTrace {
+  id?: string;
+  timestamp: number;
+  type: 'AP_EVALUATOR' | 'VALUE_ADJUSTER' | 'STORY_TELLING_ENGINE';
+  input: unknown;
+  rationale: string;
+  output: unknown;
+}
+
 /**
  * ANTIGRAVITY O-I-D-A TRACE
  */
-
 export interface AntigravityTrace {
   timestamp: number;
   agentId: string;
-  observe: any; // Raw input (e.g., last 3 days of expenses)
-  infer: any;   // Interpretation (e.g., "Player is overspending on food, high boredom risk")
-  decide: any;  // Action chosen (e.g., "Generate food-related monster quest with high reward")
-  act: any;     // Resulting data (e.g., the Quest object)
+  observe: unknown;
+  infer: unknown;
+  decide: unknown;
+  act: unknown;
 }
