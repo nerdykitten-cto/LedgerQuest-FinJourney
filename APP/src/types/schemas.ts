@@ -71,11 +71,21 @@ export interface PartyMember {
   };
 }
 
+export interface Enemy {
+  id: string;
+  name: string;
+  hp: number;
+  maxHp: number;
+  attack: number;
+  defense: number;
+}
+
 export interface CampaignState {
   currentLocation: string;
   progressPercentage: number;
   activeQuestId?: string;
   worldState: 'peace' | 'battle' | 'puzzle';
+  activeEnemy?: Enemy;
 }
 
 export interface Quest {
@@ -90,6 +100,31 @@ export interface Quest {
     items?: string[];
   };
   status: 'available' | 'active' | 'completed' | 'failed';
+}
+
+export interface QuestTemplate {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: number;
+  reward: {
+    exp: number;
+    gold: number;
+    items?: string[];
+  };
+}
+
+export interface Chapter {
+  id: string;
+  title: string;
+  minProgress: number;
+  location: string;
+  mainQuests: QuestTemplate[];
+  sideQuests: QuestTemplate[];
+}
+
+export interface StoryManifest {
+  chapters: Chapter[];
 }
 
 export interface Encounter {
@@ -110,8 +145,8 @@ export interface Encounter {
 export interface LogicEngineTrace {
   id?: string;
   timestamp: number;
-  type: 'AP_EVALUATOR' | 'VALUE_ADJUSTER';
-  input: any;
+  type: 'AP_EVALUATOR' | 'VALUE_ADJUSTER' | 'STORY_TELLING_ENGINE';
+  input: unknown;
   rationale: string;
-  output: any;
+  output: unknown;
 }

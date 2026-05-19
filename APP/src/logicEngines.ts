@@ -2,28 +2,52 @@ import type {
   FinanceTask, 
   Habit, 
   LogicEngineTrace,
-  Encounter
+  Encounter,
+  Expense,
+  PlayerStats,
+  Quest,
+  CampaignState
 } from './types/schemas';
+import storyManifestData from './data/storyManifest.json';
+
+interface ManifestQuest {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: number;
+  reward: {
+    exp: number;
+    gold: number;
+  };
+}
+
+interface Chapter {
+  id: string;
+  title: string;
+  minProgress: number;
+  location: string;
+  mainQuests: ManifestQuest[];
+  sideQuests: ManifestQuest[];
+}
+
+interface StoryManifest {
+  chapters: Chapter[];
+}
+
+const storyManifest = storyManifestData as StoryManifest;
 
 /**
  * AP EVALUATOR SCRIPT
- * Handles reward assignment for finance tasks and cost calculation for game actions.
  */
 export class APEvaluator {
-  /**
-   * Assigns AP rewards to a finance task based on necessity and difficulty.
-   */
   evaluateTaskReward(task: FinanceTask): number {
     let reward = task.baseAPReward;
     if (task.isNecessity) {
-      reward *= 1.5; // Necessities grant 50% more AP
+      reward *= 1.5;
     }
     return Math.round(reward);
   }
 
-  /**
-   * Calculates the AP cost for a game action.
-   */
   calculateActionCost(type: Encounter['type']): number {
     switch (type) {
       case 'dialogue': return 1;
@@ -34,9 +58,6 @@ export class APEvaluator {
     }
   }
 
-  /**
-   * Calculates travel cost between two points (simulated).
-   */
   calculateTravelCost(distance: number): number {
     return Math.max(1, Math.floor(distance / 10));
   }
@@ -44,52 +65,125 @@ export class APEvaluator {
 
 /**
  * DIFFICULTY & VALUE ADJUSTER SCRIPT
- * Monitors habits and adjusts rewards/difficulty to maintain engagement.
  */
 export class ValueAdjuster {
-  /**
-   * Adjusts a habit's rewards and difficulty based on skip counts and streaks.
-   */
   adjustHabit(habit: Habit): { adjustedAP: number; newDifficulty: number; rationale: string } {
     let multiplier = 1.0;
     let newDifficulty = habit.difficulty;
     let rationale = '';
 
-    // Incentive Loop: Increase reward if skipped
     if (habit.skipCount > 0) {
       multiplier += (habit.skipCount * 0.2);
-      rationale = `Incentive: Reward increased by ${habit.skipCount * 20}% due to skips. `;
+      rationale = 'Incentive: Reward increased by ' + (habit.skipCount * 20) + '% due to skips. ';
     }
 
-    // Momentum Loop: Lower difficulty if skipping too much
     if (habit.skipCount >= 3) {
       newDifficulty = Math.max(1, habit.difficulty - 1);
-      rationale += `Momentum: Difficulty lowered to help you restart. `;
+      rationale += 'Momentum: Difficulty lowered to help you restart. ';
     }
 
-    // Challenge Loop: Increase difficulty for high streaks
     if (habit.streak >= 5) {
       newDifficulty = Math.min(10, habit.difficulty + 1);
       multiplier += 0.1;
-      rationale += `Challenge: Difficulty increased for your ${habit.streak}-day streak! `;
+      rationale += 'Challenge: Difficulty increased for your ' + habit.streak + '-day streak! ';
     }
 
-    const baseReward = 10; // Default base for habits
+    const baseReward = 10;
     const adjustedAP = Math.round(baseReward * multiplier);
 
     return { adjustedAP, newDifficulty, rationale };
   }
 
-  /**
-   * Generates a trace for the logic engine audit.
-   */
-  generateTrace(type: 'AP_EVALUATOR' | 'VALUE_ADJUSTER', input: any, rationale: string, output: any): LogicEngineTrace {
+  generateTrace(type: 'AP_EVALUATOR' | 'VALUE_ADJUSTER' | 'STORY_TELLING_ENGINE', input: unknown, rationale: string, output: unknown): LogicEngineTrace {
     return {
       timestamp: Date.now(),
-      type,
+      type: type as "AP_EVALUATOR" | "VALUE_ADJUSTER" | "STORY_TELLING_ENGINE",
       input,
       rationale,
       output
     };
+  }
+}
+
+/**
+ * STORY-TELLING ENGINE
+ * Replaces generative logic with structured narrative progression.
+ */
+export class StoryTellingEngine {
+  private adjuster = new ValueAdjuster();
+
+  async process(
+    expenses: Expense[], 
+    _stats: PlayerStats, 
+    _habits: Habit[],
+    campaign: CampaignState,
+    existingQuests: Quest[]
+  ): Promise<{ quest?: Quest; trace: LogicEngineTrace }> {
+    
+    const isAtTown = campaign.currentLocation.toLowerCase().indexOf('town') !== -1 || 
+                     campaign.currentLocation.toLowerCase().indexOf('village') !== -1 ||
+                     campaign.currentLocation.toLowerCase().indexOf('city') !== -1;
+
+    const observation = {
+      campaignProgress: campaign.progressPercentage,
+      location: campaign.currentLocation,
+      isAtTown,
+      hasActiveQuest: existingQuests.some(q => q.status === 'active' || q.status === 'available')
+    };
+
+    let quest: Quest | undefined;
+    let decisionReason = 'Waiting for player to reach a town or complete active quests.';
+
+    if (isAtTown && !observation.hasActiveQuest) {
+      const chapter = [...storyManifest.chapters]
+        .reverse()
+        .find(ch => observation.campaignProgress >= ch.minProgress) || storyManifest.chapters[0];
+
+      if (chapter) {
+        const mqData = chapter.mainQuests[0];
+        const isMainCompleted = existingQuests.some(q => q.id === mqData.id && q.status === 'completed');
+
+        if (chapter.id === 'ch0' && expenses.length === 0 && !isMainCompleted) {
+          quest = {
+            ...mqData,
+            type: 'main',
+            status: 'available'
+          };
+          decisionReason = 'CH0 Onboarding: Nudging player to "' + quest.title + '" because no expenses exist.';
+        } else if (!isMainCompleted) {
+          quest = {
+            ...mqData,
+            type: 'main',
+            status: 'available'
+          };
+          decisionReason = 'Suggested Main Quest "' + quest.title + '" for chapter "' + chapter.title + '".';
+        } else {
+          const availableSideQuest = chapter.sideQuests.find(sq => 
+            !existingQuests.some(eq => eq.id === sq.id) && 
+            campaign.currentLocation.indexOf(chapter.location) !== -1
+          );
+
+          if (availableSideQuest) {
+            quest = {
+              ...availableSideQuest,
+              type: 'side',
+              status: 'available'
+            };
+            decisionReason = 'Suggested Side Quest "' + quest.title + '" in ' + campaign.currentLocation + '.';
+          } else {
+            decisionReason = 'All quests for ' + chapter.title + ' at this location completed.';
+          }
+        }
+      }
+    }
+
+    const trace = this.adjuster.generateTrace(
+      'STORY_TELLING_ENGINE',
+      observation,
+      decisionReason,
+      { decisionReason, quest }
+    );
+
+    return { quest, trace };
   }
 }
