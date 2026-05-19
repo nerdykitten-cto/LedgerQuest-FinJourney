@@ -18,6 +18,7 @@ import QuestList from './components/QuestList';
 import PlayerDashboard from './components/PlayerDashboard';
 import BattleSystem from './components/BattleSystem';
 import WorldMap from './components/WorldMap';
+import GameView from './components/GameView';
 import * as dbService from './persistenceService';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -424,6 +425,8 @@ function App() {
                     <h3>Adventure: {campaign.currentLocation}</h3>
                     <span className="subtitle">Progress: {campaign.progressPercentage}%</span>
                   </header>
+                  
+                  <GameView stats={stats} />
                   
                   <WorldMap campaign={campaign} onTravel={handleTravel} />
 

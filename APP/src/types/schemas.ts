@@ -150,3 +150,15 @@ export interface LogicEngineTrace {
   rationale: string;
   output: unknown;
 }
+
+/**
+ * ANTIGRAVITY O-I-D-A TRACE
+ */
+export interface AntigravityTrace {
+  timestamp: number;
+  agentId: string;
+  observe: unknown;
+  infer: unknown;
+  decide: unknown;
+  act: unknown;
+}
