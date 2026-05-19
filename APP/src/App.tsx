@@ -16,8 +16,6 @@ import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import QuestList from './components/QuestList';
 import PlayerDashboard from './components/PlayerDashboard';
-import BattleSystem from './components/BattleSystem';
-import WorldMap from './components/WorldMap';
 import GameView from './components/GameView';
 import * as dbService from './persistenceService';
 import { v4 as uuidv4 } from 'uuid';
@@ -411,52 +409,24 @@ function App() {
           </div>
         ) : (
           <div className="rpg-layout">
-            {campaign.worldState === 'battle' && campaign.activeEnemy ? (
-              <BattleSystem 
-                party={party} 
-                enemy={campaign.activeEnemy} 
-                onVictory={handleBattleVictory}
-                onDefeat={handleBattleDefeat}
-              />
-            ) : (
-              <>
-                <section className="narrative-section">
-                  <header className="section-header">
-                    <h3>Adventure: {campaign.currentLocation}</h3>
-                    <span className="subtitle">Progress: {campaign.progressPercentage}%</span>
-                  </header>
-                  
-                  <GameView stats={stats} />
-                  
-                  <WorldMap campaign={campaign} onTravel={handleTravel} />
+            <section className="narrative-section">
+              <header className="section-header">
+                <h3>Adventure: {campaign.currentLocation}</h3>
+                <span className="subtitle">Progress: {campaign.progressPercentage}%</span>
+              </header>
+              
+              <GameView stats={stats} />
 
-                  <div className="story-text">
-                    <p>The path ahead is clear. You feel the weight of your decisions in your pouch.</p>
-                  </div>
-                  <div className="rpg-actions">
-                    <button onClick={handleFight}>Fight (3 AP)</button>
-                    <button onClick={() => showNotify('Talking costs 1 AP...')}>Talk (1 AP)</button>
-                    <button onClick={handleRecruit}>Recruit (500 Gold)</button>
-                  </div>
-                  <div className="party-group">
-                    <h4>Your Party</h4>
-                    <div className="party-list">
-                      {party.map(m => (
-                        <div key={m.id} className="party-card">
-                          <strong>{m.name}</strong> ({m.role})
-                          <p>HP: {m.hp}/{m.maxHp} | MP: {m.mp}/{m.maxMp}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </section>
-                <QuestList 
-                  quests={quests} 
-                  onStartQuest={handleStartQuest} 
-                  onCompleteQuest={handleCompleteQuest} 
-                />
-              </>
-            )}
+              <div className="rpg-actions">
+                <button onClick={() => handleTravel('Deep Woods')}>Travel (2 AP)</button>
+                <button onClick={handleFight}>Fight (3 AP)</button>
+              </div>
+            </section>
+            <QuestList 
+              quests={quests} 
+              onStartQuest={handleStartQuest} 
+              onCompleteQuest={handleCompleteQuest} 
+            />
           </div>
         )}
       </main>
