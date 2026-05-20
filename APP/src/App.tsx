@@ -9,14 +9,18 @@ import type {
   CampaignState,
   Habit,
   PartyMember,
-  Enemy
+  BudgetStream,
+  SavingsGoal
 } from './types/schemas';
 import { APEvaluator, ValueAdjuster, StoryTellingEngine } from './logicEngines';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import QuestList from './components/QuestList';
-import PlayerDashboard from './components/PlayerDashboard';
+import QuestGater from './components/QuestGater';
 import GameView from './components/GameView';
+import TopAppBar from './components/TopAppBar';
+import WarRoom from './components/WarRoom';
+import GrandVault from './components/GrandVault';
 import * as dbService from './persistenceService';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -25,10 +29,11 @@ const adjuster = new ValueAdjuster();
 const agent = new StoryTellingEngine();
 
 function App() {
-  const [viewMode, setViewMode] = useState<'finance' | 'rpg'>('finance');
+  const [currentTab, setCurrentTab] = useState('ledger');
+  const [archiveTab, setArchiveTab] = useState<'ledger' | 'budget'>('ledger');
   const [stats, setStats] = useState<PlayerStats>({ level: 1, exp: 0, ap: 10, gold: 0 });
   const [campaign, setCampaign] = useState<CampaignState>({ 
-    currentLocation: 'Start Town', 
+    currentLocation: 'Starting Village', 
     progressPercentage: 0, 
     worldState: 'peace' 
   });
@@ -37,15 +42,22 @@ function App() {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [tasks, setTasks] = useState<FinanceTask[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
-  const [traces, setTraces] = useState<LogicEngineTrace[]>([]);
+  const [budgets, setBudgets] = useState<BudgetStream[]>([]);
+  const [_savings, setSavings] = useState<SavingsGoal[]>([]);
+  const [_traces, setTraces] = useState<LogicEngineTrace[]>([]);
   const [party, setParty] = useState<PartyMember[]>([]);
   const [notification, setNotification] = useState<string | null>(null);
-  const [newTask, setNewTask] = useState({ 
-    title: '', 
-    description: '', 
-    isNecessity: false, 
-    baseAPReward: 10 
-  });
+  const [gatedQuest, setGatedQuest] = useState<Quest | null>(null);
+  
+  const [isScribeOpen, setIsScribeOpen] = useState(false);
+  const [isTransmuteOpen, setIsTransmuteOpen] = useState(false);
+  const [isWarRoomOpen, setIsWarRoomOpen] = useState(false);
+  const [isVaultOpen, setIsVaultOpen] = useState(false);
+  
+  const [isTaskCreatorOpen, setIsTaskCreatorOpen] = useState(false);
+  const [isHabitCreatorOpen, setIsHabitCreatorOpen] = useState(false);
+  const [newTask, setNewTask] = useState({ title: '', isNecessity: false, ap: 10 });
+  const [newHabit, setNewHabit] = useState({ name: '', difficulty: 1 });
 
   const showNotify = useCallback((msg: string) => {
     setNotification(msg);
@@ -63,62 +75,129 @@ function App() {
     const unsubHabits = dbService.subscribeHabits(setHabits);
     const unsubTraces = dbService.subscribeTraces(setTraces);
     const unsubParty = dbService.subscribeParty(setParty);
+    const unsubBudgets = dbService.subscribeBudgetStreams(setBudgets);
+    const unsubSavings = dbService.subscribeSavingsGoals(setSavings);
 
     return () => {
-      unsubExpenses();
-      unsubQuests();
-      unsubStats();
-      unsubCampaign();
-      unsubTasks();
-      unsubHabits();
-      unsubTraces();
-      unsubParty();
+      unsubExpenses(); unsubQuests(); unsubStats(); unsubCampaign(); 
+      unsubTasks(); unsubHabits(); unsubTraces(); unsubParty(); 
+      unsubBudgets(); unsubSavings();
     };
   }, []);
 
-  // Story Telling Engine Trigger
-  useEffect(() => {
-    if (expenses.length >= 0) {
-      const runAgent = async () => {
-        const { quest, trace } = await agent.process(expenses, stats, habits, campaign, quests);
-        if (quest) {
-          const exists = quests.some(q => q.id === quest.id);
-          if (!exists) {
-            await dbService.addQuestDB(quest);
-            showNotify('New Story Beat: ' + quest.title);
-          }
+  const checkQuestObjective = useCallback(async (type: string, target: string) => {
+     const activeQuest = quests.find(q => q.status === 'active');
+     if (!activeQuest) return;
+
+     const objIndex = activeQuest.objectives?.findIndex(o => o.type === type && o.target === target && !o.isCompleted);
+     if (objIndex !== undefined && objIndex !== -1) {
+        const updatedObjectives = [...(activeQuest.objectives || [])];
+        updatedObjectives[objIndex] = { ...updatedObjectives[objIndex], isCompleted: true };
+        
+        const allDone = updatedObjectives.every(o => o.isCompleted);
+        if (allDone) {
+           await dbService.updateQuestDB(activeQuest.id, { status: 'completed', objectives: updatedObjectives });
+           await dbService.updateStatsDB({ exp: stats.exp + activeQuest.reward.exp, gold: stats.gold + activeQuest.reward.gold });
+           showNotify(`Quest Complete: ${activeQuest.title}!`);
+        } else {
+           await dbService.updateQuestDB(activeQuest.id, { objectives: updatedObjectives });
+           showNotify(`Objective met: ${target}`);
         }
-        await dbService.addTraceDB(trace);
-      };
-      runAgent();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expenses.length, campaign.progressPercentage, quests.length]);
+     }
+  }, [quests, stats, showNotify]);
 
-  // Finance Actions
-  const handleAddExpense = async (expense: Expense) => {
-    await dbService.addExpenseDB(expense);
-    const reward = 2;
-    await dbService.updateStatsDB({ ap: stats.ap + reward });
-    showNotify('+' + reward + ' AP for logging expense!');
-  };
+  // Story Engine - Logic Loop
+  useEffect(() => {
+    const runAgent = async () => {
+      const { quest, trace } = await agent.process(expenses, stats, habits, campaign, quests);
+      if (quest && !quests.find(q => q.id === quest.id)) {
+        await dbService.addQuestDB(quest);
+        showNotify('New Quest Unlocked: ' + quest.title);
+      }
+      if (trace.rationale !== 'Waiting for player to reach a town or complete active quests.') {
+         await dbService.addTraceDB(trace);
+      }
+    };
+    runAgent();
+  }, [expenses.length, campaign.currentLocation, quests.length, stats.ap]);
 
-  const handleAddTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTask.title) return;
-
-    const task: FinanceTask = {
-      id: uuidv4(),
-      title: newTask.title,
-      description: newTask.description,
-      isNecessity: newTask.isNecessity,
-      baseAPReward: newTask.baseAPReward,
-      isCompleted: false,
+  // RPG Actions & Messaging
+  useEffect(() => {
+    const handleGameMessage = async (event: MessageEvent) => {
+      const { type, data } = event.data;
+      
+      if (type === 'TRAVEL_ACTION') {
+        const { destination, cost } = data;
+        if (stats.ap >= cost) {
+          await dbService.updateStatsDB({ ap: stats.ap - cost });
+          await dbService.updateCampaign({ currentLocation: destination, progressPercentage: Math.min(100, campaign.progressPercentage + 5) });
+          checkQuestObjective('travel', destination);
+          showNotify('Traveled to ' + destination);
+        } else {
+          showNotify('Not enough AP!');
+        }
+      } 
+      else if (type === 'TALK_ACTION') {
+        const { npcName } = data;
+        if (stats.ap >= 1) {
+          await dbService.updateStatsDB({ ap: stats.ap - 1 });
+          checkQuestObjective('talk', npcName);
+        } else {
+          showNotify('Not enough AP!');
+        }
+      }
+      else if (type === 'BATTLE_VICTORY') {
+        const activeQuest = quests.find(q => q.status === 'active');
+        if (activeQuest) {
+           const targetObj = activeQuest.objectives?.find(o => o.type === 'kill' && !o.isCompleted);
+           if (targetObj) checkQuestObjective('kill', targetObj.target);
+        }
+        await dbService.updateStatsDB({ exp: stats.exp + 100, gold: stats.gold + 50 });
+        showNotify('Victory! +100 XP / +50 Gold');
+      }
+      else if (type === 'SHOP_PURCHASE') {
+         const { item, cost } = data;
+         if (stats.gold >= cost) {
+            await dbService.updateStatsDB({ gold: stats.gold - cost });
+            showNotify(`Acquired ${item.name}!`);
+         } else {
+            showNotify('Insufficient Gold!');
+         }
+      }
     };
 
-    await dbService.addTaskDB(task);
-    setNewTask({ title: '', description: '', isNecessity: false, baseAPReward: 10 });
-    showNotify('New task created: ' + task.title);
+    window.addEventListener('message', handleGameMessage);
+    return () => window.removeEventListener('message', handleGameMessage);
+  }, [stats, campaign, quests, checkQuestObjective, showNotify]);
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      switch (e.key.toLowerCase()) {
+        case 'l': setCurrentTab('ledger'); break;
+        case 'h': setCurrentTab('trials'); break;
+        case 'a': setCurrentTab('archive'); break;
+        case 'q': setCurrentTab('quests'); break;
+        case 'm': setIsWarRoomOpen(true); break;
+        case 'i': setIsVaultOpen(true); break;
+        case ' ': e.preventDefault(); setIsScribeOpen(true); break;
+        case 'escape':
+          setIsScribeOpen(false); setIsTransmuteOpen(false);
+          setIsWarRoomOpen(false); setIsVaultOpen(false);
+          setIsTaskCreatorOpen(false); setIsHabitCreatorOpen(false);
+          setGatedQuest(null); break;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleAddExpense = async (expense: Expense) => {
+    await dbService.addExpenseDB(expense);
+    await dbService.updateStatsDB({ ap: stats.ap + 2 });
+    showNotify('+2 AP for logging expense!');
+    setIsScribeOpen(false);
   };
 
   const handleCompleteTask = async (taskId: string) => {
@@ -127,322 +206,256 @@ function App() {
       const reward = evaluator.evaluateTaskReward(task);
       await dbService.updateTaskDB(taskId, { isCompleted: true });
       await dbService.updateStatsDB({ ap: stats.ap + reward });
-      showNotify('+' + reward + ' AP: Task "' + task.title + '" completed!');
-
-      const trace = adjuster.generateTrace('AP_EVALUATOR', task, 'Task reward evaluation', { reward });
-      await dbService.addTraceDB(trace);
+      showNotify('+' + reward + ' AP: Feat Complete!');
     }
   };
 
   const handleCompleteHabit = useCallback(async (habitId: string) => {
     const habit = habits.find(h => h.id === habitId);
     if (habit) {
-      const now = Date.now();
-      const { adjustedAP, newDifficulty, rationale } = adjuster.adjustHabit(habit);
-      await dbService.updateHabitDB(habitId, { 
-        streak: habit.streak + 1, 
-        lastCompleted: now,
-        skipCount: 0,
-        difficulty: newDifficulty
-      });
+      const { adjustedAP, newDifficulty } = adjuster.adjustHabit(habit);
+      await dbService.updateHabitDB(habitId, { streak: habit.streak + 1, lastCompleted: Date.now(), difficulty: newDifficulty });
       await dbService.updateStatsDB({ ap: stats.ap + adjustedAP });
-      showNotify('+' + adjustedAP + ' AP: Habit "' + habit.name + '" updated!');
-
-      const trace = adjuster.generateTrace('VALUE_ADJUSTER', habit, rationale, { adjustedAP, newDifficulty });
-      await dbService.addTraceDB(trace);
+      showNotify('+' + adjustedAP + ' AP: Ritual Performed!');
     }
   }, [habits, stats.ap, showNotify]);
 
-  // RPG Actions
-  const handleTravel = async (destination: string) => {
-    const cost = evaluator.calculateTravelCost(20);
-    if (stats.ap >= cost) {
-      await dbService.updateStatsDB({ ap: stats.ap - cost });
-      await dbService.updateCampaign({ 
-        currentLocation: destination, 
-        progressPercentage: Math.min(100, campaign.progressPercentage + 5) 
-      });
-      showNotify('Traveled to ' + destination + '. Cost: ' + cost + ' AP');
-    } else {
-      showNotify('Not enough AP to travel!');
+  const handleAddTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTask.title) return;
+    const task: FinanceTask = { id: uuidv4(), title: newTask.title, description: '', isNecessity: newTask.isNecessity, baseAPReward: newTask.ap, isCompleted: false };
+    await dbService.addTaskDB(task);
+    setNewTask({ title: '', isNecessity: false, ap: 10 });
+    setIsTaskCreatorOpen(false);
+    showNotify('Feat inscribed!');
+  };
+
+  const handleAddHabit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newHabit.name) return;
+    const habit: Habit = { id: uuidv4(), name: newHabit.name, streak: 0, lastCompleted: 0, skipCount: 0, difficulty: newHabit.difficulty };
+    const raw = localStorage.getItem('habits');
+    const currentHabits = raw ? JSON.parse(raw) : [];
+    localStorage.setItem('habits', JSON.stringify([...currentHabits, habit]));
+    window.dispatchEvent(new Event('storage'));
+    setNewHabit({ name: '', difficulty: 1 });
+    setIsHabitCreatorOpen(false);
+    showNotify('Ritual sealed!');
+  };
+
+  const handleStartQuest = (id: string) => {
+     const q = quests.find(q => q.id === id);
+     if (q) setGatedQuest(q);
+  };
+
+  const confirmStartQuest = async (quest: Quest) => {
+    if (stats.ap >= 5) {
+      await dbService.updateQuestDB(quest.id, { status: 'active' });
+      await dbService.updateStatsDB({ ap: stats.ap - 5 });
+      setGatedQuest(null);
+      showNotify('Embarking: ' + quest.title);
     }
   };
 
-  const handleRecruit = async () => {
-    const cost = 500;
-    if (stats.gold >= cost) {
-      const newMember: PartyMember = {
-        id: uuidv4(),
-        name: 'Mercenary',
-        role: 'Archer',
-        hp: 80,
-        maxHp: 80,
-        mp: 40,
-        maxMp: 40,
-        level: stats.level,
-        equipment: {}
-      };
-      await dbService.addPartyMemberDB(newMember);
-      await dbService.updateStatsDB({ gold: stats.gold - cost });
-      showNotify('Recruited a new Mercenary!');
-    } else {
-      showNotify('Need ' + cost + ' Gold to recruit!');
-    }
+  const handleCompleteQuest = async (id: string) => {
+     const q = quests.find(q => q.id === id);
+     if (q && q.status === 'active') {
+        const allDone = q.objectives?.every(o => o.isCompleted);
+        if (allDone) {
+           await dbService.updateQuestDB(id, { status: 'completed' });
+           await dbService.updateStatsDB({ exp: stats.exp + q.reward.exp, gold: stats.gold + q.reward.gold });
+           showNotify(`Quest Success!`);
+        } else {
+           showNotify('Objectives remain incomplete.');
+        }
+     }
   };
 
-  const handleStartQuest = async (questId: string) => {
-    const cost = 3; // Standard quest start cost
-    if (stats.ap >= cost) {
-      await dbService.updateQuestDB(questId, { status: 'active' });
-      await dbService.updateStatsDB({ ap: stats.ap - cost });
-      showNotify('Quest started! Good luck.');
-    } else {
-      showNotify('Not enough AP to start quest!');
-    }
-  };
-
-  const handleFight = async () => {
-    const cost = evaluator.calculateActionCost('battle');
-    if (stats.ap >= cost) {
-      const enemy: Enemy = {
-        id: uuidv4(),
-        name: 'Roaming Shadow',
-        hp: 50 + stats.level * 10,
-        maxHp: 50 + stats.level * 10,
-        attack: 10 + stats.level * 2,
-        defense: 5
-      };
-      await dbService.updateStatsDB({ ap: stats.ap - cost });
-      await dbService.updateCampaign({ worldState: 'battle', activeEnemy: enemy });
-      showNotify('Engaging in battle! Cost: ' + cost + ' AP');
-    } else {
-      showNotify('Not enough AP to fight!');
-    }
-  };
-
-  const handleBattleVictory = async () => {
-    const rewardExp = 100;
-    const rewardGold = 50;
-    await dbService.updateStatsDB({ 
-      exp: stats.exp + rewardExp, 
-      gold: stats.gold + rewardGold 
-    });
-    await dbService.updateCampaign({ worldState: 'peace', activeEnemy: undefined });
-    showNotify('Victory! Gained ' + rewardExp + ' EXP and ' + rewardGold + ' Gold.');
-
-    if (stats.exp + rewardExp >= stats.level * 1000) {
-      await dbService.updateStatsDB({ level: stats.level + 1, exp: 0 });
-      showNotify('LEVEL UP!');
-    }
-  };
-
-  const handleBattleDefeat = async () => {
-    await dbService.updateCampaign({ worldState: 'peace', activeEnemy: undefined });
-    showNotify('Defeat... You escaped with minor injuries.');
-  };
-
-  const handleCompleteQuest = async (questId: string) => {
-    const quest = quests.find(q => q.id === questId);
-    if (quest) {
-      // For now, higher difficulty quests trigger a mandatory battle
-      if (quest.difficulty > stats.level) {
-        const enemy: Enemy = {
-          id: uuidv4(),
-          name: 'Quest Guardian: ' + quest.title,
-          hp: quest.difficulty * 40,
-          maxHp: quest.difficulty * 40,
-          attack: quest.difficulty * 8,
-          defense: quest.difficulty * 2
-        };
-        await dbService.updateCampaign({ 
-          worldState: 'battle', 
-          activeEnemy: enemy,
-          activeQuestId: quest.id 
-        });
-        showNotify('A guardian blocks your quest! Defeat it to complete the quest.');
-      } else {
-        await finalizeQuest(quest);
-      }
-    }
-  };
-
-  const finalizeQuest = async (quest: Quest) => {
-    await dbService.updateQuestDB(quest.id, { status: 'completed' });
-    await dbService.updateStatsDB({ 
-      exp: stats.exp + quest.reward.exp, 
-      gold: stats.gold + quest.reward.gold 
-    });
-    showNotify('Quest Success! Gained ' + quest.reward.exp + ' EXP and ' + quest.reward.gold + ' Gold.');
-    
-    if (stats.exp + quest.reward.exp >= stats.level * 1000) {
-      await dbService.updateStatsDB({ 
-        level: stats.level + 1,
-        exp: 0
-      });
-      showNotify('LEVEL UP!');
-    }
-    await dbService.updateCampaign({ activeQuestId: undefined });
-  };
-
-  // Check if a battle victory should complete a quest
-  useEffect(() => {
-    if (campaign.worldState === 'peace' && campaign.activeQuestId) {
-      const quest = quests.find(q => q.id === campaign.activeQuestId);
-      if (quest && quest.status === 'active') {
-        finalizeQuest(quest);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [campaign.worldState, campaign.activeQuestId]);
+  const totalIncome = 4850.00;
+  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   return (
-    <div className="container">
-      {notification && <div className="notification">{notification}</div>}
-
-      <header className="main-header">
-        <div className="title-area">
-          <h1>FinJourney</h1>
-          <p>{viewMode === 'finance' ? 'Finance Office' : 'Adventure World'}</p>
+    <div className="min-h-screen bg-surface text-on-surface paper-texture font-body">
+      {notification && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] doodle-border bg-surface-container-highest px-6 py-2 font-headline animate-bounce shadow-2xl border-primary/50 text-primary">
+          {notification}
         </div>
-        <nav className="mode-switcher">
-          <button 
-            className={viewMode === 'finance' ? 'active' : ''} 
-            onClick={() => setViewMode('finance')}
-          >
-            Finance
-          </button>
-          <button 
-            className={viewMode === 'rpg' ? 'active' : ''} 
-            onClick={() => setViewMode('rpg')}
-          >
-            RPG
-          </button>
-        </nav>
-      </header>
+      )}
+      
+      {gatedQuest && <QuestGater quest={gatedQuest} tasks={tasks} habits={habits} ap={stats.ap} onAccept={() => confirmStartQuest(gatedQuest)} onClose={() => setGatedQuest(null)} />}
 
-      <PlayerDashboard stats={stats} />
-
-      <main className="view-container">
-        {viewMode === 'finance' ? (
-          <div className="finance-layout">
-            <section className="tasks-section">
-              <header className="section-header">
-                <h3>Commitment Bridge</h3>
-                <span className="subtitle">Habits & Tasks</span>
-              </header>
-
-              <div className="task-group create-task">
-                <h4>Create New Task</h4>
-                <form onSubmit={handleAddTask} className="task-form-inline">
-                  <input 
-                    type="text" 
-                    placeholder="Task Title" 
-                    value={newTask.title}
-                    onChange={e => setNewTask({ ...newTask, title: e.target.value })}
-                    required
-                  />
-                  <input 
-                    type="text" 
-                    placeholder="Description" 
-                    value={newTask.description}
-                    onChange={e => setNewTask({ ...newTask, description: e.target.value })}
-                  />
-                  <div className="form-row">
-                    <label>
-                      <input 
-                        type="checkbox" 
-                        checked={newTask.isNecessity}
-                        onChange={e => setNewTask({ ...newTask, isNecessity: e.target.checked })}
-                      />
-                      Necessity
-                    </label>
-                    <label>
-                      AP:
-                      <input 
-                        type="number" 
-                        style={{ width: '50px' }}
-                        value={newTask.baseAPReward}
-                        onChange={e => setNewTask({ ...newTask, baseAPReward: parseInt(e.target.value) || 0 })}
-                      />
-                    </label>
-                    <button type="submit">Add</button>
-                  </div>
-                </form>
-              </div>
-
-              <div className="task-group">
-                <h4>Daily Tasks</h4>
-                {tasks.filter(t => !t.isCompleted).map(t => (
-                  <div key={t.id} className="task-card">
-                    <div>
-                      <strong>{t.title}</strong>
-                      <p>{t.description}</p>
-                    </div>
-                    <button onClick={() => handleCompleteTask(t.id)}>
-                      Complete ({evaluator.evaluateTaskReward(t)} AP)
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="task-group">
-                <h4>Financial Habits</h4>
-                {habits.map(h => {
-                  const { adjustedAP } = adjuster.adjustHabit(h);
-                  return (
-                    <div key={h.id} className="task-card habit">
-                      <div>
-                        <strong>{h.name}</strong>
-                        <p>Streak: {h.streak} | Skip Count: {h.skipCount}</p>
-                      </div>
-                      <button onClick={() => handleCompleteHabit(h.id)}>
-                        Log ({adjustedAP} AP)
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-            <section className="input-section">
-              <ExpenseForm onAddExpense={handleAddExpense} />
-              <ExpenseList expenses={expenses} />
-            </section>
+      {isScribeOpen && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-surface/90 backdrop-blur-md">
+          <div className="w-full max-w-2xl relative animate-in zoom-in-95 duration-200">
+            <button className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-surface-container-highest doodle-border z-10 flex items-center justify-center hover:scale-110 transition-transform" onClick={() => setIsScribeOpen(false)}><span className="material-symbols-outlined">close</span></button>
+            <div className="tape-accent doodle-border bg-surface-container p-8 shadow-2xl"><ExpenseForm onAddExpense={handleAddExpense} /></div>
           </div>
-        ) : (
-          <div className="rpg-layout">
-            <section className="narrative-section">
-              <header className="section-header">
-                <h3>Adventure: {campaign.currentLocation}</h3>
-                <span className="subtitle">Progress: {campaign.progressPercentage}%</span>
-              </header>
-              
-              <GameView stats={stats} />
+        </div>
+      )}
 
-              <div className="rpg-actions">
-                <button onClick={() => handleTravel('Deep Woods')}>Travel (2 AP)</button>
-                <button onClick={handleFight}>Fight (3 AP)</button>
+      {isTransmuteOpen && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-surface/90 backdrop-blur-md">
+          <div className="w-full max-w-lg relative animate-in zoom-in-95 duration-200">
+            <button className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-surface-container-highest doodle-border z-10 flex items-center justify-center hover:scale-110 transition-transform" onClick={() => setIsTransmuteOpen(false)}><span className="material-symbols-outlined">close</span></button>
+            <div className="tape-accent doodle-border bg-surface-container p-8 shadow-2xl">
+               <h2 className="font-headline text-2xl font-bold text-primary mb-6 flex items-center gap-2"><img src="/assets/ui/Icon_GearWheels.png" className="w-8 h-8" /> Transmute Budget</h2>
+               <div className="space-y-6">
+                  {budgets.map(b => (
+                    <div key={b.id} className="space-y-2">
+                       <div className="flex justify-between font-label text-[10px] uppercase tracking-widest text-on-surface-variant"><span>{b.category}</span><span className="font-black text-on-surface">${b.allocatedAmount}</span></div>
+                       <input type="range" className="w-full accent-primary bg-surface-container-highest h-2 rounded-full appearance-none cursor-pointer" min="0" max="2000" step="50" value={b.allocatedAmount} onChange={(e) => dbService.updateBudgetStreamDB(b.id, { allocatedAmount: parseInt(e.target.value) })} />
+                    </div>
+                  ))}
+               </div>
+               <button onClick={() => setIsTransmuteOpen(false)} className="w-full mt-10 doodle-btn bg-primary text-on-primary font-headline font-black py-3 uppercase tracking-widest">Seal the Grimoire</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isWarRoomOpen && <WarRoom party={party} onClose={() => setIsWarRoomOpen(false)} onAddMember={() => showNotify('Requires City visit.')} onRemoveMember={() => {}} />}
+      {isVaultOpen && <GrandVault onClose={() => setIsVaultOpen(false)} />}
+
+      <TopAppBar currentTab={currentTab} onTabChange={setCurrentTab} ap={stats.ap} />
+
+      <main className="max-w-[1200px] mx-auto px-6 md:px-10 mt-8 pb-32">
+        {currentTab === 'ledger' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+              <div><h2 className="font-headline text-3xl font-bold text-primary doodle-underline inline-block mb-2">Personal Ledger</h2><p className="font-body text-lg text-on-surface-variant italic">Annotating financial flow.</p></div>
+              <div className="flex gap-4"><button onClick={() => setIsScribeOpen(true)} className="bg-primary text-on-primary px-6 py-3 font-headline font-bold doodle-border hover:scale-105 transition-all shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2"><img src="/assets/ui/Icon_Gold.png" className="w-6 h-6" /> Scribe Expense</button></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+              <div className="bg-surface-container p-6 doodle-border shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between group">
+                <span className="font-label text-[10px] uppercase text-on-surface-variant">Monthly Income</span>
+                <div className="font-headline text-3xl font-black text-primary">${totalIncome.toLocaleString()}</div>
               </div>
-            </section>
-            <QuestList 
-              quests={quests} 
-              onStartQuest={handleStartQuest} 
-              onCompleteQuest={handleCompleteQuest} 
-            />
+              <div className="bg-surface-container p-6 doodle-border shadow-[6px_6px_0px_0px_rgba(244,208,63,0.2)] flex flex-col justify-between group">
+                <span className="font-label text-[10px] uppercase text-on-surface-variant">Total Expenses</span>
+                <div className="font-headline text-3xl font-black text-secondary">${totalExpenses.toLocaleString()}</div>
+              </div>
+            </div>
+            <div className="bg-surface-container-low p-8 doodle-border shadow-xl"><ExpenseList expenses={expenses} /></div>
+          </div>
+        )}
+
+        {currentTab === 'trials' && (
+          <div className="animate-in fade-in duration-500 space-y-16">
+             <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+                <div><h2 className="font-headline text-4xl font-black text-primary doodle-underline inline-block mb-2">The Trial Log</h2><p className="font-body text-lg text-on-surface-variant italic">Rituals of discipline.</p></div>
+                <div className="flex gap-4">
+                   <button onClick={() => setIsTaskCreatorOpen(true)} className="bg-surface-container px-6 py-3 doodle-border font-headline font-bold text-on-surface hover:bg-primary/10 transition-all flex items-center gap-2"><img src="/assets/ui/Icon_Quest.png" className="w-6 h-6" /> Scribe Feat</button>
+                   <button onClick={() => setIsHabitCreatorOpen(true)} className="bg-surface-container px-6 py-3 doodle-border font-headline font-bold text-on-surface hover:bg-tertiary/10 transition-all flex items-center gap-2"><img src="/assets/ui/Icon_Star.png" className="w-6 h-6" /> New Ritual</button>
+                </div>
+             </div>
+             
+             {isTaskCreatorOpen && (
+               <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-surface/90 backdrop-blur-md">
+                  <div className="w-full max-w-md relative animate-in zoom-in-95 duration-200">
+                     <div className="tape-accent doodle-border bg-surface-container p-8 shadow-2xl">
+                        <h3 className="font-headline text-2xl font-bold text-primary mb-6">Scribe New Feat</h3>
+                        <form onSubmit={handleAddTask} className="space-y-6">
+                           <input className="w-full bg-transparent pencil-line py-2 outline-none font-headline text-xl" type="text" placeholder="Feat title..." value={newTask.title} onChange={e => setNewTask({...newTask, title: e.target.value})} required />
+                           <div className="flex justify-between items-center"><label className="flex items-center gap-2 font-label text-[10px] uppercase cursor-pointer"><input type="checkbox" className="accent-primary" checked={newTask.isNecessity} onChange={e => setNewTask({...newTask, isNecessity: e.target.checked})} /> Necessity</label><div className="flex items-center gap-2"><span className="font-label text-[10px] uppercase">AP:</span><input className="w-12 bg-surface text-center doodle-border py-1 text-primary font-bold" type="number" value={newTask.ap} onChange={e => setNewTask({...newTask, ap: parseInt(e.target.value) || 0})} /></div></div>
+                           <button type="submit" className="w-full doodle-btn bg-primary text-on-primary py-3 font-headline font-black uppercase tracking-widest">Inscribe Feat</button>
+                        </form>
+                     </div>
+                  </div>
+               </div>
+             )}
+
+             {isHabitCreatorOpen && (
+               <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-surface/90 backdrop-blur-md">
+                  <div className="w-full max-w-md relative animate-in zoom-in-95 duration-200">
+                     <div className="tape-accent doodle-border bg-surface-container p-8 shadow-2xl">
+                        <h3 className="font-headline text-2xl font-bold text-tertiary mb-6">New Ritual</h3>
+                        <form onSubmit={handleAddHabit} className="space-y-6">
+                           <input className="w-full bg-transparent pencil-line py-2 outline-none font-headline text-xl" type="text" placeholder="Ritual name..." value={newHabit.name} onChange={e => setNewHabit({...newHabit, name: e.target.value})} required />
+                           <button type="submit" className="w-full doodle-btn bg-tertiary text-on-tertiary py-3 font-headline font-black uppercase tracking-widest">Seal Ritual</button>
+                        </form>
+                     </div>
+                  </div>
+               </div>
+             )}
+
+             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                <div className="lg:col-span-8 space-y-8">
+                   <h3 className="font-headline text-2xl font-bold text-on-surface uppercase border-l-4 border-tertiary pl-4">Daily Rituals</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {habits.map(h => (
+                        <div key={h.id} className="tape-accent doodle-border bg-surface-container p-6 hover:translate-y-[-4px] transition-transform group">
+                           <div className="flex justify-between items-start mb-6">
+                              <div><h4 className="font-headline text-xl font-bold group-hover:text-tertiary">{h.name}</h4><p className="text-[10px] font-label uppercase text-on-surface-variant">LV.{h.difficulty} RITUAL</p></div>
+                              <div className="flex items-center gap-1 text-primary"><span className="font-headline text-lg font-black">{h.streak}</span><img src="/assets/ui/Icon_Energy_Green.png" className="w-4 h-4" /></div>
+                           </div>
+                           <button onClick={() => handleCompleteHabit(h.id)} className="w-full doodle-btn bg-tertiary text-on-tertiary py-3 font-headline font-black uppercase text-xs flex items-center justify-center gap-2 group-hover:scale-105 transition-all">Perform Ritual (+{adjuster.adjustHabit(h).adjustedAP} AP)</button>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+                <div className="lg:col-span-4 space-y-8">
+                   <h3 className="font-headline text-2xl font-bold text-on-surface uppercase border-l-4 border-primary pl-4">One-Time Feats</h3>
+                   <div className="space-y-4">
+                      {tasks.filter(t => !t.isCompleted).map(t => (
+                        <div key={t.id} onClick={() => handleCompleteTask(t.id)} className="bg-surface-container p-6 doodle-border hover:bg-surface-variant flex justify-between group cursor-pointer shadow-md">
+                           <div><span className="font-headline text-lg font-bold text-on-surface block group-hover:text-primary">{t.title}</span><span className="font-label text-[8px] uppercase text-on-surface-variant">{t.isNecessity ? 'Vital' : 'Minor'} Feat</span></div>
+                           <div className="text-right text-primary font-black">+{evaluator.evaluateTaskReward(t)} AP</div>
+                        </div>
+                      ))}
+                      <button onClick={() => setIsTaskCreatorOpen(true)} className="w-full py-4 border-2 border-dashed border-outline/30 text-on-surface-variant font-label text-[10px] uppercase hover:text-primary transition-all">+ Scribe Feat</button>
+                   </div>
+                </div>
+             </div>
+          </div>
+        )}
+
+        {currentTab === 'archive' && (
+          <div className="animate-in fade-in duration-500">
+             <div className="mb-8 flex justify-between items-end gap-4">
+                <h1 className="font-headline text-4xl font-black text-primary doodle-underline inline-block">Grand Archive</h1>
+                <div className="flex bg-surface-container-high rounded-full p-1 doodle-border shadow-inner">
+                  <button onClick={() => setArchiveTab('ledger')} className={`px-6 py-2 rounded-full font-label text-[10px] uppercase tracking-widest transition-all ${archiveTab === 'ledger' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Ledger</button>
+                  <button onClick={() => setArchiveTab('budget')} className={`px-6 py-2 rounded-full font-label text-[10px] uppercase tracking-widest transition-all ${archiveTab === 'budget' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Streams</button>
+                </div>
+             </div>
+             <div className="bg-surface-container-low p-8 doodle-border shadow-2xl min-h-[600px]">
+                {archiveTab === 'ledger' ? <ExpenseList expenses={expenses} /> : (
+                  <div className="space-y-12">
+                     <h3 className="font-headline text-2xl font-bold text-on-surface doodle-underline inline-block">Active Budget Streams</h3>
+                     <div className="grid grid-cols-1 gap-8">{budgets.map(b => {
+                        const catTotal = expenses.filter(e => e.category === b.category).reduce((s, e) => s + e.amount, 0);
+                        const perc = Math.min(100, (catTotal / b.allocatedAmount) * 100);
+                        return (
+                          <div key={b.id} className="bg-surface-container p-6 doodle-border group hover:bg-surface-container-high transition-colors">
+                             <div className="flex justify-between items-end mb-4"><div><span className="font-label text-[10px] uppercase text-on-surface-variant">Stream: {b.category}</span><h4 className="font-headline text-2xl font-black text-on-surface">${catTotal.toLocaleString()} <span className="text-sm font-normal text-on-surface-variant">of ${b.allocatedAmount}</span></h4></div><div className="text-right text-primary font-black">{Math.round(perc)}%</div></div>
+                             <div className="h-4 w-full bg-surface/50 doodle-border p-0.5"><div className={`h-full transition-all duration-1000 ${perc > 90 ? 'bg-secondary' : 'bg-primary'}`} style={{ width: `${perc}%` }}></div></div>
+                          </div>
+                        );
+                     })}</div>
+                  </div>
+                )}
+             </div>
+          </div>
+        )}
+
+        {currentTab === 'quests' && (
+          <div className="animate-in zoom-in-95 duration-500 h-[calc(100vh-12rem)] min-h-[600px] flex flex-col gap-8">
+             <div className="flex justify-between items-end gap-4">
+                <div><h1 className="font-headline text-3xl font-black text-primary mb-2 doodle-underline inline-block">Strategic Map</h1><p className="font-body text-lg text-on-surface-variant italic">Expend AP to navigate.</p></div>
+                <div className="flex gap-4">
+                   <button onClick={() => setIsWarRoomOpen(true)} className="bg-surface-container-high text-on-surface px-6 py-2 doodle-border font-label text-[10px] uppercase font-black hover:bg-primary transition-all">War Room</button>
+                   <button onClick={() => setIsVaultOpen(true)} className="bg-surface-container-high text-on-surface px-6 py-2 doodle-border font-label text-[10px] uppercase font-black hover:bg-primary transition-all">Vault</button>
+                </div>
+             </div>
+             <div className="flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8 overflow-hidden">
+                <div className="lg:col-span-8 bg-surface-container-lowest doodle-border relative overflow-hidden shadow-2xl"><GameView stats={stats} campaign={campaign} party={party} /></div>
+                <div className="lg:col-span-4 overflow-y-auto pr-4 custom-scrollbar"><QuestList quests={quests} onStartQuest={handleStartQuest} onCompleteQuest={handleCompleteQuest} /></div>
+             </div>
           </div>
         )}
       </main>
 
-      <footer className="audit-footer">
-        <details>
-          <summary>Logic Engine Traces (Audit)</summary>
-          <div className="trace-container">
-            {traces.slice(0, 10).map((t, i) => (
-              <div key={i} className="trace-item">
-                <code>[{new Date(t.timestamp).toLocaleTimeString()}] {t.type}: {t.rationale}</code>
-              </div>
-            ))}
-          </div>
-        </details>
-      </footer>
+      <footer className="fixed bottom-0 left-0 w-full z-50 p-6 md:hidden"><div className="bg-surface-container doodle-border shadow-2xl flex justify-around p-4 backdrop-blur-md"><button onClick={() => setCurrentTab('ledger')} className={`material-symbols-outlined ${currentTab === 'ledger' ? 'text-primary' : 'text-on-surface-variant'}`}>dashboard</button><button onClick={() => setCurrentTab('trials')} className={`material-symbols-outlined ${currentTab === 'trials' ? 'text-primary' : 'text-on-surface-variant'}`}>history_edu</button><button onClick={() => setCurrentTab('archive')} className={`material-symbols-outlined ${currentTab === 'archive' ? 'text-primary' : 'text-on-surface-variant'}`}>menu_book</button><button onClick={() => setCurrentTab('quests')} className={`material-symbols-outlined ${currentTab === 'quests' ? 'text-primary' : 'text-on-surface-variant'}`}>explore</button></div></footer>
     </div>
   );
 }

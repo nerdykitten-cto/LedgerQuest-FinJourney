@@ -26,6 +26,20 @@ export interface Earning {
   timestamp: number;
 }
 
+export interface BudgetStream {
+  id: string;
+  category: string;
+  allocatedAmount: number;
+  spentAmount: number;
+}
+
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+}
+
 export interface FinanceTask {
   id: string;
   title: string;
@@ -84,7 +98,7 @@ export interface CampaignState {
   currentLocation: string;
   progressPercentage: number;
   activeQuestId?: string;
-  worldState: 'peace' | 'battle' | 'puzzle';
+  worldState: 'peace' | 'battle' | 'puzzle' | 'town';
   activeEnemy?: Enemy;
 }
 
@@ -99,7 +113,19 @@ export interface Quest {
     gold: number;
     items?: string[];
   };
-  status: 'available' | 'active' | 'completed' | 'failed';
+  status: 'available' | 'active' | 'completed' | 'failed' | 'gated';
+  requirements?: {
+    apQuota: number;
+    taskCount: number;
+    habitCount: number;
+  };
+  objectives?: {
+    id: string;
+    text: string;
+    type: 'talk' | 'kill' | 'travel';
+    target: string; // NPC ID, Enemy Type, or Location
+    isCompleted: boolean;
+  }[];
 }
 
 export interface QuestTemplate {

@@ -1,10 +1,9 @@
 export interface GameSyncData {
     ap: number;
     level: number;
-    quest?: {
-        title: string;
-        difficulty: number;
-    };
+    gold: number;
+    campaign: any;
+    party: any[];
 }
 
 export class GameBridge {

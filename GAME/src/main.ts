@@ -1,5 +1,9 @@
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
+import { WorldScene } from './scenes/WorldScene';
+import { BattleScene } from './scenes/BattleScene';
+import { PartyScene } from './scenes/PartyScene';
+import { TownScene } from './scenes/TownScene';
 import { GameBridge } from './bridge/GameBridge';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -8,7 +12,11 @@ const config: Phaser.Types.Core.GameConfig = {
     height: 600,
     parent: 'app',
     backgroundColor: '#1a1a1a',
-    scene: [BootScene],
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    },
+    scene: [BootScene, WorldScene, BattleScene, PartyScene, TownScene],
     physics: {
         default: 'arcade',
         arcade: {

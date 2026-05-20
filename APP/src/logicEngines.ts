@@ -19,6 +19,7 @@ interface ManifestQuest {
     exp: number;
     gold: number;
   };
+  objectives?: any[];
 }
 
 interface Chapter {
@@ -107,13 +108,12 @@ export class ValueAdjuster {
 
 /**
  * STORY-TELLING ENGINE
- * Replaces generative logic with structured narrative progression.
  */
 export class StoryTellingEngine {
   private adjuster = new ValueAdjuster();
 
   async process(
-    expenses: Expense[], 
+    _expenses: Expense[], 
     _stats: PlayerStats, 
     _habits: Habit[],
     campaign: CampaignState,
@@ -122,7 +122,8 @@ export class StoryTellingEngine {
     
     const isAtTown = campaign.currentLocation.toLowerCase().indexOf('town') !== -1 || 
                      campaign.currentLocation.toLowerCase().indexOf('village') !== -1 ||
-                     campaign.currentLocation.toLowerCase().indexOf('city') !== -1;
+                     campaign.currentLocation.toLowerCase().indexOf('city') !== -1 ||
+                     campaign.currentLocation.toLowerCase().indexOf('citadel') !== -1;
 
     const observation = {
       campaignProgress: campaign.progressPercentage,
@@ -143,36 +144,16 @@ export class StoryTellingEngine {
         const mqData = chapter.mainQuests[0];
         const isMainCompleted = existingQuests.some(q => q.id === mqData.id && q.status === 'completed');
 
-        if (chapter.id === 'ch0' && expenses.length === 0 && !isMainCompleted) {
+        if (!isMainCompleted) {
           quest = {
             ...mqData,
             type: 'main',
-            status: 'available'
-          };
-          decisionReason = 'CH0 Onboarding: Nudging player to "' + quest.title + '" because no expenses exist.';
-        } else if (!isMainCompleted) {
-          quest = {
-            ...mqData,
-            type: 'main',
-            status: 'available'
-          };
-          decisionReason = 'Suggested Main Quest "' + quest.title + '" for chapter "' + chapter.title + '".';
+            status: 'available',
+            requirements: { apQuota: 5, taskCount: 0, habitCount: 0 }
+          } as Quest;
+          decisionReason = 'Nudging player to Main Quest: ' + quest.title;
         } else {
-          const availableSideQuest = chapter.sideQuests.find(sq => 
-            !existingQuests.some(eq => eq.id === sq.id) && 
-            campaign.currentLocation.indexOf(chapter.location) !== -1
-          );
-
-          if (availableSideQuest) {
-            quest = {
-              ...availableSideQuest,
-              type: 'side',
-              status: 'available'
-            };
-            decisionReason = 'Suggested Side Quest "' + quest.title + '" in ' + campaign.currentLocation + '.';
-          } else {
-            decisionReason = 'All quests for ' + chapter.title + ' at this location completed.';
-          }
+           decisionReason = 'All primary objectives for ' + chapter.title + ' completed.';
         }
       }
     }

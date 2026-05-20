@@ -18,7 +18,9 @@ import type {
   FinanceTask, 
   Habit,
   CampaignState,
-  PartyMember
+  PartyMember,
+  BudgetStream,
+  SavingsGoal
 } from './types/schemas';
 import storyManifest from './data/storyManifest.json';
 
@@ -36,12 +38,64 @@ const SUBS_COL = 'subscriptions';
 const TASKS_COL = 'tasks';
 const HABITS_COL = 'habits';
 const PARTY_COL = 'party';
+const BUDGET_COL = 'budget';
+const SAVINGS_COL = 'savings';
 
 // --- HELPER: LOCAL STORAGE ---
 const getLocal = (key: string): unknown => JSON.parse(localStorage.getItem(key) || '[]');
 const setLocal = (key: string, data: unknown) => localStorage.setItem(key, JSON.stringify(data));
 
 // --- UNIFIED PERSISTENCE API ---
+
+export const subscribeBudgetStreams = (callback: (streams: BudgetStream[]) => void) => {
+  if (USE_BASE_FIREBASE()) {
+    return onSnapshot(collection(db, BUDGET_COL), (snapshot) => {
+      const streams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BudgetStream));
+      callback(streams);
+    });
+  } else {
+    const handler = () => callback(getLocal(BUDGET_COL) as BudgetStream[]);
+    window.addEventListener('storage', handler);
+    handler();
+    return () => window.removeEventListener('storage', handler);
+  }
+};
+
+const USE_BASE_FIREBASE = () => USE_FIREBASE;
+
+export const updateBudgetStreamDB = async (streamId: string, updates: Partial<BudgetStream>) => {
+  if (USE_FIREBASE) {
+    await updateDoc(doc(db, BUDGET_COL, streamId), updates);
+  } else {
+    const streams = (getLocal(BUDGET_COL) as BudgetStream[]).map(s => s.id === streamId ? { ...s, ...updates } : s);
+    setLocal(BUDGET_COL, streams);
+    window.dispatchEvent(new Event('storage'));
+  }
+};
+
+export const subscribeSavingsGoals = (callback: (goals: SavingsGoal[]) => void) => {
+  if (USE_FIREBASE) {
+    return onSnapshot(collection(db, SAVINGS_COL), (snapshot) => {
+      const goals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SavingsGoal));
+      callback(goals);
+    });
+  } else {
+    const handler = () => callback(getLocal(SAVINGS_COL) as SavingsGoal[]);
+    window.addEventListener('storage', handler);
+    handler();
+    return () => window.removeEventListener('storage', handler);
+  }
+};
+
+export const updateSavingsGoalDB = async (goalId: string, updates: Partial<SavingsGoal>) => {
+  if (USE_FIREBASE) {
+    await updateDoc(doc(db, SAVINGS_COL, goalId), updates);
+  } else {
+    const goals = (getLocal(SAVINGS_COL) as SavingsGoal[]).map(g => g.id === goalId ? { ...g, ...updates } : g);
+    setLocal(SAVINGS_COL, goals);
+    window.dispatchEvent(new Event('storage'));
+  }
+};
 
 export const subscribeExpenses = (callback: (expenses: Expense[]) => void) => {
   if (USE_FIREBASE) {
@@ -292,6 +346,39 @@ export const addPartyMemberDB = async (member: PartyMember) => {
   }
 };
 
+export const updatePartyMemberDB = async (memberId: string, equipment: any) => {
+  if (USE_FIREBASE) {
+    await updateDoc(doc(db, PARTY_COL, memberId), { equipment });
+  } else {
+    const party = (getLocal(PARTY_COL) as PartyMember[]).map(m => 
+      m.id === memberId ? { ...m, equipment: { ...m.equipment, ...equipment } } : m
+    );
+    setLocal(PARTY_COL, party);
+    window.dispatchEvent(new Event('storage'));
+  }
+};
+
+export const resetGameDB = async () => {
+  if (USE_FIREBASE) {
+    console.warn('Reset not fully implemented for Firebase in this demo.');
+  } else {
+    localStorage.removeItem(EXPENSES_COL);
+    localStorage.removeItem(QUESTS_COL);
+    localStorage.removeItem(STATS_DOC);
+    localStorage.removeItem(CAMPAIGN_DOC);
+    localStorage.removeItem(TRACES_COL);
+    localStorage.removeItem(SUBS_COL);
+    localStorage.removeItem(TASKS_COL);
+    localStorage.removeItem(HABITS_COL);
+    localStorage.removeItem(PARTY_COL);
+    localStorage.removeItem(BUDGET_COL);
+    localStorage.removeItem(SAVINGS_COL);
+    
+    initializeLocalData();
+    window.dispatchEvent(new Event('storage'));
+  }
+};
+
 // MOCK DATA INITIALIZATION
 export const initializeLocalData = () => {
   if (USE_FIREBASE) return;
@@ -325,5 +412,21 @@ export const initializeLocalData = () => {
     ];
     setLocal(PARTY_COL, initialParty);
   }
-};
 
+  if ((getLocal(BUDGET_COL) as BudgetStream[]).length === 0) {
+    const initialBudgets: BudgetStream[] = [
+      { id: 'b1', category: 'Food', allocatedAmount: 500, spentAmount: 0 },
+      { id: 'b2', category: 'Transport', allocatedAmount: 200, spentAmount: 0 },
+      { id: 'b3', category: 'Entertainment', allocatedAmount: 300, spentAmount: 0 },
+      { id: 'b4', category: 'Bills', allocatedAmount: 1000, spentAmount: 0 },
+    ];
+    setLocal(BUDGET_COL, initialBudgets);
+  }
+
+  if ((getLocal(SAVINGS_COL) as SavingsGoal[]).length === 0) {
+    const initialSavings: SavingsGoal[] = [
+      { id: 's1', name: 'Summer Cabin', targetAmount: 25000, currentAmount: 12400 },
+    ];
+    setLocal(SAVINGS_COL, initialSavings);
+  }
+};

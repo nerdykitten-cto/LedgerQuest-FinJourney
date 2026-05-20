@@ -1,0 +1,10 @@
+node_modules
+dist
+build
+.git
+.gemini
+*.log
+APP/node_modules
+GAME/node_modules
+APP/dist
+GAME/dist
