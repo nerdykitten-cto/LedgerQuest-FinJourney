@@ -1,36 +1,33 @@
-import { useEffect, useRef } from 'react';
+import { AdventureWorld } from './AdventureWorld/AdventureWorld';
 import type { PlayerStats, CampaignState, PartyMember } from '../types/schemas';
 
 interface GameViewProps {
   stats: PlayerStats;
   campaign: CampaignState;
   party: PartyMember[];
+  onTravel: (destination: string, cost: number) => void;
+  onTalk: (npcName: string, message: string) => void;
+  onBattleVictory: () => void;
+  onBattleDefeat: () => void;
+  onBattleAction: () => void;
+  onShopPurchase: (item: any, cost: number) => void;
+  onEnterTown: (name: string) => void;
+  onExitTown: () => void;
 }
 
-export default function GameView({ stats, campaign, party }: GameViewProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  useEffect(() => {
-    const syncData = () => {
-      if (iframeRef.current && iframeRef.current.contentWindow) {
-        iframeRef.current.contentWindow.postMessage({
-          type: 'SYNC_PLAYER_DATA',
-          data: {
-            ap: stats.ap,
-            level: stats.level,
-            gold: stats.gold,
-            campaign,
-            party
-          }
-        }, '*');
-      }
-    };
-
-    syncData();
-    const timer = setInterval(syncData, 2000);
-    return () => clearInterval(timer);
-  }, [stats, campaign, party]);
-
+export default function GameView({ 
+  stats, 
+  campaign, 
+  party,
+  onTravel,
+  onTalk,
+  onBattleVictory,
+  onBattleDefeat,
+  onBattleAction,
+  onShopPurchase,
+  onEnterTown,
+  onExitTown
+}: GameViewProps) {
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center p-4 md:p-8 bg-surface-container-lowest/30 group overflow-hidden">
       {/* Immersive CRT Monitor Frame */}
@@ -60,14 +57,22 @@ export default function GameView({ stats, campaign, party }: GameViewProps) {
            <div className="absolute inset-0 pointer-events-none z-20 opacity-[0.03] bg-[url('https://media.giphy.com/media/oEI9uWUicKgH6/giphy.gif')] mix-blend-overlay"></div>
 
            {/* Actual Game Content */}
-           <div className="w-full h-full relative z-10 p-2">
-             <iframe
-              ref={iframeRef}
-              src="/game/index.html"
-              title="FinJourney Visual World"
-              className="w-full h-full rounded-2xl md:rounded-3xl"
-              style={{ border: 'none' }}
-            />
+           <div className="w-full h-full relative z-10 p-2 overflow-hidden flex items-center justify-center">
+             <div className="scale-[0.8] md:scale-100 origin-center">
+               <AdventureWorld 
+                 stats={stats} 
+                 campaign={campaign} 
+                 party={party}
+                 onTravel={onTravel}
+                 onTalk={onTalk}
+                 onBattleVictory={onBattleVictory}
+                 onBattleDefeat={onBattleDefeat}
+                 onBattleAction={onBattleAction}
+                 onShopPurchase={onShopPurchase}
+                 onEnterTown={onEnterTown}
+                 onExitTown={onExitTown}
+               />
+             </div>
            </div>
 
            {/* HUD / Monitor Overlays */}
@@ -100,12 +105,12 @@ export default function GameView({ stats, campaign, party }: GameViewProps) {
       {/* Control Hint Tape */}
       <div className="mt-12 flex flex-wrap justify-center gap-4 opacity-60 group-hover:opacity-100 transition-opacity">
          <div className="bg-surface-container p-2 doodle-border border-dashed flex items-center gap-2">
-            <span className="text-[10px] font-label font-black uppercase text-primary">Arrows</span>
-            <span className="text-[10px] font-body text-on-surface-variant italic">Move Character</span>
+            <span className="text-[10px] font-label font-black uppercase text-primary">Click</span>
+            <span className="text-[10px] font-body text-on-surface-variant italic">Travel / Interact</span>
          </div>
          <div className="bg-surface-container p-2 doodle-border border-dashed flex items-center gap-2">
             <span className="text-[10px] font-label font-black uppercase text-tertiary">Double Click</span>
-            <span className="text-[10px] font-body text-on-surface-variant italic">Enter Region</span>
+            <span className="text-[10px] font-body text-on-surface-variant italic">Enter Town</span>
          </div>
          <div className="bg-surface-container p-2 doodle-border border-dashed flex items-center gap-2">
             <span className="text-[10px] font-label font-black uppercase text-secondary">[I] / [M]</span>

@@ -121,54 +121,77 @@ function App() {
     runAgent();
   }, [expenses.length, campaign.currentLocation, quests.length, stats.ap]);
 
-  // RPG Actions & Messaging
-  useEffect(() => {
-    const handleGameMessage = async (event: MessageEvent) => {
-      const { type, data } = event.data;
-      
-      if (type === 'TRAVEL_ACTION') {
-        const { destination, cost } = data;
-        if (stats.ap >= cost) {
-          await dbService.updateStatsDB({ ap: stats.ap - cost });
-          await dbService.updateCampaign({ currentLocation: destination, progressPercentage: Math.min(100, campaign.progressPercentage + 5) });
-          checkQuestObjective('travel', destination);
-          showNotify('Traveled to ' + destination);
-        } else {
-          showNotify('Not enough AP!');
-        }
-      } 
-      else if (type === 'TALK_ACTION') {
-        const { npcName } = data;
-        if (stats.ap >= 1) {
-          await dbService.updateStatsDB({ ap: stats.ap - 1 });
-          checkQuestObjective('talk', npcName);
-        } else {
-          showNotify('Not enough AP!');
-        }
-      }
-      else if (type === 'BATTLE_VICTORY') {
-        const activeQuest = quests.find(q => q.status === 'active');
-        if (activeQuest) {
-           const targetObj = activeQuest.objectives?.find(o => o.type === 'kill' && !o.isCompleted);
-           if (targetObj) checkQuestObjective('kill', targetObj.target);
-        }
-        await dbService.updateStatsDB({ exp: stats.exp + 100, gold: stats.gold + 50 });
-        showNotify('Victory! +100 XP / +50 Gold');
-      }
-      else if (type === 'SHOP_PURCHASE') {
-         const { item, cost } = data;
-         if (stats.gold >= cost) {
-            await dbService.updateStatsDB({ gold: stats.gold - cost });
-            showNotify(`Acquired ${item.name}!`);
-         } else {
-            showNotify('Insufficient Gold!');
-         }
-      }
-    };
+  // --- RPG ACTIONS ---
 
-    window.addEventListener('message', handleGameMessage);
-    return () => window.removeEventListener('message', handleGameMessage);
-  }, [stats, campaign, quests, checkQuestObjective, showNotify]);
+  const handleTravel = useCallback(async (destination: string, cost: number) => {
+    if (stats.ap >= cost) {
+      await dbService.updateStatsDB({ ap: stats.ap - cost });
+      await dbService.updateCampaign({ 
+        currentLocation: destination, 
+        progressPercentage: Math.min(100, campaign.progressPercentage + 5) 
+      });
+      checkQuestObjective('travel', destination);
+      showNotify('Traveled to ' + destination);
+    } else {
+      showNotify('Not enough AP!');
+    }
+  }, [stats.ap, campaign.progressPercentage, checkQuestObjective, showNotify]);
+
+  const handleTalk = useCallback(async (npcName: string, _message: string) => {
+    if (stats.ap >= 1) {
+      await dbService.updateStatsDB({ ap: stats.ap - 1 });
+      checkQuestObjective('talk', npcName);
+    } else {
+      showNotify('Not enough AP!');
+    }
+  }, [stats.ap, checkQuestObjective, showNotify]);
+
+  const handleBattleVictory = useCallback(async () => {
+    const activeQuest = quests.find(q => q.status === 'active');
+    if (activeQuest) {
+      const targetObj = activeQuest.objectives?.find(o => o.type === 'kill' && !o.isCompleted);
+      if (targetObj) checkQuestObjective('kill', targetObj.target);
+    }
+    await dbService.updateStatsDB({ exp: stats.exp + 100, gold: stats.gold + 50 });
+    await dbService.updateCampaign({ worldState: 'peace' });
+    showNotify('Victory! +100 XP / +50 Gold');
+  }, [quests, stats.exp, stats.gold, checkQuestObjective, showNotify]);
+
+  const handleBattleDefeat = useCallback(async () => {
+    await dbService.updateCampaign({ worldState: 'peace' });
+    showNotify('Defeated... Escaped to safety.');
+  }, [showNotify]);
+
+  const handleShopPurchase = useCallback(async (item: any, cost: number) => {
+    if (stats.gold >= cost) {
+      await dbService.updateStatsDB({ gold: stats.gold - cost });
+      // Here we could add logic to actually add the item to party inventory
+      showNotify(`Acquired ${item.name}!`);
+    } else {
+      showNotify('Insufficient Gold!');
+    }
+  }, [stats.gold, showNotify]);
+
+  const handleEnterTown = useCallback(async (name: string) => {
+    await dbService.updateCampaign({ worldState: 'town', currentLocation: name });
+    showNotify(`Entering ${name}...`);
+  }, [showNotify]);
+
+  const handleExitTown = useCallback(async () => {
+    await dbService.updateCampaign({ worldState: 'peace' });
+  }, []);
+
+  const handleBattleAction = useCallback(async () => {
+    const randomEnemy = {
+      id: uuidv4(),
+      name: 'Debt Gnome',
+      hp: 50,
+      maxHp: 50,
+      attack: 5,
+      defense: 2
+    };
+    await dbService.updateCampaign({ worldState: 'battle', activeEnemy: randomEnemy });
+  }, []);
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -448,7 +471,19 @@ function App() {
                 </div>
              </div>
              <div className="flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8 overflow-hidden">
-                <div className="lg:col-span-8 bg-surface-container-lowest doodle-border relative overflow-hidden shadow-2xl"><GameView stats={stats} campaign={campaign} party={party} /></div>
+                <div className="lg:col-span-8 bg-surface-container-lowest doodle-border relative overflow-hidden shadow-2xl"><GameView 
+                  stats={stats} 
+                  campaign={campaign} 
+                  party={party} 
+                  onTravel={handleTravel}
+                  onTalk={handleTalk}
+                  onBattleVictory={handleBattleVictory}
+                  onBattleDefeat={handleBattleDefeat}
+                  onBattleAction={handleBattleAction}
+                  onShopPurchase={handleShopPurchase}
+                  onEnterTown={handleEnterTown}
+                  onExitTown={handleExitTown}
+                /></div>
                 <div className="lg:col-span-4 overflow-y-auto pr-4 custom-scrollbar"><QuestList quests={quests} onStartQuest={handleStartQuest} onCompleteQuest={handleCompleteQuest} /></div>
              </div>
           </div>
