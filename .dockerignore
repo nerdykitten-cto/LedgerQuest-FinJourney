@@ -4,7 +4,13 @@ build
 .git
 .gemini
 *.log
+PLANS
+GAME
 APP/node_modules
-GAME/node_modules
 APP/dist
-GAME/dist
+Dockerfile
+.dockerignore
+.gitignore
+README.md
+PREVIOUSLY.md
+GEMINI.md
