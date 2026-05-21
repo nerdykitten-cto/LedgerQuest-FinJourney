@@ -31,36 +31,64 @@ export default function GameView({
   onExitTown
 }: GameViewProps) {
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center p-4 md:p-8 bg-surface-container-lowest/30 group overflow-hidden">
-      {/* Immersive CRT Monitor Frame */}
-      <div className="relative w-full max-w-[800px] aspect-square flex items-center justify-center scale-95 md:scale-100 transition-transform duration-500">
+    <div className="relative w-full h-full flex flex-col items-center justify-center p-4 md:p-8 bg-[#0a0f1a] group overflow-hidden">
+      
+      {/* Retro TV/Monitor Enclosure */}
+      <div className="relative w-full max-w-[850px] aspect-square flex items-center justify-center transition-all duration-700">
         
-        {/* Physical Monitor Body / Border */}
-        <div className="absolute inset-0 bg-[#1c2331] doodle-border border-[10px] md:border-[20px] border-[#2d3449] shadow-[20px_20px_0px_0px_rgba(0,0,0,0.8)] overflow-hidden rounded-lg">
-           {/* Monitor Vents / Hardware Doodles */}
-           <div className="absolute top-2 left-1/2 -translate-x-1/2 flex gap-4 opacity-20">
-              <div className="w-10 h-1 bg-surface-bright rounded-full"></div>
-              <div className="w-10 h-1 bg-surface-bright rounded-full"></div>
-              <div className="w-10 h-1 bg-surface-bright rounded-full"></div>
+        {/* Physical TV Chassis */}
+        <div className="absolute inset-0 bg-[#2b2b2b] rounded-[20px] shadow-[inset_0_4px_10px_rgba(255,255,255,0.1),20px_20px_60px_rgba(0,0,0,0.8)] border-[2px] border-[#1a1a1a] overflow-hidden">
+           
+           {/* Top Ventilation Grille */}
+           <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-2 opacity-40">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="w-8 h-1 bg-black rounded-full shadow-inner"></div>
+              ))}
+           </div>
+
+           {/* Speaker Grille Area (Left) */}
+           <div className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-1/2 flex flex-col gap-1 opacity-30">
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className="w-full h-1 bg-black rounded-full"></div>
+              ))}
+           </div>
+
+           {/* Controls Area (Right) */}
+           <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-8 items-center">
+              {/* Dial 1 */}
+              <div className="w-10 h-10 rounded-full bg-[#1a1a1a] border-2 border-[#333] shadow-lg flex items-center justify-center group/dial cursor-pointer active:rotate-45 transition-transform">
+                 <div className="w-1 h-4 bg-[#444] -translate-y-2 rounded-full"></div>
+              </div>
+              {/* Dial 2 */}
+              <div className="w-10 h-10 rounded-full bg-[#1a1a1a] border-2 border-[#333] shadow-lg flex items-center justify-center group/dial cursor-pointer active:rotate-90 transition-transform">
+                 <div className="w-1 h-4 bg-[#444] -translate-y-2 rounded-full"></div>
+              </div>
+              {/* Power Button */}
+              <div className="mt-12 flex flex-col items-center gap-2">
+                 <div className="w-8 h-8 rounded-full bg-[#84231d] border-2 border-[#1a1a1a] shadow-inner cursor-pointer hover:brightness-125 active:scale-95 transition-all flex items-center justify-center">
+                    <div className="w-1 h-1 rounded-full bg-[#ffb4aa] animate-pulse"></div>
+                 </div>
+                 <span className="font-label text-[6px] text-white/20 uppercase tracking-tighter">Power</span>
+              </div>
            </div>
         </div>
 
-        {/* The Screen Surface */}
-        <div className="relative w-[92%] h-[92%] overflow-hidden bg-black rounded-[40px] md:rounded-[60px] shadow-inner">
+        {/* The Glass Bezel */}
+        <div className="relative w-[82%] h-[82%] bg-[#1a1a1a] rounded-[60px] shadow-[inset_0_0_100px_rgba(0,0,0,1),0_0_20px_rgba(0,0,0,0.5)] border-[12px] border-[#333] overflow-hidden group-hover:border-[#3a3a3a] transition-colors flex items-center justify-center">
            
-           {/* CRT Glass Curvature Highlight */}
-           <div className="absolute inset-0 pointer-events-none z-30 opacity-30 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]"></div>
-           <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-30 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.1),transparent_50%)]"></div>
+           {/* Glass Curvature & Reflections */}
+           <div className="absolute inset-0 pointer-events-none z-30 opacity-40 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)]"></div>
+           <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-30 opacity-20 bg-[linear-gradient(135deg,rgba(255,255,255,0.2),transparent_40%,transparent_60%,rgba(0,0,0,0.3))]"></div>
 
-           {/* Scanlines Effect */}
-           <div className="absolute inset-0 pointer-events-none z-20 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%] animate-pulse opacity-40"></div>
+           {/* Advanced Scanlines */}
+           <div className="absolute inset-0 pointer-events-none z-20 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.3)_50%),linear-gradient(90deg,rgba(255,0,0,0.04),rgba(0,255,0,0.02),rgba(0,0,255,0.04))] bg-[length:100%_3px,2px_100%] animate-pulse opacity-60"></div>
 
-           {/* CRT Flicker & Static */}
-           <div className="absolute inset-0 pointer-events-none z-20 opacity-[0.03] bg-[url('https://media.giphy.com/media/oEI9uWUicKgH6/giphy.gif')] mix-blend-overlay"></div>
+           {/* Dynamic Static/Flicker Overlay */}
+           <div className="absolute inset-0 pointer-events-none z-20 opacity-[0.04] bg-[url('https://media.giphy.com/media/oEI9uWUicKgH6/giphy.gif')] mix-blend-overlay"></div>
 
            {/* Actual Game Content */}
-           <div className="w-full h-full relative z-10 overflow-hidden flex items-center justify-center bg-black">
-             <div className="w-full h-full">
+           <div className="w-full h-full relative z-10 overflow-hidden flex items-center justify-center bg-[#050505]">
+             <div className="w-full h-full transform transition-transform duration-1000 scale-[1.02]">
                <AdventureWorld 
                  stats={stats} 
                  campaign={campaign} 
@@ -78,46 +106,40 @@ export default function GameView({
              </div>
            </div>
 
-           {/* HUD / Monitor Overlays */}
-           <div className="absolute top-6 left-10 z-40 pointer-events-none flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                 <span className="w-2 h-2 rounded-full bg-primary animate-ping"></span>
-                 <span className="font-label text-[10px] uppercase font-black tracking-widest text-primary/80 drop-shadow-md">REC [LIVE]</span>
+           {/* Retro OSD (On Screen Display) */}
+           <div className="absolute top-8 left-12 z-40 pointer-events-none opacity-80">
+              <div className="flex items-center gap-3">
+                 <div className="w-3 h-3 rounded-full bg-red-600 animate-jiggle shadow-[0_0_10px_red]"></div>
+                 <span className="font-mono text-xs font-bold text-red-500 tracking-[0.2em] drop-shadow-lg">RECORDING...</span>
               </div>
-              <span className="font-label text-[8px] uppercase font-bold text-on-surface-variant/40 tracking-[0.3em]">CH: REALM_FEED_01</span>
            </div>
 
-           <div className="absolute bottom-8 right-12 z-40 pointer-events-none">
-              <span className="font-label text-[12px] uppercase font-black text-tertiary/60 tracking-widest drop-shadow-md">AETHELGARD_OS v2.4</span>
+           <div className="absolute bottom-8 right-12 z-40 pointer-events-none opacity-40">
+              <span className="font-mono text-[10px] text-green-500/80 tracking-widest uppercase">AV-1 / 60Hz</span>
            </div>
 
         </div>
 
-        {/* Taped-on labels (External to Screen) */}
-        <div className="absolute -top-6 -right-4 bg-primary text-on-primary px-4 py-1 doodle-border rotate-3 z-50 shadow-lg font-headline font-black text-xs uppercase tracking-tighter">
-           Property of Ledger Archive
-        </div>
-        
-        <div className="absolute -bottom-4 left-1/4 bg-surface-container-high px-4 py-2 doodle-border -rotate-2 z-50 shadow-xl flex items-center gap-3">
-           <span className="material-symbols-outlined text-secondary text-sm animate-pulse">radar</span>
-           <span className="font-label text-[10px] uppercase font-bold text-on-surface-variant tracking-widest">Signal Locked: {campaign.currentLocation}</span>
+        {/* Physical Label (Old Tape) */}
+        <div className="absolute -bottom-2 left-1/4 bg-[#e5e5e5] px-4 py-1 border border-gray-400 shadow-md -rotate-1 z-50 transform hover:rotate-0 transition-transform cursor-default">
+           <span className="font-mono text-[8px] font-bold text-gray-600 uppercase tracking-widest">Property of Aethelgard Media</span>
         </div>
 
       </div>
 
-      {/* Control Hint Tape */}
-      <div className="mt-12 flex flex-wrap justify-center gap-4 opacity-60 group-hover:opacity-100 transition-opacity">
-         <div className="bg-surface-container p-2 doodle-border border-dashed flex items-center gap-2">
-            <span className="text-[10px] font-label font-black uppercase text-primary">Click</span>
-            <span className="text-[10px] font-body text-on-surface-variant italic">Travel / Interact</span>
+      {/* Modern Control Key Info (Solid, No Doodles) */}
+      <div className="mt-12 flex flex-wrap justify-center gap-6 opacity-40 group-hover:opacity-100 transition-all duration-500">
+         <div className="bg-white/5 border border-white/10 px-4 py-2 rounded flex items-center gap-3">
+            <kbd className="bg-white/10 px-2 py-0.5 rounded text-[10px] font-bold text-primary">CLICK</kbd>
+            <span className="text-[10px] text-on-surface-variant uppercase tracking-widest">Navigate / Action</span>
          </div>
-         <div className="bg-surface-container p-2 doodle-border border-dashed flex items-center gap-2">
-            <span className="text-[10px] font-label font-black uppercase text-tertiary">Double Click</span>
-            <span className="text-[10px] font-body text-on-surface-variant italic">Enter Town</span>
+         <div className="bg-white/5 border border-white/10 px-4 py-2 rounded flex items-center gap-3">
+            <kbd className="bg-white/10 px-2 py-0.5 rounded text-[10px] font-bold text-secondary">DBL-CLICK</kbd>
+            <span className="text-[10px] text-on-surface-variant uppercase tracking-widest">Enter Region</span>
          </div>
-         <div className="bg-surface-container p-2 doodle-border border-dashed flex items-center gap-2">
-            <span className="text-[10px] font-label font-black uppercase text-secondary">[I] / [M]</span>
-            <span className="text-[10px] font-body text-on-surface-variant italic">Vault / War Room</span>
+         <div className="bg-white/5 border border-white/10 px-4 py-2 rounded flex items-center gap-3">
+            <kbd className="bg-white/10 px-2 py-0.5 rounded text-[10px] font-bold text-tertiary">M / I</kbd>
+            <span className="text-[10px] text-on-surface-variant uppercase tracking-widest">Tactics / Vault</span>
          </div>
       </div>
     </div>
