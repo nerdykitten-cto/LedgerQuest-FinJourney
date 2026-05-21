@@ -31,7 +31,7 @@ const agent = new StoryTellingEngine();
 function App() {
   const [currentTab, setCurrentTab] = useState('ledger');
   const [archiveTab, setArchiveTab] = useState<'ledger' | 'budget'>('ledger');
-  const [stats, setStats] = useState<PlayerStats>({ level: 1, exp: 0, ap: 10, gold: 0 });
+  const [stats, setStats] = useState<PlayerStats>({ level: 1, exp: 0, ap: 10, gold: 0, monthlyBudget: 3000 });
   const [campaign, setCampaign] = useState<CampaignState>({ 
     currentLocation: 'Starting Village', 
     progressPercentage: 0, 
@@ -217,9 +217,19 @@ function App() {
   }, []);
 
   const handleAddExpense = async (expense: Expense) => {
+    const isOverBudget = (totalExpenses + expense.amount) > totalIncome;
+    const baseAP = 5;
+    const bonusAP = isOverBudget ? 0 : 3;
+    const totalAP = baseAP + bonusAP;
+
     await dbService.addExpenseDB(expense);
-    await dbService.updateStatsDB({ ap: stats.ap + 2 });
-    showNotify('+2 AP for logging expense!');
+    await dbService.updateStatsDB({ ap: stats.ap + totalAP });
+    
+    if (isOverBudget) {
+      showNotify(`+${baseAP} AP. Warning: Monthly Budget exceeded!`);
+    } else {
+      showNotify(`+${totalAP} AP! Bonus for staying within budget.`);
+    }
     setIsScribeOpen(false);
   };
 
@@ -531,12 +541,6 @@ function App() {
       </main>
 
       <footer className="fixed bottom-0 left-0 w-full z-50 p-6 md:hidden"><div className="bg-surface-container doodle-border shadow-2xl flex justify-around p-4 backdrop-blur-md"><button onClick={() => setCurrentTab('ledger')} className={`material-symbols-outlined ${currentTab === 'ledger' ? 'text-primary' : 'text-on-surface-variant'}`}>dashboard</button><button onClick={() => setCurrentTab('trials')} className={`material-symbols-outlined ${currentTab === 'trials' ? 'text-primary' : 'text-on-surface-variant'}`}>history_edu</button><button onClick={() => setCurrentTab('archive')} className={`material-symbols-outlined ${currentTab === 'archive' ? 'text-primary' : 'text-on-surface-variant'}`}>menu_book</button><button onClick={() => setCurrentTab('quests')} className={`material-symbols-outlined ${currentTab === 'quests' ? 'text-primary' : 'text-on-surface-variant'}`}>explore</button></div></footer>
-    </div>
-  );
-}
-
-export default App;
-ant'}`}>menu_book</button><button onClick={() => setCurrentTab('quests')} className={`material-symbols-outlined ${currentTab === 'quests' ? 'text-primary' : 'text-on-surface-variant'}`}>explore</button></div></footer>
     </div>
   );
 }
