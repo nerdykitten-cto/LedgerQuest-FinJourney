@@ -14,6 +14,7 @@ interface AdventureWorldProps {
   onBattleVictory: () => void;
   onBattleDefeat: () => void;
   onBattleAction: () => void;
+  onActionCost: (cost: number) => void;
   onShopPurchase: (item: any, cost: number) => void;
   onEnterTown: (name: string) => void;
   onExitTown: () => void;
@@ -30,6 +31,7 @@ export const AdventureWorld: React.FC<AdventureWorldProps> = ({
   onBattleVictory,
   onBattleDefeat,
   onBattleAction,
+  onActionCost,
   onShopPurchase,
   onEnterTown,
   onExitTown
@@ -70,7 +72,7 @@ export const AdventureWorld: React.FC<AdventureWorldProps> = ({
   };
 
   return (
-    <div className="relative w-[800px] h-[600px] bg-black overflow-hidden select-none">
+    <div className="relative w-full h-full bg-black overflow-hidden select-none">
       {currentScene === 'map' && (
         <WorldMapScene 
           stats={stats} 
@@ -85,8 +87,11 @@ export const AdventureWorld: React.FC<AdventureWorldProps> = ({
         <CombatScene 
           party={party}
           enemy={activeEnemy}
+          ap={stats.ap}
           onVictory={onBattleVictory}
           onDefeat={onBattleDefeat}
+          onActionCost={onActionCost}
+          showDialogue={showDialogue}
         />
       )}
 

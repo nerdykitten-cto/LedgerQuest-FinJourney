@@ -10,6 +10,7 @@ interface GameViewProps {
   onBattleVictory: () => void;
   onBattleDefeat: () => void;
   onBattleAction: () => void;
+  onActionCost: (cost: number) => void;
   onShopPurchase: (item: any, cost: number) => void;
   onEnterTown: (name: string) => void;
   onExitTown: () => void;
@@ -24,6 +25,7 @@ export default function GameView({
   onBattleVictory,
   onBattleDefeat,
   onBattleAction,
+  onActionCost,
   onShopPurchase,
   onEnterTown,
   onExitTown
@@ -31,7 +33,7 @@ export default function GameView({
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center p-4 md:p-8 bg-surface-container-lowest/30 group overflow-hidden">
       {/* Immersive CRT Monitor Frame */}
-      <div className="relative w-full max-w-6xl aspect-[4/3] flex items-center justify-center">
+      <div className="relative w-full max-w-[800px] aspect-square flex items-center justify-center scale-95 md:scale-100 transition-transform duration-500">
         
         {/* Physical Monitor Body / Border */}
         <div className="absolute inset-0 bg-[#1c2331] doodle-border border-[10px] md:border-[20px] border-[#2d3449] shadow-[20px_20px_0px_0px_rgba(0,0,0,0.8)] overflow-hidden rounded-lg">
@@ -44,7 +46,7 @@ export default function GameView({
         </div>
 
         {/* The Screen Surface */}
-        <div className="relative w-[95%] h-[92%] overflow-hidden bg-black rounded-[40px] md:rounded-[60px] shadow-inner">
+        <div className="relative w-[92%] h-[92%] overflow-hidden bg-black rounded-[40px] md:rounded-[60px] shadow-inner">
            
            {/* CRT Glass Curvature Highlight */}
            <div className="absolute inset-0 pointer-events-none z-30 opacity-30 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]"></div>
@@ -57,8 +59,8 @@ export default function GameView({
            <div className="absolute inset-0 pointer-events-none z-20 opacity-[0.03] bg-[url('https://media.giphy.com/media/oEI9uWUicKgH6/giphy.gif')] mix-blend-overlay"></div>
 
            {/* Actual Game Content */}
-           <div className="w-full h-full relative z-10 p-2 overflow-hidden flex items-center justify-center">
-             <div className="scale-[0.8] md:scale-100 origin-center">
+           <div className="w-full h-full relative z-10 overflow-hidden flex items-center justify-center bg-black">
+             <div className="w-full h-full">
                <AdventureWorld 
                  stats={stats} 
                  campaign={campaign} 
@@ -68,6 +70,7 @@ export default function GameView({
                  onBattleVictory={onBattleVictory}
                  onBattleDefeat={onBattleDefeat}
                  onBattleAction={onBattleAction}
+                 onActionCost={onActionCost}
                  onShopPurchase={onShopPurchase}
                  onEnterTown={onEnterTown}
                  onExitTown={onExitTown}

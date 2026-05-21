@@ -138,13 +138,12 @@ function App() {
   }, [stats.ap, campaign.progressPercentage, checkQuestObjective, showNotify]);
 
   const handleTalk = useCallback(async (npcName: string, _message: string) => {
-    if (stats.ap >= 1) {
-      await dbService.updateStatsDB({ ap: stats.ap - 1 });
-      checkQuestObjective('talk', npcName);
-    } else {
-      showNotify('Not enough AP!');
-    }
-  }, [stats.ap, checkQuestObjective, showNotify]);
+    checkQuestObjective('talk', npcName);
+  }, [checkQuestObjective]);
+
+  const handleActionCost = useCallback(async (cost: number) => {
+    await dbService.updateStatsDB({ ap: Math.max(0, stats.ap - cost) });
+  }, [stats.ap]);
 
   const handleBattleVictory = useCallback(async () => {
     const activeQuest = quests.find(q => q.status === 'active');
@@ -165,7 +164,6 @@ function App() {
   const handleShopPurchase = useCallback(async (item: any, cost: number) => {
     if (stats.gold >= cost) {
       await dbService.updateStatsDB({ gold: stats.gold - cost });
-      // Here we could add logic to actually add the item to party inventory
       showNotify(`Acquired ${item.name}!`);
     } else {
       showNotify('Insufficient Gold!');
@@ -485,10 +483,18 @@ function App() {
         {currentTab === 'archive' && (
           <div className="animate-in fade-in duration-500">
              <div className="mb-8 flex justify-between items-end gap-4">
-                <h1 className="font-headline text-4xl font-black text-primary doodle-underline inline-block">Grand Archive</h1>
-                <div className="flex bg-surface-container-high rounded-full p-1 doodle-border shadow-inner">
-                  <button onClick={() => setArchiveTab('ledger')} className={`px-6 py-2 rounded-full font-label text-[10px] uppercase tracking-widest transition-all ${archiveTab === 'ledger' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Ledger</button>
-                  <button onClick={() => setArchiveTab('budget')} className={`px-6 py-2 rounded-full font-label text-[10px] uppercase tracking-widest transition-all ${archiveTab === 'budget' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Streams</button>
+                <div>
+                   <h1 className="font-headline text-4xl font-black text-primary doodle-underline inline-block">Grand Archive</h1>
+                   <p className="font-body text-sm text-on-surface-variant italic mt-2">Historical financial records and goal calibration.</p>
+                </div>
+                <div className="flex flex-col md:flex-row items-end gap-4">
+                  <button onClick={() => { setNewBudget(totalIncome); setIsBudgetEditorOpen(true); }} className="bg-surface-container px-4 py-2 doodle-border font-label text-[10px] uppercase font-black hover:text-primary transition-all flex items-center gap-2 shadow-md mb-1">
+                    <span className="material-symbols-outlined text-sm">tune</span> Calibrate Budget
+                  </button>
+                  <div className="flex bg-surface-container-high rounded-full p-1 doodle-border shadow-inner">
+                    <button onClick={() => setArchiveTab('ledger')} className={`px-6 py-2 rounded-full font-label text-[10px] uppercase tracking-widest transition-all ${archiveTab === 'ledger' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Ledger</button>
+                    <button onClick={() => setArchiveTab('budget')} className={`px-6 py-2 rounded-full font-label text-[10px] uppercase tracking-widest transition-all ${archiveTab === 'budget' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Streams</button>
+                  </div>
                 </div>
              </div>
              <div className="bg-surface-container-low p-8 doodle-border shadow-2xl min-h-[600px]">
@@ -530,6 +536,7 @@ function App() {
                   onBattleVictory={handleBattleVictory}
                   onBattleDefeat={handleBattleDefeat}
                   onBattleAction={handleBattleAction}
+                  onActionCost={handleActionCost}
                   onShopPurchase={handleShopPurchase}
                   onEnterTown={handleEnterTown}
                   onExitTown={handleExitTown}

@@ -408,7 +408,11 @@ export const initializeLocalData = () => {
 
   if ((getLocal(PARTY_COL) as PartyMember[]).length === 0) {
     const initialParty: PartyMember[] = [
-      { id: 'p1', name: 'Hero', role: 'Warrior', hp: 100, maxHp: 100, mp: 20, maxMp: 20, level: 1, equipment: {} }
+      { id: 'p1', name: 'Althea', avatar: '/assets/game/main_character.png', role: 'Leader', hp: 100, maxHp: 100, mp: 20, maxMp: 20, level: 1, equipment: {} },
+      { id: 'p2', name: 'Kael', avatar: '/assets/game/party_member_1.png', role: 'Vanguard', hp: 120, maxHp: 120, mp: 10, maxMp: 10, level: 1, equipment: {} },
+      { id: 'p3', name: 'Elora', avatar: '/assets/game/party_member_2.png', role: 'Arcanist', hp: 80, maxHp: 80, mp: 50, maxMp: 50, level: 1, equipment: {} },
+      { id: 'p4', name: 'Thal', avatar: '/assets/game/party_member_3.png', role: 'Sharpshooter', hp: 90, maxHp: 90, mp: 15, maxMp: 15, level: 1, equipment: {} },
+      { id: 'p5', name: 'Lia', avatar: '/assets/game/party_member_4.png', role: 'Lightweaver', hp: 70, maxHp: 70, mp: 40, maxMp: 40, level: 1, equipment: {} }
     ];
     setLocal(PARTY_COL, initialParty);
   }

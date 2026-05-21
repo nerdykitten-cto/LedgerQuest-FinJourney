@@ -74,17 +74,19 @@ export interface PlayerStats {
 export interface PartyMember {
   id: string;
   name: string;
+  avatar: string; // URL to avatar image
   role: string;
+  level: number;
   hp: number;
   maxHp: number;
   mp: number;
   maxMp: number;
-  level: number;
   equipment: {
     weapon?: string;
     armor?: string;
   };
 }
+
 
 export interface Enemy {
   id: string;
