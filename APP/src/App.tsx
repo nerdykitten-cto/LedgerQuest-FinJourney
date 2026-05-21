@@ -527,7 +527,8 @@ function App() {
                 </div>
              </div>
              <div className="flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8 overflow-hidden">
-                <div className="lg:col-span-8 bg-surface-container-lowest doodle-border relative overflow-hidden shadow-2xl"><GameView 
+                <div className="lg:col-span-8 bg-[#0a0f1a] relative overflow-hidden shadow-2xl rounded-2xl">
+                   <GameView 
                   stats={stats} 
                   campaign={campaign} 
                   party={party} 
