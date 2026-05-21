@@ -275,6 +275,7 @@ function App() {
     if (stats.ap >= 5) {
       await dbService.updateQuestDB(quest.id, { status: 'active' });
       await dbService.updateStatsDB({ ap: stats.ap - 5 });
+      await dbService.updateCampaign({ activeQuestId: quest.id });
       setGatedQuest(null);
       showNotify('Embarking: ' + quest.title);
     }
@@ -294,8 +295,19 @@ function App() {
      }
   };
 
-  const totalIncome = 4850.00;
+  const [isBudgetEditorOpen, setIsBudgetEditorOpen] = useState(false);
+  const [newBudget, setNewBudget] = useState(stats.monthlyBudget || 3000);
+
+  const handleUpdateBudget = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await dbService.updateStatsDB({ monthlyBudget: newBudget });
+    setIsBudgetEditorOpen(false);
+    showNotify('Monthly Budget calibrated.');
+  };
+
+  const totalIncome = stats.monthlyBudget || 3000;
   const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const remainingBudget = totalIncome - totalExpenses;
 
   return (
     <div className="min-h-screen bg-surface text-on-surface paper-texture font-body">
@@ -306,6 +318,30 @@ function App() {
       )}
       
       {gatedQuest && <QuestGater quest={gatedQuest} tasks={tasks} habits={habits} ap={stats.ap} onAccept={() => confirmStartQuest(gatedQuest)} onClose={() => setGatedQuest(null)} />}
+
+      {isBudgetEditorOpen && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-surface/90 backdrop-blur-md">
+          <div className="w-full max-w-md relative animate-in zoom-in-95 duration-200">
+            <div className="tape-accent doodle-border bg-surface-container p-8 shadow-2xl">
+              <h3 className="font-headline text-2xl font-bold text-primary mb-6">Calibrate Budget</h3>
+              <form onSubmit={handleUpdateBudget} className="space-y-6">
+                <div className="flex flex-col gap-2">
+                  <span className="font-label text-[10px] uppercase text-on-surface-variant">Monthly Allowance ($)</span>
+                  <input 
+                    className="w-full bg-surface doodle-border py-3 px-4 text-primary font-bold text-2xl outline-none" 
+                    type="number" 
+                    value={newBudget} 
+                    onChange={e => setNewBudget(parseInt(e.target.value) || 0)} 
+                    required 
+                  />
+                </div>
+                <button type="submit" className="w-full doodle-btn bg-primary text-on-primary py-3 font-headline font-black uppercase tracking-widest">Update Limit</button>
+                <button type="button" onClick={() => setIsBudgetEditorOpen(false)} className="w-full text-[10px] font-label uppercase text-on-surface-variant hover:text-primary transition-colors">Dismiss</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isScribeOpen && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-surface/90 backdrop-blur-md">
@@ -349,13 +385,17 @@ function App() {
               <div className="flex gap-4"><button onClick={() => setIsScribeOpen(true)} className="bg-primary text-on-primary px-6 py-3 font-headline font-bold doodle-border hover:scale-105 transition-all shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2"><img src="/assets/ui/Icon_Gold.png" className="w-6 h-6" /> Scribe Expense</button></div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-              <div className="bg-surface-container p-6 doodle-border shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between group">
-                <span className="font-label text-[10px] uppercase text-on-surface-variant">Monthly Income</span>
+              <div onClick={() => { setNewBudget(totalIncome); setIsBudgetEditorOpen(true); }} className="bg-surface-container p-6 doodle-border shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between group cursor-pointer hover:bg-primary/5 transition-all">
+                <span className="font-label text-[10px] uppercase text-on-surface-variant flex justify-between">Monthly Budget <span className="material-symbols-outlined text-xs">edit</span></span>
                 <div className="font-headline text-3xl font-black text-primary">${totalIncome.toLocaleString()}</div>
               </div>
               <div className="bg-surface-container p-6 doodle-border shadow-[6px_6px_0px_0px_rgba(244,208,63,0.2)] flex flex-col justify-between group">
                 <span className="font-label text-[10px] uppercase text-on-surface-variant">Total Expenses</span>
                 <div className="font-headline text-3xl font-black text-secondary">${totalExpenses.toLocaleString()}</div>
+              </div>
+              <div className={`bg-surface-container p-6 doodle-border shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between group ${remainingBudget < 0 ? 'border-error animate-pulse' : ''}`}>
+                <span className="font-label text-[10px] uppercase text-on-surface-variant">Remaining Safe</span>
+                <div className={`font-headline text-3xl font-black ${remainingBudget < 0 ? 'text-error' : 'text-tertiary'}`}>${remainingBudget.toLocaleString()}</div>
               </div>
             </div>
             <div className="bg-surface-container-low p-8 doodle-border shadow-xl"><ExpenseList expenses={expenses} /></div>
@@ -491,6 +531,12 @@ function App() {
       </main>
 
       <footer className="fixed bottom-0 left-0 w-full z-50 p-6 md:hidden"><div className="bg-surface-container doodle-border shadow-2xl flex justify-around p-4 backdrop-blur-md"><button onClick={() => setCurrentTab('ledger')} className={`material-symbols-outlined ${currentTab === 'ledger' ? 'text-primary' : 'text-on-surface-variant'}`}>dashboard</button><button onClick={() => setCurrentTab('trials')} className={`material-symbols-outlined ${currentTab === 'trials' ? 'text-primary' : 'text-on-surface-variant'}`}>history_edu</button><button onClick={() => setCurrentTab('archive')} className={`material-symbols-outlined ${currentTab === 'archive' ? 'text-primary' : 'text-on-surface-variant'}`}>menu_book</button><button onClick={() => setCurrentTab('quests')} className={`material-symbols-outlined ${currentTab === 'quests' ? 'text-primary' : 'text-on-surface-variant'}`}>explore</button></div></footer>
+    </div>
+  );
+}
+
+export default App;
+ant'}`}>menu_book</button><button onClick={() => setCurrentTab('quests')} className={`material-symbols-outlined ${currentTab === 'quests' ? 'text-primary' : 'text-on-surface-variant'}`}>explore</button></div></footer>
     </div>
   );
 }

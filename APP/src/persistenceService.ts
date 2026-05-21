@@ -140,7 +140,7 @@ export const subscribeStats = (callback: (stats: PlayerStats) => void) => {
   } else {
     const handler = () => {
       const raw = localStorage.getItem(STATS_DOC);
-      const stats = raw ? (JSON.parse(raw) as PlayerStats) : { level: 1, exp: 0, ap: 10, gold: 0 };
+      const stats = raw ? (JSON.parse(raw) as PlayerStats) : { level: 1, exp: 0, ap: 10, gold: 0, monthlyBudget: 3000 };
       callback(stats);
     };
     window.addEventListener('storage', handler);

@@ -17,7 +17,7 @@ const TopAppBar: React.FC<Props> = ({ currentTab, onTabChange, ap }) => {
   return (
     <header className="bg-surface border-b-2 border-outline-variant flex justify-between items-center px-6 md:px-10 h-20 w-full z-50 sticky top-0 shadow-lg select-none">
       <div className="flex items-center gap-4">
-        <h1 className="font-headline text-3xl font-black text-primary drop-shadow-[2px_2px_0px_rgba(0,0,0,1)] uppercase tracking-tighter">LedgerQuest</h1>
+        <h1 className="font-headline text-3xl font-black text-primary drop-shadow-[2px_2px_0px_rgba(0,0,0,1)] uppercase tracking-tighter">LedgerQuest <span className="text-xs text-on-surface-variant align-top opacity-50">- DEMO</span></h1>
       </div>
       
       <nav className="hidden md:flex gap-8 h-full">

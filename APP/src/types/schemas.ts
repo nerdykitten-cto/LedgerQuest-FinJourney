@@ -68,6 +68,7 @@ export interface PlayerStats {
   exp: number;
   ap: number; // Action Points (Earned via Finance Tasks/Habits)
   gold: number;
+  monthlyBudget?: number;
 }
 
 export interface PartyMember {
