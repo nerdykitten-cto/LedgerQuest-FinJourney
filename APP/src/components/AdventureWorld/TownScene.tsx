@@ -23,30 +23,45 @@ export const TownScene: React.FC<TownSceneProps> = ({
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [activeArea, setActiveArea] = useState<'center' | 'outskirts'>('center');
 
-  const NPCs = [
-    { 
-      id: 'n1', 
-      name: 'Elder Aris', 
-      area: 'center',
-      message: "The ledger is more than just paper, scribe. It is the anchor of our reality. Keep it steady.",
-      icon: '🧙‍♂️'
-    },
-    { 
-      id: 'n2', 
-      name: 'Stablemaster', 
-      area: 'center',
-      message: "Looking for a faster way to travel? Keep logging those feats and maybe you'll earn a mount one day.",
-      icon: '🏇'
+  const getTownNPCs = () => {
+    switch (name) {
+      case 'Starting Village':
+        return [
+          { id: 'n1', name: 'Chronicler Daniel', area: 'center', message: "Welcome, scribe. To clear the fog of debt, one must first document the flow. Log your expenses to earn Action Points.", icon: '🧙‍♂️' },
+          { id: 'n2', name: 'Stablemaster', area: 'center', message: "The road to Iron Citadel is long. Ensure your Action Reserve is full before departing.", icon: '🏇' }
+        ];
+      case 'Copper Town':
+        return [
+          { id: 'n3', name: 'Copper Smith', area: 'center', message: "Base metals for base needs. Efficiency is the key to profit.", icon: '⚒️' },
+          { id: 'n4', name: 'Market Overseer', area: 'center', message: "The ledger must balance, even here in the mud.", icon: '⚖️' }
+        ];
+      case 'Silver City':
+        return [
+          { id: 'n5', name: 'High Banker', area: 'center', message: "Interest never sleeps, and neither should your focus on savings.", icon: '🏛️' },
+          { id: 'n6', name: 'Guild Master', area: 'center', message: "Join the elite scribes. Master your budget, master the realm.", icon: '🎭' }
+        ];
+      case 'Iron Citadel':
+        return [
+          { id: 'n7', name: 'Commander Fortis', area: 'center', message: "The fortress of savings is impenetrable. Your discipline is your shield.", icon: '💂' },
+          { id: 'n8', name: 'Grand Archivist', area: 'center', message: "Every copper logged is a brick in the wall of your future.", icon: '📜' }
+        ];
+      default:
+        return [
+          { id: 'n9', name: 'Traveler', area: 'center', message: "The map is vast, but the ledger is vaster.", icon: '🚶' }
+        ];
     }
-  ];
+  };
+
+  const NPCs = getTownNPCs();
 
   const SHOP_ITEMS = [
-    { id: 'iron-sword', name: 'Iron Sword', cost: 150, sprite: '/assets/game/weapons/gear_right_18.png', type: 'weapon' },
+    { id: 'iron-sword', name: 'Iron Sword', cost: 150, sprite: '/assets/game/ui/bat_1.png', type: 'weapon' },
     { id: 'leather-tunic', name: 'Leather Tunic', cost: 100, sprite: '/assets/ui/Icon_Shield.png', type: 'armor' },
     { id: 'health-potion', name: 'Health Potion', cost: 50, sprite: '/assets/ui/Icon_Energy_Green.png', type: 'item' }
   ];
 
   const handleNPCInteraction = (npc: typeof NPCs[0]) => {
+    showDialogue(npc.message);
     onTalk(npc.name, npc.message);
   };
 
@@ -164,7 +179,7 @@ export const TownScene: React.FC<TownSceneProps> = ({
             <h3 className="font-headline text-3xl font-black text-[#f4d03f] text-center mb-10 uppercase tracking-tighter italic doodle-underline inline-block mx-auto">Town Armory</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto pr-2 custom-scrollbar p-2">
-              {SHOP_ITEMS.map(item => (
+              {SHOP_ITEMS.map((item: any) => (
                 <div 
                   key={item.id}
                   className="flex flex-col p-4 bg-[#0b1326] border-2 border-[#4c4634]/50 hover:border-[#f4d03f] transition-all group cursor-pointer shadow-md"

@@ -4,10 +4,10 @@ import type { Quest } from '../types/schemas';
 interface Props {
   quests: Quest[];
   onStartQuest?: (id: string) => void;
-  onCompleteQuest?: (id: string) => void;
+  onClaimReward?: (id: string) => void;
 }
 
-const QuestList: React.FC<Props> = ({ quests, onStartQuest, onCompleteQuest }) => {
+const QuestList: React.FC<Props> = ({ quests, onStartQuest, onClaimReward }) => {
   return (
     <div className="flex flex-col gap-6">
       <h3 className="font-headline text-lg font-bold flex items-center justify-between px-2">
@@ -35,7 +35,10 @@ const QuestList: React.FC<Props> = ({ quests, onStartQuest, onCompleteQuest }) =
               <header className="flex justify-between items-start mb-3 relative z-10">
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
-                    <span className={`font-label text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-sm ${q.status === 'active' ? 'bg-primary text-on-primary font-black' : 'bg-surface-container-high text-on-surface-variant'}`}>
+                    <span className={`font-label text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-sm 
+                      ${q.status === 'active' ? 'bg-primary text-on-primary font-black animate-pulse' : 
+                        q.status === 'ready' ? 'bg-tertiary text-on-tertiary font-black' :
+                        'bg-surface-container-high text-on-surface-variant'}`}>
                       {q.status.toUpperCase()}
                     </span>
                     <span className="font-label text-[9px] text-on-surface-variant uppercase">Lv.{q.difficulty}</span>
@@ -51,7 +54,7 @@ const QuestList: React.FC<Props> = ({ quests, onStartQuest, onCompleteQuest }) =
               </p>
 
               {/* Objective Progress */}
-              {q.status === 'active' && q.objectives && (
+              {(q.status === 'active' || q.status === 'ready') && q.objectives && (
                 <div className="mb-4 space-y-2 relative z-10">
                    {q.objectives.map(obj => (
                      <div key={obj.id} className="flex items-center gap-2">
@@ -83,16 +86,19 @@ const QuestList: React.FC<Props> = ({ quests, onStartQuest, onCompleteQuest }) =
                       Accept <span className="material-symbols-outlined text-xs">edit_square</span>
                     </button>
                   )}
-                  {q.status === 'active' && onCompleteQuest && (
+                  {q.status === 'ready' && onClaimReward && (
                     <button 
-                      onClick={() => onCompleteQuest(id_fix(q.id))} 
-                      className="doodle-btn bg-primary text-on-primary text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 flex items-center gap-2 animate-pulse"
+                      onClick={() => onClaimReward(id_fix(q.id))} 
+                      className="doodle-btn bg-[#f4d03f] text-black text-[10px] font-black uppercase tracking-[0.1em] px-5 py-2 flex items-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all"
                     >
-                      Attempt <span className="material-symbols-outlined text-xs">swords</span>
+                      Claim Rewards <span className="material-symbols-outlined text-sm">redeem</span>
                     </button>
                   )}
                   {q.status === 'completed' && (
                     <span className="material-symbols-outlined text-tertiary">check_circle</span>
+                  )}
+                  {q.status === 'active' && (
+                    <span className="font-label text-[8px] uppercase text-on-surface-variant italic">Objectives Pending...</span>
                   )}
                 </div>
               </div>

@@ -116,7 +116,7 @@ export interface Quest {
     gold: number;
     items?: string[];
   };
-  status: 'available' | 'active' | 'completed' | 'failed' | 'gated';
+  status: 'available' | 'active' | 'ready' | 'completed' | 'failed' | 'gated';
   requirements?: {
     apQuota: number;
     taskCount: number;

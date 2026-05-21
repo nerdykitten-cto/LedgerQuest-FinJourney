@@ -96,15 +96,23 @@ function App() {
         
         const allDone = updatedObjectives.every(o => o.isCompleted);
         if (allDone) {
-           await dbService.updateQuestDB(activeQuest.id, { status: 'completed', objectives: updatedObjectives });
-           await dbService.updateStatsDB({ exp: stats.exp + activeQuest.reward.exp, gold: stats.gold + activeQuest.reward.gold });
-           showNotify(`Quest Complete: ${activeQuest.title}!`);
+           await dbService.updateQuestDB(activeQuest.id, { status: 'ready', objectives: updatedObjectives });
+           showNotify(`Quest Objectives Met: ${activeQuest.title}! Claim rewards in the Strategic Map.`);
         } else {
            await dbService.updateQuestDB(activeQuest.id, { objectives: updatedObjectives });
            showNotify(`Objective met: ${target}`);
         }
      }
-  }, [quests, stats, showNotify]);
+  }, [quests, showNotify]);
+
+  const handleClaimReward = async (id: string) => {
+     const q = quests.find(q => q.id === id);
+     if (q && q.status === 'ready') {
+        await dbService.updateQuestDB(id, { status: 'completed' });
+        await dbService.updateStatsDB({ exp: stats.exp + q.reward.exp, gold: stats.gold + q.reward.gold });
+        showNotify(`Claimed ${q.reward.gold} Gold and ${q.reward.exp} XP!`);
+     }
+  };
 
   // Story Engine - Logic Loop
   useEffect(() => {
@@ -287,20 +295,6 @@ function App() {
       setGatedQuest(null);
       showNotify('Embarking: ' + quest.title);
     }
-  };
-
-  const handleCompleteQuest = async (id: string) => {
-     const q = quests.find(q => q.id === id);
-     if (q && q.status === 'active') {
-        const allDone = q.objectives?.every(o => o.isCompleted);
-        if (allDone) {
-           await dbService.updateQuestDB(id, { status: 'completed' });
-           await dbService.updateStatsDB({ exp: stats.exp + q.reward.exp, gold: stats.gold + q.reward.gold });
-           showNotify(`Quest Success!`);
-        } else {
-           showNotify('Objectives remain incomplete.');
-        }
-     }
   };
 
   const [isBudgetEditorOpen, setIsBudgetEditorOpen] = useState(false);
@@ -542,7 +536,7 @@ function App() {
                   onEnterTown={handleEnterTown}
                   onExitTown={handleExitTown}
                 /></div>
-                <div className="lg:col-span-4 overflow-y-auto pr-4 custom-scrollbar"><QuestList quests={quests} onStartQuest={handleStartQuest} onCompleteQuest={handleCompleteQuest} /></div>
+                <div className="lg:col-span-4 overflow-y-auto pr-4 custom-scrollbar"><QuestList quests={quests} onStartQuest={handleStartQuest} onClaimReward={handleClaimReward} /></div>
              </div>
           </div>
         )}

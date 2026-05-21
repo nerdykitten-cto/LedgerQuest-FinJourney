@@ -61,6 +61,11 @@ export const AdventureWorld: React.FC<AdventureWorldProps> = ({
     setDialogue(prev => ({ ...prev, isVisible: false }));
   };
 
+  const handleNPCTalk = (npcName: string, message: string) => {
+    showDialogue(message);
+    onTalk(npcName, message);
+  };
+
   // Default enemy if none provided (for safety)
   const activeEnemy: Enemy = campaign.activeEnemy || {
     id: 'unknown',
@@ -99,7 +104,7 @@ export const AdventureWorld: React.FC<AdventureWorldProps> = ({
         <TownScene 
           name={campaign.currentLocation}
           stats={stats}
-          onTalk={onTalk}
+          onTalk={handleNPCTalk}
           onShopPurchase={onShopPurchase}
           onBattleAction={onBattleAction}
           onExit={onExitTown}

@@ -37,7 +37,6 @@ export const WorldMapScene: React.FC<WorldMapSceneProps> = ({
     }
 
     if (name === campaign.currentLocation) {
-      showDialogue(`You are already at ${name}.`);
       return;
     }
 
