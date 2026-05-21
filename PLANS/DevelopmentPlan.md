@@ -1,34 +1,33 @@
-# FinJourney Development Plan
+# LedgerQuest Development Plan
 
-CRITICAL DEADLINE: May 20, 2026
-STACK: React (TypeScript) | Google Antigravity | Firebase | Cloud Run
+STATUS: Completed (Prototype Stage)
+STACK: React (TypeScript) | Firebase | Cloud Run | Docker
 
-## Phase 1: Foundation (Today - May 17)
-- [x] **Infrastructure:** Initialize React (Vite) project in `APP/`. Setup Firebase & GCP. (Bilal)
-- [x] **Design:** Map "Finance-to-Game" AP bridge. (Bilal/Adil)
-- [x] **Game Design:** Define quest parameters, RPG stats, and combat mechanics. (Adil)
+## Phase 1: Foundation (Completed)
+- [x] **Infrastructure:** Initialize React (Vite) project in `APP/`. Setup Firebase & GCP.
+- [x] **Design:** Map "Finance-to-Game" AP bridge.
+- [x] **Game Design:** Define quest parameters, RPG stats, and combat mechanics.
 
-## Phase 2: Core Utility (May 18)
-- [x] **Finance Side:** Implementation of Expense/Budget logic (React Forms). (Bilal)
-- [x] **AP Engine:** Convert tracking to game energy/Action Points. (Bilal)
-- [x] **Game Side:** Mockup of RPG UI and Party Management screen. (Adil/Bilal)
-- [x] **QA:** Initial bug testing of Finance module. (Ahmad)
+## Phase 2: Core Utility (Completed)
+- [x] **Finance Side:** Implementation of Expense/Budget logic (React Forms).
+- [x] **AP Engine:** Convert tracking to game energy/Action Points.
+- [x] **Game Side:** Mockup of RPG UI and Party Management screen.
+- [x] **QA:** Initial bug testing of Finance module.
 
-## Phase 3: Agentic Integration (May 19)
-- [x] **Antigravity Agents:** Implementation of Narrative (StoryTellingEngine), Difficulty, and Reward agents. (Bilal)
-- [x] **Content Generation:** Structured quest selection via Story Manifest (JSON). (Bilal/Adil)
-- [x] **Tracing:** Implement O-I-D-A logging/audit trail. (Bilal)
-- [x] **Visual Integration:** Battle Mechanics & World Map implemented. Prep architecture for integration with assets from future `GAME/` folder. (Bilal/Team)
-- [x] **QA:** Testing agentic behavior for fairness/solvability. (Ahmad)
+## Phase 3: Agentic Integration (Completed)
+- [x] **Antigravity Agents:** Implementation of Narrative (StoryTellingEngine), Difficulty, and Reward agents.
+- [x] **Content Generation:** Structured quest selection via Story Manifest (JSON).
+- [x] **Tracing:** Implement O-I-D-A logging/audit trail.
+- [x] **Visual Integration:** Battle Mechanics & World Map implemented as a native React Adventure Engine (RAE).
+- [x] **QA:** Testing agentic behavior for fairness/solvability.
 
-## Phase 4: Finalization & Submission (May 20)
-- [ ] **Polishing:** Refine CSS for a more cohesive "Game" feel. (Bilal/Adil)
-- [ ] **Validation:** Baseline comparison (Agent vs Fixed-rule). (Bilal/Ahmad)
-- [ ] **Multimedia:** Demo video and screenshots of Web App. (Ahmad/Adil)
-- [ ] **Submission:** README, traces, and final package to judges. (Bilal)
+## Phase 4: Finalization & Submission (Completed)
+- [x] **Polishing:** Solidified the "Old TV" experience with CRT effects and centered 1:1 map.
+- [x] **Validation:** Verified objective-driven sub-missions and manual reward claiming.
+- [x] **CI/CD:** Automated deployment via GitHub -> Cloud Build -> Cloud Run.
+- [x] **Budget Calibration:** Integrated monthly budget goal-setting into the Archive.
 
 ## Checkpoints
-- **May 17 Night:** React builds; Firebase connected.
-- **May 18 Night:** Finance tracks; AP accumulates.
-- **May 19 Night:** Antigravity quests playable in-browser.
-- **May 20 12:00:** Submission ready.
+- **Infrastructure:** Live on Cloud Run with dynamic port support.
+- **Gameplay:** Full loop (Scribe -> Earn AP -> Navigate -> Battle/Talk -> Claim Reward) is functional.
+- **Aesthetic:** Hand-drawn "Doodle" UI paired with high-fidelity retro hardware effects.
