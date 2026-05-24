@@ -55,9 +55,39 @@ export const TownScene: React.FC<TownSceneProps> = ({
   const NPCs = getTownNPCs();
 
   const SHOP_ITEMS = [
-    { id: 'iron-sword', name: 'Iron Sword', cost: 150, sprite: '/assets/game/ui/bat_1.png', type: 'weapon' },
-    { id: 'leather-tunic', name: 'Leather Tunic', cost: 100, sprite: '/assets/ui/Icon_Shield.png', type: 'armor' },
-    { id: 'health-potion', name: 'Health Potion', cost: 50, sprite: '/assets/ui/Icon_Energy_Green.png', type: 'item' }
+    { 
+      id: 'iron-sword', 
+      name: 'Iron Sword', 
+      cost: 150, 
+      sprite: '/assets/game/weapons/bat_1.png', 
+      type: 'Equipment' as const, 
+      icon: 'swords',
+      stats: '+15 Attack',
+      statBonus: { attack: 15 },
+      weight: 3.0
+    },
+    { 
+      id: 'leather-tunic', 
+      name: 'Leather Tunic', 
+      cost: 100, 
+      sprite: '/assets/ui/Icon_Shield.png', 
+      type: 'Equipment' as const, 
+      icon: 'shield',
+      stats: '+10 Defense',
+      statBonus: { defense: 10 },
+      weight: 5.0
+    },
+    { 
+      id: 'health-potion', 
+      name: 'Health Potion', 
+      cost: 50, 
+      sprite: '/assets/ui/Icon_Energy_Green.png', 
+      type: 'Consumable' as const, 
+      icon: 'science',
+      stats: '+40 HP',
+      statBonus: { hpHeal: 40 },
+      weight: 0.5
+    }
   ];
 
   const handleNPCInteraction = (npc: typeof NPCs[0]) => {

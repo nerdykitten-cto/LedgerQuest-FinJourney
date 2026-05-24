@@ -6,7 +6,8 @@ import {
   doc, 
   query, 
   orderBy, 
-  setDoc
+  setDoc,
+  deleteDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { 
@@ -20,7 +21,8 @@ import type {
   CampaignState,
   PartyMember,
   BudgetStream,
-  SavingsGoal
+  SavingsGoal,
+  InventoryItem
 } from './types/schemas';
 import storyManifest from './data/storyManifest.json';
 
@@ -40,6 +42,7 @@ const HABITS_COL = 'habits';
 const PARTY_COL = 'party';
 const BUDGET_COL = 'budget';
 const SAVINGS_COL = 'savings';
+const INVENTORY_COL = 'inventory';
 
 // --- HELPER: LOCAL STORAGE ---
 const getLocal = (key: string): unknown => JSON.parse(localStorage.getItem(key) || '[]');
@@ -327,8 +330,19 @@ export const updateHabitDB = async (habitId: string, updates: Partial<Habit>) =>
 export const subscribeParty = (callback: (members: PartyMember[]) => void) => {
   if (USE_FIREBASE) {
     return onSnapshot(collection(db, PARTY_COL), (snapshot) => {
-      const members = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PartyMember));
-      callback(members);
+      if (snapshot.empty) {
+        const initialParty: PartyMember[] = [
+          { id: 'p1', name: 'Althea', avatar: '/assets/game/main_character.png', role: 'Leader', hp: 100, maxHp: 100, mp: 20, maxMp: 20, level: 1, equipment: {} },
+          { id: 'p2', name: 'Kael', avatar: '/assets/game/party_member_1.png', role: 'Vanguard', hp: 120, maxHp: 120, mp: 10, maxMp: 10, level: 1, equipment: {} },
+          { id: 'p3', name: 'Elora', avatar: '/assets/game/party_member_2.png', role: 'Arcanist', hp: 80, maxHp: 80, mp: 50, maxMp: 50, level: 1, equipment: {} },
+          { id: 'p4', name: 'Thal', avatar: '/assets/game/party_member_3.png', role: 'Sharpshooter', hp: 90, maxHp: 90, mp: 15, maxMp: 15, level: 1, equipment: {} },
+          { id: 'p5', name: 'Lia', avatar: '/assets/game/party_member_4.png', role: 'Lightweaver', hp: 70, maxHp: 70, mp: 40, maxMp: 40, level: 1, equipment: {} }
+        ];
+        initialParty.forEach(m => setDoc(doc(db, PARTY_COL, m.id), m));
+      } else {
+        const members = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PartyMember));
+        callback(members);
+      }
     });
   } else {
     const handler = () => callback(getLocal(PARTY_COL) as PartyMember[]);
@@ -346,14 +360,92 @@ export const addPartyMemberDB = async (member: PartyMember) => {
   }
 };
 
-export const updatePartyMemberDB = async (memberId: string, equipment: any) => {
+export const updatePartyMemberDB = async (memberId: string, updates: Partial<PartyMember>) => {
   if (USE_FIREBASE) {
-    await updateDoc(doc(db, PARTY_COL, memberId), { equipment });
+    await updateDoc(doc(db, PARTY_COL, memberId), updates);
   } else {
     const party = (getLocal(PARTY_COL) as PartyMember[]).map(m => 
-      m.id === memberId ? { ...m, equipment: { ...m.equipment, ...equipment } } : m
+      m.id === memberId ? { ...m, ...updates } : m
     );
     setLocal(PARTY_COL, party);
+    window.dispatchEvent(new Event('storage'));
+  }
+};
+
+export const subscribeInventory = (callback: (items: InventoryItem[]) => void) => {
+  if (USE_FIREBASE) {
+    return onSnapshot(collection(db, INVENTORY_COL), (snapshot) => {
+      if (snapshot.empty) {
+        const initialItems: InventoryItem[] = [
+          {
+            id: 'init-w1',
+            templateId: 'iron-sword',
+            name: 'Budget Slicer',
+            type: 'Equipment',
+            icon: 'swords',
+            sprite: '/assets/game/weapons/bat_1.png',
+            description: 'A keen blade used to trim unnecessary expenses.',
+            stats: '+10 Attack',
+            statBonus: { attack: 10 },
+            weight: 3.0,
+            quantity: 1
+          },
+          {
+            id: 'init-p1',
+            templateId: 'health-potion',
+            name: 'Health Potion',
+            type: 'Consumable',
+            icon: 'science',
+            sprite: '/assets/ui/Icon_Energy_Green.png',
+            description: 'Restores 40 HP.',
+            stats: '+40 HP',
+            statBonus: { hpHeal: 40 },
+            weight: 0.5,
+            quantity: 3
+          }
+        ];
+        initialItems.forEach(item => setDoc(doc(db, INVENTORY_COL, item.id), item));
+      } else {
+        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem));
+        callback(items);
+      }
+    });
+  } else {
+    const handler = () => callback(getLocal(INVENTORY_COL) as InventoryItem[]);
+    window.addEventListener('storage', handler);
+    handler();
+    return () => window.removeEventListener('storage', handler);
+  }
+};
+
+export const addInventoryItemDB = async (item: InventoryItem) => {
+  if (USE_FIREBASE) {
+    await setDoc(doc(db, INVENTORY_COL, item.id), item);
+  } else {
+    const items = getLocal(INVENTORY_COL) as InventoryItem[];
+    setLocal(INVENTORY_COL, [...items, item]);
+    window.dispatchEvent(new Event('storage'));
+  }
+};
+
+export const updateInventoryItemDB = async (itemId: string, updates: Partial<InventoryItem>) => {
+  if (USE_FIREBASE) {
+    await updateDoc(doc(db, INVENTORY_COL, itemId), updates);
+  } else {
+    const items = (getLocal(INVENTORY_COL) as InventoryItem[]).map(item =>
+      item.id === itemId ? { ...item, ...updates } : item
+    );
+    setLocal(INVENTORY_COL, items);
+    window.dispatchEvent(new Event('storage'));
+  }
+};
+
+export const removeInventoryItemDB = async (itemId: string) => {
+  if (USE_FIREBASE) {
+    await deleteDoc(doc(db, INVENTORY_COL, itemId));
+  } else {
+    const items = (getLocal(INVENTORY_COL) as InventoryItem[]).filter(item => item.id !== itemId);
+    setLocal(INVENTORY_COL, items);
     window.dispatchEvent(new Event('storage'));
   }
 };
@@ -373,6 +465,7 @@ export const resetGameDB = async () => {
     localStorage.removeItem(PARTY_COL);
     localStorage.removeItem(BUDGET_COL);
     localStorage.removeItem(SAVINGS_COL);
+    localStorage.removeItem(INVENTORY_COL);
     
     initializeLocalData();
     window.dispatchEvent(new Event('storage'));
@@ -415,6 +508,38 @@ export const initializeLocalData = () => {
       { id: 'p5', name: 'Lia', avatar: '/assets/game/party_member_4.png', role: 'Lightweaver', hp: 70, maxHp: 70, mp: 40, maxMp: 40, level: 1, equipment: {} }
     ];
     setLocal(PARTY_COL, initialParty);
+  }
+
+  if ((getLocal(INVENTORY_COL) as InventoryItem[]).length === 0) {
+    const initialItems: InventoryItem[] = [
+      {
+        id: 'init-w1',
+        templateId: 'iron-sword',
+        name: 'Budget Slicer',
+        type: 'Equipment',
+        icon: 'swords',
+        sprite: '/assets/game/weapons/bat_1.png',
+        description: 'A keen blade used to trim unnecessary expenses.',
+        stats: '+10 Attack',
+        statBonus: { attack: 10 },
+        weight: 3.0,
+        quantity: 1
+      },
+      {
+        id: 'init-p1',
+        templateId: 'health-potion',
+        name: 'Health Potion',
+        type: 'Consumable',
+        icon: 'science',
+        sprite: '/assets/ui/Icon_Energy_Green.png',
+        description: 'Restores 40 HP.',
+        stats: '+40 HP',
+        statBonus: { hpHeal: 40 },
+        weight: 0.5,
+        quantity: 3
+      }
+    ];
+    setLocal(INVENTORY_COL, initialItems);
   }
 
   if ((getLocal(BUDGET_COL) as BudgetStream[]).length === 0) {

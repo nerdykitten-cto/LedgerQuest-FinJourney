@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { PlayerStats, CampaignState, PartyMember, Enemy } from '../../types/schemas';
+import type { PlayerStats, CampaignState, PartyMember, Enemy, InventoryItem } from '../../types/schemas';
 import { WorldMapScene } from './WorldMapScene';
 import { CombatScene } from './CombatScene';
 import { TownScene } from './TownScene';
@@ -9,6 +9,7 @@ interface AdventureWorldProps {
   stats: PlayerStats;
   campaign: CampaignState;
   party: PartyMember[];
+  inventory: InventoryItem[];
   onTravel: (destination: string, cost: number) => void;
   onTalk: (npcName: string, message: string) => void;
   onBattleVictory: () => void;
@@ -26,6 +27,7 @@ export const AdventureWorld: React.FC<AdventureWorldProps> = ({
   stats,
   campaign,
   party,
+  inventory,
   onTravel,
   onTalk,
   onBattleVictory,
@@ -93,6 +95,7 @@ export const AdventureWorld: React.FC<AdventureWorldProps> = ({
           party={party}
           enemy={activeEnemy}
           ap={stats.ap}
+          inventory={inventory}
           onVictory={onBattleVictory}
           onDefeat={onBattleDefeat}
           onActionCost={onActionCost}

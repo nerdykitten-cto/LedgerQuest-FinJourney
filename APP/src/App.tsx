@@ -10,7 +10,8 @@ import type {
   Habit,
   PartyMember,
   BudgetStream,
-  SavingsGoal
+  SavingsGoal,
+  InventoryItem
 } from './types/schemas';
 import { APEvaluator, ValueAdjuster, StoryTellingEngine } from './logicEngines';
 import ExpenseForm from './components/ExpenseForm';
@@ -27,6 +28,42 @@ import { v4 as uuidv4 } from 'uuid';
 const evaluator = new APEvaluator();
 const adjuster = new ValueAdjuster();
 const agent = new StoryTellingEngine();
+
+const ITEM_TEMPLATES: Record<string, Partial<InventoryItem>> = {
+  'Midas Elixir': {
+    templateId: 'midas-elixir',
+    name: 'Midas Elixir',
+    type: 'Consumable',
+    icon: 'science',
+    sprite: '/assets/ui/Icon_Energy_Green.png',
+    description: 'A golden liquid that tastes like sun-warmed honey and financial stability.',
+    stats: '+20 HP',
+    statBonus: { hpHeal: 20 },
+    weight: 0.5
+  },
+  'Ledger Shield': {
+    templateId: 'ledger-shield',
+    name: 'Ledger Shield',
+    type: 'Equipment',
+    icon: 'shield',
+    sprite: '/assets/ui/Icon_Shield.png',
+    description: 'Protects against sudden market crashes.',
+    stats: '+10 Defense',
+    statBonus: { defense: 10 },
+    weight: 5.0
+  },
+  'Budget Slicer': {
+    templateId: 'iron-sword',
+    name: 'Budget Slicer',
+    type: 'Equipment',
+    icon: 'swords',
+    sprite: '/assets/game/weapons/bat_1.png',
+    description: 'A keen blade used to trim unnecessary expenses.',
+    stats: '+10 Attack',
+    statBonus: { attack: 10 },
+    weight: 3.0
+  }
+};
 
 function App() {
   const [currentTab, setCurrentTab] = useState('ledger');
@@ -46,6 +83,7 @@ function App() {
   const [_savings, setSavings] = useState<SavingsGoal[]>([]);
   const [_traces, setTraces] = useState<LogicEngineTrace[]>([]);
   const [party, setParty] = useState<PartyMember[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [notification, setNotification] = useState<string | null>(null);
   const [gatedQuest, setGatedQuest] = useState<Quest | null>(null);
   
@@ -77,11 +115,12 @@ function App() {
     const unsubParty = dbService.subscribeParty(setParty);
     const unsubBudgets = dbService.subscribeBudgetStreams(setBudgets);
     const unsubSavings = dbService.subscribeSavingsGoals(setSavings);
+    const unsubInventory = dbService.subscribeInventory(setInventory);
 
     return () => {
       unsubExpenses(); unsubQuests(); unsubStats(); unsubCampaign(); 
       unsubTasks(); unsubHabits(); unsubTraces(); unsubParty(); 
-      unsubBudgets(); unsubSavings();
+      unsubBudgets(); unsubSavings(); unsubInventory();
     };
   }, []);
 
@@ -110,7 +149,42 @@ function App() {
      if (q && q.status === 'ready') {
         await dbService.updateQuestDB(id, { status: 'completed' });
         await dbService.updateStatsDB({ exp: stats.exp + q.reward.exp, gold: stats.gold + q.reward.gold });
-        showNotify(`Claimed ${q.reward.gold} Gold and ${q.reward.exp} XP!`);
+        
+        if (q.reward.items && q.reward.items.length > 0) {
+           for (const itemKey of q.reward.items) {
+              const template = ITEM_TEMPLATES[itemKey] || {
+                 templateId: 'generic-item',
+                 name: itemKey,
+                 type: 'Quest',
+                 icon: 'info',
+                 sprite: '/assets/ui/Icon_Quest.png',
+                 description: 'An item of narrative importance.',
+                 weight: 0.1
+              };
+              
+              const existing = inventory.find(invItem => invItem.templateId === template.templateId && invItem.type === 'Consumable');
+              if (existing) {
+                 await dbService.updateInventoryItemDB(existing.id, { quantity: existing.quantity + 1 });
+              } else {
+                 const newItem: InventoryItem = {
+                    id: uuidv4(),
+                    templateId: template.templateId || 'generic',
+                    name: template.name || itemKey,
+                    type: template.type || 'Quest',
+                    icon: template.icon || 'info',
+                    sprite: template.sprite,
+                    description: template.description || '',
+                    stats: template.stats,
+                    statBonus: template.statBonus,
+                    weight: template.weight || 0,
+                    quantity: 1
+                 };
+                 await dbService.addInventoryItemDB(newItem);
+              }
+           }
+        }
+        
+        showNotify(`Claimed ${q.reward.gold} Gold, ${q.reward.exp} XP` + (q.reward.items?.length ? ' and items!' : '!'));
      }
   };
 
@@ -172,11 +246,31 @@ function App() {
   const handleShopPurchase = useCallback(async (item: any, cost: number) => {
     if (stats.gold >= cost) {
       await dbService.updateStatsDB({ gold: stats.gold - cost });
+      
+      const existing = inventory.find(invItem => invItem.templateId === item.id && invItem.type === 'Consumable');
+      if (existing) {
+        await dbService.updateInventoryItemDB(existing.id, { quantity: existing.quantity + 1 });
+      } else {
+        const newItem: InventoryItem = {
+          id: uuidv4(),
+          templateId: item.id,
+          name: item.name,
+          type: item.type,
+          icon: item.icon,
+          sprite: item.sprite,
+          description: item.name + ' acquired from the Armory.',
+          stats: item.stats,
+          statBonus: item.statBonus,
+          weight: item.weight,
+          quantity: 1
+        };
+        await dbService.addInventoryItemDB(newItem);
+      }
       showNotify(`Acquired ${item.name}!`);
     } else {
       showNotify('Insufficient Gold!');
     }
-  }, [stats.gold, showNotify]);
+  }, [stats.gold, inventory, showNotify]);
 
   const handleEnterTown = useCallback(async (name: string) => {
     await dbService.updateCampaign({ worldState: 'town', currentLocation: name });
@@ -375,7 +469,7 @@ function App() {
       )}
 
       {isWarRoomOpen && <WarRoom party={party} onClose={() => setIsWarRoomOpen(false)} onAddMember={() => showNotify('Requires City visit.')} onRemoveMember={() => {}} />}
-      {isVaultOpen && <GrandVault onClose={() => setIsVaultOpen(false)} />}
+      {isVaultOpen && <GrandVault inventory={inventory} party={party} onClose={() => setIsVaultOpen(false)} />}
 
       <TopAppBar currentTab={currentTab} onTabChange={setCurrentTab} ap={stats.ap} />
 
@@ -526,6 +620,7 @@ function App() {
                   stats={stats} 
                   campaign={campaign} 
                   party={party} 
+                  inventory={inventory}
                   onTravel={handleTravel}
                   onTalk={handleTalk}
                   onBattleVictory={handleBattleVictory}

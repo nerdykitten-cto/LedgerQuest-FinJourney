@@ -1,10 +1,11 @@
 import { AdventureWorld } from './AdventureWorld/AdventureWorld';
-import type { PlayerStats, CampaignState, PartyMember } from '../types/schemas';
+import type { PlayerStats, CampaignState, PartyMember, InventoryItem } from '../types/schemas';
 
 interface GameViewProps {
   stats: PlayerStats;
   campaign: CampaignState;
   party: PartyMember[];
+  inventory: InventoryItem[];
   onTravel: (destination: string, cost: number) => void;
   onTalk: (npcName: string, message: string) => void;
   onBattleVictory: () => void;
@@ -20,6 +21,7 @@ export default function GameView({
   stats, 
   campaign, 
   party,
+  inventory,
   onTravel,
   onTalk,
   onBattleVictory,
@@ -67,6 +69,7 @@ export default function GameView({
                       stats={stats} 
                       campaign={campaign} 
                       party={party}
+                      inventory={inventory}
                       onTravel={onTravel}
                       onTalk={onTalk}
                       onBattleVictory={onBattleVictory}

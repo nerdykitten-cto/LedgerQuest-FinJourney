@@ -191,3 +191,22 @@ export interface AntigravityTrace {
   decide: unknown;
   act: unknown;
 }
+
+export interface InventoryItem {
+  id: string;
+  templateId: string;
+  name: string;
+  type: 'Consumable' | 'Equipment' | 'Quest';
+  icon: string; // Material symbols icon identifier
+  sprite?: string; // Image path (e.g., /assets/ui/... or /assets/game/weapons/...)
+  description: string;
+  stats?: string; // Display text e.g. "+15 Attack"
+  statBonus?: {
+    attack?: number;
+    defense?: number;
+    hpHeal?: number;
+  };
+  weight: number;
+  quantity: number;
+  equippedTo?: string; // PartyMember ID
+}
