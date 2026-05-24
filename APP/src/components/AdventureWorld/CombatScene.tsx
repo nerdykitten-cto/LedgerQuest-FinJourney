@@ -27,29 +27,44 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
   const [party, setParty] = useState<PartyMember[]>([...initialParty]);
   const [isEnemyTurn, setIsEnemyTurn] = useState(false);
   const [battleLog, setBattleLog] = useState('INITIALIZING COMBAT PROTOCOLS...');
-  const [vibrate, setVibrate] = useState(false);
+  const [shake, setShake] = useState<'none' | 'enemy' | 'party'>('none');
+  const [flash, setFlash] = useState(false);
+  const [damageNumber, setDamageNumber] = useState<{ value: number; type: 'player' | 'enemy' } | null>(null);
+
+  const triggerShake = (target: 'enemy' | 'party') => {
+    setShake(target);
+    setTimeout(() => setShake('none'), 300);
+  };
+
+  const triggerDamage = (val: number, type: 'player' | 'enemy') => {
+    setDamageNumber({ value: val, type });
+    setTimeout(() => setDamageNumber(null), 1000);
+  };
 
   const handlePlayerAttack = (member: PartyMember) => {
-    if (isEnemyTurn || enemy.hp <= 0) return;
+    if (isEnemyTurn || enemy.hp <= 0 || member.hp <= 0) return;
 
     if (ap < 1) {
       showDialogue("EXHAUSTION DETECTED. LOG MORE FEATS TO REPLENISH ACTION POINTS.");
       return;
     }
 
-    onActionCost(1); // Each strike costs 1 AP
+    onActionCost(1);
 
-    // Look for equipped weapon to add bonus
     const weapon = inventory.find(i => i.equippedTo === member.id && i.type === 'Equipment' && i.statBonus?.attack !== undefined);
     const weaponBonus = weapon?.statBonus?.attack || 0;
 
     const damage = Math.max(1, member.level * 10 + weaponBonus + Math.floor(Math.random() * 10));
-    const newEnemyHp = Math.max(0, enemy.hp - damage);
+    const isCrit = Math.random() > 0.9;
+    const finalDmg = isCrit ? Math.floor(damage * 1.5) : damage;
+
+    const newEnemyHp = Math.max(0, enemy.hp - finalDmg);
     
     setEnemy({ ...enemy, hp: newEnemyHp });
-    setBattleLog(`STRIKE: ${member.name}${weapon ? ` (with ${weapon.name})` : ''} DEALT ${damage} DMG${weaponBonus ? ` (+${weaponBonus} Weapon Bonus)` : ''}.`);
-    setVibrate(true);
-    setTimeout(() => setVibrate(false), 200);
+    setBattleLog(`${isCrit ? 'CRITICAL ' : ''}STRIKE: ${member.name} DEALT ${finalDmg} DMG.`);
+    
+    triggerShake('enemy');
+    triggerDamage(finalDmg, 'enemy');
 
     if (newEnemyHp <= 0) {
       setBattleLog('OBJECTIVE SECURED. VICTORY CONFIRMED.');
@@ -62,26 +77,23 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
   const handleUsePotion = async (potion: InventoryItem) => {
     if (isEnemyTurn || enemy.hp <= 0) return;
 
-    // Filter alive party members that are damaged
     const damagedMembers = party.filter(m => m.hp > 0 && m.hp < m.maxHp);
     if (damagedMembers.length === 0) {
       showDialogue("ALL PARTY MEMBERS ARE ALREADY AT MAXIMUM HEALTH.");
       return;
     }
 
-    // Target the character with lowest HP percentage
     const target = damagedMembers.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
     const healAmt = potion.statBonus?.hpHeal || 40;
     const newHp = Math.min(target.maxHp, target.hp + healAmt);
 
-    // Update local state for immediate feedback
     setParty(party.map(m => m.id === target.id ? { ...m, hp: newHp } : m));
     setBattleLog(`POTION: consumed ${potion.name}. ${target.name} healed for ${healAmt} HP.`);
+    setFlash(true);
+    setTimeout(() => setFlash(false), 500);
 
-    // Persist healing
     await updatePartyMemberDB(target.id, { hp: newHp });
 
-    // Decrement or remove item from inventory
     if (potion.quantity > 1) {
       await updateInventoryItemDB(potion.id, { quantity: potion.quantity - 1 });
     } else {
@@ -95,23 +107,23 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
         const aliveMembers = party.filter(m => m.hp > 0);
         if (aliveMembers.length === 0) return;
 
-        const target = aliveMembers[Math.floor(Math.random() * aliveMembers.length)];
+        // Target low HP member (Aggressive AI)
+        const target = aliveMembers.sort((a, b) => a.hp - b.hp)[0];
         
-        // Look for equipped armor to reduce damage
         const armor = inventory.find(i => i.equippedTo === target.id && i.type === 'Equipment' && i.statBonus?.defense !== undefined);
         const defenseBonus = armor?.statBonus?.defense || 0;
 
         const damage = Math.max(1, enemy.attack - defenseBonus + Math.floor(Math.random() * 5));
-        
         const newParty = party.map(m => 
           m.id === target.id ? { ...m, hp: Math.max(0, m.hp - damage) } : m
         );
         
         setParty(newParty);
-        setBattleLog(`COUNTER-STRIKE: ${enemy.name} HIT ${target.name} FOR ${damage}${defenseBonus ? ` (-${defenseBonus} Armor Block)` : ''}.`);
+        setBattleLog(`COUNTER-STRIKE: ${enemy.name} HIT ${target.name} FOR ${damage} DMG.`);
+        triggerShake('party');
+        triggerDamage(damage, 'player');
         setIsEnemyTurn(false);
 
-        // Also persist party member damage
         updatePartyMemberDB(target.id, { hp: Math.max(0, target.hp - damage) });
 
         if (newParty.every(m => m.hp <= 0)) {
@@ -123,85 +135,115 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
     }
   }, [isEnemyTurn, enemy, party, inventory, onDefeat]);
 
-  // Find combat potions
   const potions = inventory.filter(i => i.type === 'Consumable' && i.statBonus?.hpHeal !== undefined);
 
   return (
-    <div className={`relative w-full h-full bg-gradient-to-b from-[#060d20] to-[#1a0a1a] flex flex-col items-center p-6 ${vibrate ? 'animate-bounce' : ''}`}>
+    <div className={`relative w-full h-full bg-gradient-to-b from-[#060d20] to-[#1a0a1a] flex flex-col items-center p-6 overflow-hidden transition-all duration-300 ${flash ? 'brightness-200' : ''}`}>
       
+      {/* Background Grid Pattern */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(#4c4634 1px, transparent 1px), linear-gradient(90deg, #4c4634 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+
       {/* HUD Info */}
-      <div className="absolute top-4 left-4 flex gap-4">
-         <div className="bg-[#171f33]/80 px-3 py-1 doodle-border border-[#f4d03f]/30 flex items-center gap-2">
-            <img src="/assets/ui/Icon_Energy_Yellow.png" className="w-3 h-3" alt="AP" />
-            <span className="font-label text-xs font-black text-[#f4d03f]">{ap} AP</span>
+      <div className="absolute top-4 left-4 z-50">
+         <div className="bg-[#171f33]/80 px-4 py-2 doodle-border border-[#f4d03f]/50 flex items-center gap-2 shadow-xl">
+            <img src="/assets/ui/Icon_Energy_Yellow.png" className="w-4 h-4 animate-pulse" alt="AP" />
+            <span className="font-headline text-sm font-black text-[#f4d03f] tracking-tighter">{ap} AP</span>
          </div>
       </div>
 
-      <h2 className="font-headline text-2xl font-black text-[#ffb4aa] tracking-tighter mb-4 uppercase italic">Critical Incursion</h2>
+      <div className="absolute top-4 right-4 z-50">
+        <div className={`px-4 py-1 rounded font-headline text-[10px] font-black uppercase tracking-[0.2em] shadow-lg transition-all ${isEnemyTurn ? 'bg-[#84231d] text-white animate-pulse' : 'bg-[#f4d03f] text-[#060d20]'}`}>
+          {isEnemyTurn ? 'Enemy Phase' : 'Player Phase'}
+        </div>
+      </div>
+
+      <h2 className="font-headline text-3xl font-black text-[#ffb4aa] tracking-tighter mb-6 uppercase italic drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">Combat Interface</h2>
 
       {/* Potion Battle Shelf */}
       {potions.length > 0 && (
-        <div className="flex gap-2 mb-6 bg-[#171f33]/80 border border-[#ffeebb]/25 px-4 py-2 rounded-lg items-center z-10 animate-in slide-in-from-top-2">
-          <span className="font-label text-[8px] uppercase text-[#ffeebb]/50 tracking-wider font-bold">Heal Potions:</span>
+        <div className="flex gap-2 mb-8 bg-[#0b1326]/90 border-2 border-[#ffeebb]/20 px-6 py-3 rounded-xl items-center z-10 shadow-2xl animate-in slide-in-from-top-4">
+          <span className="font-label text-[10px] uppercase text-[#ffeebb]/40 tracking-widest font-black mr-2">Inventory:</span>
           {potions.map(potion => (
             <button
               key={potion.id}
               onClick={() => handleUsePotion(potion)}
               disabled={isEnemyTurn || enemy.hp <= 0}
-              className="bg-[#0b1326] hover:bg-[#1a233a] text-[#ffeebb] hover:text-[#f4d03f] font-headline font-black text-[9px] px-2.5 py-1 border border-[#4c4634] active:scale-95 transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:scale-100"
+              className="bg-[#171f33] hover:bg-[#222a3e] text-[#ffeebb] hover:text-[#f4d03f] font-headline font-black text-[10px] px-4 py-2 border-2 border-[#4c4634] active:scale-95 transition-all flex items-center gap-2 disabled:opacity-30 shadow-md"
             >
               {potion.sprite ? (
-                <img src={potion.sprite} className="w-3 h-3 object-contain" alt={potion.name} />
+                <img src={potion.sprite} className="w-4 h-4 object-contain" alt={potion.name} />
               ) : (
-                <span className="material-symbols-outlined text-[10px]">science</span>
+                <span className="material-symbols-outlined text-xs">science</span>
               )}
-              {potion.name} (x{potion.quantity})
+              {potion.name} <span className="text-[#f4d03f]">x{potion.quantity}</span>
             </button>
           ))}
         </div>
       )}
 
       {/* Enemy Area */}
-      <div className="flex flex-col items-center mb-8 animate-in zoom-in-95">
-        <div className="w-20 h-20 relative mb-4">
-           <div className="absolute inset-0 bg-red-900/20 rounded-full blur-xl animate-pulse" />
-           <img src="/assets/ui/Icon_Battle.png" className="w-full h-full object-contain relative z-10" alt="Enemy" />
+      <div className={`flex flex-col items-center mb-12 relative ${shake === 'enemy' ? 'animate-shake' : ''}`}>
+        {damageNumber && damageNumber.type === 'enemy' && (
+          <div className="absolute -top-12 font-headline text-3xl font-black text-[#ffb4aa] animate-float-up pointer-events-none drop-shadow-lg z-50">
+            -{damageNumber.value}
+          </div>
+        )}
+        <div className="w-24 h-24 relative mb-4">
+           <div className={`absolute inset-0 bg-[#84231d]/20 rounded-full blur-2xl transition-all duration-500 ${isEnemyTurn ? 'scale-125 opacity-40' : 'scale-100 opacity-20'}`} />
+           <img src="/assets/ui/Icon_Battle.png" className={`w-full h-full object-contain relative z-10 drop-shadow-2xl transition-transform duration-500 ${isEnemyTurn ? 'scale-110' : 'scale-100'}`} alt="Enemy" />
         </div>
-        <h3 className="font-headline text-lg font-bold text-[#ffb4aa] mb-1 uppercase tracking-widest">{enemy.name}</h3>
-        <div className="w-48 h-2 bg-[#171f33] border border-[#4c4634] rounded-full overflow-hidden">
+        <h3 className="font-headline text-xl font-black text-[#ffb4aa] mb-2 uppercase tracking-[0.2em]">{enemy.name}</h3>
+        <div className="w-64 h-3 bg-[#0b1326] border-2 border-[#4c4634] rounded-full overflow-hidden shadow-inner p-0.5">
           <div 
-            className="h-full bg-[#84231d] transition-all duration-500 shadow-[0_0_10px_#84231d]" 
+            className="h-full bg-gradient-to-r from-[#5a1a1a] to-[#84231d] transition-all duration-700 shadow-[0_0_15px_#84231d]" 
             style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }}
           />
         </div>
       </div>
 
       {/* Party Area */}
-      <div className="flex justify-center gap-4 w-full mb-6 overflow-x-auto pb-4 custom-scrollbar">
+      <div className={`flex justify-center gap-6 w-full mb-8 overflow-x-auto pb-6 custom-scrollbar ${shake === 'party' ? 'animate-shake' : ''}`}>
         {party.map((member) => {
-          const equippedWeapon = inventory.find(i => i.equippedTo === member.id && i.icon === 'swords');
-          const equippedArmor = inventory.find(i => i.equippedTo === member.id && i.icon === 'shield');
+          const equippedWeapon = inventory.find(i => i.equippedTo === member.id && (i.icon === 'swords' || i.statBonus?.attack));
+          const equippedArmor = inventory.find(i => i.equippedTo === member.id && (i.icon === 'shield' || i.statBonus?.defense));
+          const isTarget = damageNumber && damageNumber.type === 'player' && party.sort((a,b)=>a.hp-b.hp)[0]?.id === member.id;
+          
           return (
-            <div key={member.id} className={`flex flex-col items-center min-w-[105px] p-3 rounded bg-[#0b1326]/60 border ${isEnemyTurn ? 'border-transparent' : 'border-white/10'} relative group transition-all`}>
+            <div key={member.id} className={`flex flex-col items-center min-w-[120px] p-4 rounded-xl bg-[#0b1326]/80 border-2 transition-all duration-300 relative group
+              ${isEnemyTurn ? 'border-transparent scale-95 opacity-60' : 'border-white/5 hover:border-[#f4d03f]/30 hover:bg-[#171f33]'}
+              ${member.hp <= 0 ? 'opacity-30 grayscale' : ''}
+            `}>
               
+              {isTarget && damageNumber && (
+                <div className="absolute -top-10 font-headline text-2xl font-black text-[#84231d] animate-float-up pointer-events-none z-50">
+                  -{damageNumber.value}
+                </div>
+              )}
+
               {/* Equipped Indicators */}
-              <div className="absolute top-1 right-1 flex gap-1 z-10 pointer-events-none">
+              <div className="absolute top-2 right-2 flex gap-1 z-10">
                 {equippedWeapon && (
-                  <span className="bg-[#f4d03f] text-black text-[6px] font-black px-1 rounded uppercase" title={equippedWeapon.name}>W</span>
+                  <div className="bg-[#f4d03f] text-[#060d20] w-5 h-5 flex items-center justify-center rounded shadow-md" title={equippedWeapon.name}>
+                    <span className="material-symbols-outlined text-[12px] font-black">swords</span>
+                  </div>
                 )}
                 {equippedArmor && (
-                  <span className="bg-[#ffb4aa] text-black text-[6px] font-black px-1 rounded uppercase" title={equippedArmor.name}>A</span>
+                  <div className="bg-[#ffb4aa] text-[#060d20] w-5 h-5 flex items-center justify-center rounded shadow-md" title={equippedArmor.name}>
+                    <span className="material-symbols-outlined text-[12px] font-black">shield</span>
+                  </div>
                 )}
               </div>
 
-              <div className="w-14 h-14 relative mb-2">
-                 <div className={`absolute inset-0 rounded-full blur-lg ${member.hp > 0 ? 'bg-[#f4d03f]/10' : 'bg-transparent'}`} />
-                 <img src={member.avatar} className={`w-full h-full object-cover relative z-10 rounded-full border-2 border-[#4c4634] ${member.hp <= 0 ? 'grayscale opacity-50' : 'group-hover:scale-110'}`} alt={member.name} />
+              <div className="w-16 h-16 relative mb-3">
+                 <div className={`absolute inset-0 rounded-full blur-xl transition-all ${member.hp > 0 ? 'bg-[#f4d03f]/10' : 'bg-transparent'}`} />
+                 <img src={member.avatar} className={`w-full h-full object-cover relative z-10 rounded-full border-2 border-[#4c4634] shadow-xl ${member.hp <= 0 ? '' : 'group-hover:scale-110'}`} alt={member.name} />
               </div>
-              <span className="font-label text-[8px] font-black text-[#ffeebb] mb-1 uppercase tracking-widest">{member.name}</span>
-              <div className="w-full h-1.5 bg-[#171f33] border border-[#4c4634] rounded-full overflow-hidden mb-3">
+              
+              <span className="font-headline text-[10px] font-black text-[#ffeebb] mb-2 uppercase tracking-widest">{member.name}</span>
+              
+              <div className="w-full h-2 bg-[#171f33] border border-[#4c4634] rounded-full overflow-hidden mb-4">
                 <div 
-                  className="h-full bg-[#f4d03f] transition-all duration-500" 
+                  className={`h-full transition-all duration-700 ${member.hp / member.maxHp < 0.3 ? 'bg-[#84231d]' : 'bg-[#f4d03f]'}`} 
                   style={{ width: `${(member.hp / member.maxHp) * 100}%` }}
                 />
               </div>
@@ -210,9 +252,9 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
                 <button 
                   onClick={() => handlePlayerAttack(member)}
                   disabled={ap < 1 || enemy.hp <= 0}
-                  className="w-full bg-[#171f33] border border-[#4c4634] text-[#ffeebb] font-headline font-black text-[9px] py-1.5 hover:bg-[#222a3e] hover:text-[#f4d03f] transition-all active:scale-95 disabled:opacity-30 disabled:grayscale"
+                  className="w-full bg-[#171f33] border-2 border-[#4c4634] text-[#f4d03f] font-headline font-black text-[10px] py-2 hover:bg-[#f4d03f] hover:text-[#060d20] hover:border-[#f4d03f] transition-all active:scale-90 disabled:opacity-20 shadow-lg uppercase tracking-tighter"
                 >
-                  STRIKE (-1)
+                  STRIKE
                 </button>
               )}
             </div>
@@ -221,8 +263,8 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
       </div>
 
       {/* Battle Log */}
-      <div className="mt-auto w-full bg-[#0b1326]/90 border-t-2 border-[#4c4634] p-4 text-center min-h-[60px] flex items-center justify-center">
-        <p className="font-label text-xs text-[#f4d03f] uppercase tracking-[0.15em] font-bold">
+      <div className="mt-auto w-full max-w-3xl bg-[#0b1326]/95 border-2 border-[#4c4634] p-6 text-center min-h-[80px] flex items-center justify-center shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+        <p className="font-label text-sm text-[#f4d03f] uppercase tracking-[0.2em] font-black animate-in fade-in slide-in-from-bottom-2 duration-300">
           {battleLog}
         </p>
       </div>
