@@ -5,9 +5,12 @@
 !/.gitignore
 !/PLANS/
 !/APP/
-!/GAME/
 !/README.md
 !/PREVIOUSLY.md
+
+# Test artifacts
+**/test-results/
+**/playwright-report/
 
 # Specifically ignore GEMINI.md and CUSTOM_SKILLS folder
 /GEMINI.md
