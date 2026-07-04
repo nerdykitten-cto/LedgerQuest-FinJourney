@@ -8,11 +8,11 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "test": "vitest run",
     "test:e2e": "playwright test"
   },
   "dependencies": {
     "firebase": "^12.13.0",
-    "gm-antigravity": "^2.0.1076",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "uuid": "^14.0.0"
@@ -34,6 +34,7 @@
     "tailwindcss": "^3.4.17",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vitest": "^4.1.9"
   }
 }

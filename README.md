@@ -1,6 +1,6 @@
-# LedgerQuest - DEMO
+# LedgerQuest
 
-Bridging real-world financial discipline with an immersive retro RPG adventure. Built for the Google Challenge.
+Bridging real-world financial discipline with an immersive retro RPG adventure.
 
 ## Project Overview: Dual-World Architecture
 LedgerQuest integrates your financial life directly into a fantasy realm. The application is split into two primary modes:

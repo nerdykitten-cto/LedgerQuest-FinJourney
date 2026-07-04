@@ -1,7 +1,11 @@
-# LedgerQuest Development Plan
+# LedgerQuest Development Plan (LEGACY — Prototype Stage)
 
-STATUS: Completed (Prototype Stage)
-STACK: React (TypeScript) | Firebase | Cloud Run | Docker
+STATUS: Prototype complete. Superseded by `PLANS/OverhaulPlan.md` (global release overhaul).
+STACK: React (TypeScript) | LocalStorage | Cloud Run | Docker
+
+> NOTE: This document describes the original competition prototype. The
+> competition submission is finished; active development now follows the
+> phased overhaul in `OverhaulPlan.md`. Kept for historical context.
 
 ## Phase 1: Foundation (Completed)
 - [x] **Infrastructure:** Initialize React (Vite) project in `APP/`. Setup Firebase & GCP.
