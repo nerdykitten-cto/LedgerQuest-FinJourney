@@ -49,7 +49,7 @@ export const WorldMapScene: React.FC<WorldMapSceneProps> = ({
   };
 
   return (
-    <div className="relative w-full h-full min-w-[600px] min-h-[450px] overflow-hidden bg-[#060d20]">
+    <div className="relative w-full h-full overflow-hidden bg-[#060d20]">
       {/* World Map Image */}
       <img 
         src="/assets/game/world_map.png" 

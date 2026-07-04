@@ -4,10 +4,11 @@ import {
   addDoc, 
   updateDoc, 
   doc, 
-  query, 
-  orderBy, 
+  query,
+  orderBy,
   setDoc,
-  deleteDoc
+  deleteDoc,
+  runTransaction
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { 
@@ -158,7 +159,7 @@ export const subscribeCampaign = (callback: (state: CampaignState) => void) => {
       if (snapshot.exists()) {
         callback(snapshot.data() as CampaignState);
       } else {
-        const initial: CampaignState = { currentLocation: 'Start Town', progressPercentage: 0, worldState: 'peace' };
+        const initial: CampaignState = { currentLocation: 'Starting Village', progressPercentage: 0, worldState: 'peace' };
         setDoc(doc(db, CAMPAIGN_DOC), initial);
         callback(initial);
       }
@@ -166,7 +167,9 @@ export const subscribeCampaign = (callback: (state: CampaignState) => void) => {
   } else {
     const handler = () => {
       const raw = localStorage.getItem(CAMPAIGN_DOC);
-      const state = raw ? (JSON.parse(raw) as CampaignState) : { currentLocation: 'Start Town', progressPercentage: 0, worldState: 'peace' as const };
+      const state = raw ? (JSON.parse(raw) as CampaignState) : { currentLocation: 'Starting Village', progressPercentage: 0, worldState: 'peace' as const };
+      // Legacy saves used 'Start Town', which is not a map node and caused a phantom travel charge.
+      if (state.currentLocation === 'Start Town') state.currentLocation = 'Starting Village';
       callback(state as CampaignState);
     };
     window.addEventListener('storage', handler);
@@ -180,7 +183,7 @@ export const updateCampaign = async (updates: Partial<CampaignState>) => {
     await updateDoc(doc(db, CAMPAIGN_DOC), updates);
   } else {
     const raw = localStorage.getItem(CAMPAIGN_DOC);
-    const current = raw ? (JSON.parse(raw) as CampaignState) : { currentLocation: 'Start Town', progressPercentage: 0, worldState: 'peace' as const };
+    const current = raw ? (JSON.parse(raw) as CampaignState) : { currentLocation: 'Starting Village', progressPercentage: 0, worldState: 'peace' as const };
     localStorage.setItem(CAMPAIGN_DOC, JSON.stringify({ ...current, ...updates }));
     window.dispatchEvent(new Event('storage'));
   }
@@ -213,13 +216,24 @@ export const updateQuestDB = async (questId: string, updates: Partial<Quest>) =>
   }
 };
 
-export const updateStatsDB = async (updates: Partial<PlayerStats>) => {
+const DEFAULT_STATS: PlayerStats = { level: 1, exp: 0, ap: 10, gold: 0 };
+
+/**
+ * Functional stat update: the updater receives the CURRENT persisted stats,
+ * so concurrent callers can't clobber each other with stale React snapshots.
+ */
+export const updateStats = async (updater: (current: PlayerStats) => Partial<PlayerStats>) => {
   if (USE_FIREBASE) {
-    await updateDoc(doc(db, STATS_DOC), updates);
+    await runTransaction(db, async (tx) => {
+      const ref = doc(db, STATS_DOC);
+      const snap = await tx.get(ref);
+      const current = snap.exists() ? (snap.data() as PlayerStats) : DEFAULT_STATS;
+      tx.set(ref, { ...current, ...updater(current) });
+    });
   } else {
     const raw = localStorage.getItem(STATS_DOC);
-    const current = raw ? (JSON.parse(raw) as PlayerStats) : { level: 1, exp: 0, ap: 10, gold: 0 };
-    localStorage.setItem(STATS_DOC, JSON.stringify({ ...current, ...updates }));
+    const current = raw ? (JSON.parse(raw) as PlayerStats) : DEFAULT_STATS;
+    localStorage.setItem(STATS_DOC, JSON.stringify({ ...current, ...updater(current) }));
     window.dispatchEvent(new Event('storage'));
   }
 };

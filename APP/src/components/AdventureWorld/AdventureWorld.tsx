@@ -44,8 +44,9 @@ export const AdventureWorld: React.FC<AdventureWorldProps> = ({
     isVisible: false
   });
 
-  // Sync scene with worldState
+  // Sync scene with worldState; drop any dialogue left over from the previous scene
   useEffect(() => {
+    setDialogue({ message: '', isVisible: false });
     if (campaign.worldState === 'battle') {
       setCurrentScene('combat');
     } else if (campaign.worldState === 'town') {

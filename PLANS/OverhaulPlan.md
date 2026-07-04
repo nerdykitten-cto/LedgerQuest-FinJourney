@@ -1,6 +1,6 @@
 # LedgerQuest Overhaul Plan — Global Release
 
-STATUS: Phase 0 complete (2026-07-04). Next up: **Phase 1**.
+STATUS: Phase 1 complete (2026-07-04). Next up: **Phase 2**.
 CONTEXT: Competition prototype (didn't win, deadline passed). Goal now: fix, polish, publish globally. All "Antigravity" agent code is being replaced with custom deterministic TS algorithms — no external AI, no cloud cost, offline localStorage app.
 
 How to use this doc in a fresh session: read this file + `~/.claude` project memory (`ledgerquest-audit-2026-07`), then start the first unchecked phase. Each phase ends with a browser-verifiable checkpoint. Update STATUS line and checkboxes when a phase lands.
@@ -17,14 +17,15 @@ How to use this doc in a fresh session: read this file + `~/.claude` project mem
 - Verified: `npm test` 4/4, `npm run build` passes.
 - Committed locally on `main`: `76e7377` (cleanup + vitest), `53f3769` (GAME removal). **Not pushed** — pushing `main` triggers Cloud Build → Cloud Run redeploy and burns TryGCP credits; push only at deploy-worthy checkpoints.
 
-## Phase 1 — P0 playability (NEXT) — game unplayable without this
+## Phase 1 — P0 playability ✅ DONE (2026-07-04)
 All bugs runtime-verified in audit:
-- [ ] Rebuild TV/GameView sizing ([GameView.tsx](../APP/src/components/GameView.tsx)): kill fixed `h-[85vh]` TV and `min-w-[600px] min-h-[450px]` in [WorldMapScene.tsx](../APP/src/components/AdventureWorld/WorldMapScene.tsx); scenes must scale fluidly to container. Evidence: at 1440×900 combat STRIKE buttons render at y=806 while TV screen ends y=692 — combat literally unclickable; at <1024px width bottom map nodes (Starting Village, Copper Town) clipped → can't enter towns; mobile = ~30px sliver.
-- [ ] Mobile layout pass: TV chrome collapses to thin bezel on small screens.
-- [ ] Fix location default mismatch: [persistenceService.ts](../APP/src/persistenceService.ts) campaign default `'Start Town'` vs map node `'Starting Village'` (also `subscribeCampaign`/`updateCampaign` fallbacks) → first town click charges phantom 20 AP travel.
-- [ ] Atomic stat writes: all `updateStatsDB` callers read stale React `stats.ap` (read-modify-write race; verified lost update 18+10+15→33). Add functional-update API in persistence layer (`updateStats(fn: (cur) => Partial)`) and migrate callers.
-- [ ] Clear DialogueBox on scene change ([AdventureWorld.tsx](../APP/src/components/AdventureWorld/AdventureWorld.tsx)): town NPC dialogue currently persists over combat screen.
-- CHECKPOINT: full loop playable by hand at 1280/1024/768/375 widths: expense → AP → embark → enter town → talk → outskirts → combat → victory → claim.
+- [x] Rebuilt TV/GameView sizing: TV `h-[85vh]` → `flex-1 min-h-0` fills parent; killed `min-w-[600px] min-h-[450px]` in WorldMapScene; quests tab gets `lg:h-[calc(100vh-11rem)]` + `h-[70vh]` game cell on mobile; `min-w-0` added at flex ancestors so scenes can't blow past TV screen (flexbox min-width:auto). CombatScene column compressed + `overflow-y-auto` fallback; battle log `sticky bottom-0`.
+- [x] Mobile layout pass: speaker panel `hidden md:flex`, control dials + key-info `hidden 2xl:flex`, thin bezel `border-[6px]` / chunky `md:border-[8px]`, tape label hidden on mobile; TownScene header + CombatScene HUD responsive.
+- [x] Location default `'Start Town'` → `'Starting Village'` in all 3 fallbacks; legacy saves migrated on read in `subscribeCampaign`. Phantom 20 AP travel charge gone (verified: enter town at 13 AP → still 13 AP).
+- [x] Atomic stat writes: `updateStats(updater)` functional API (localStorage read-modify-write inside; Firestore `runTransaction`); `updateStatsDB` deleted; all 10 App.tsx callers migrated. Unit-tested (18+10+15−5 = 38, no lost updates).
+- [x] DialogueBox cleared on `worldState` change in AdventureWorld effect (verified: town dialogue open → Hunt For Gold → combat clean).
+- CHECKPOINT PASSED: full loop played in browser at 1280/1024/768/375: expense (+8 AP) → embark (−5) → dbl-click enter town (no charge) → talk (objective ✓) → outskirts → combat (4 strikes, −4 AP, atomic) → victory (+100xp/+50g) → claim (+150xp/+100g). `npm test` 10/10, `npm run build` ✓, console clean. Combat fits TV screen exactly at 1280×800 and 768; scrolls gracefully at 1024×768 (all STRIKEs + sticky log visible).
+- New: `APP/src/persistenceService.test.ts` (6 tests: location defaults/migration + functional updates).
 
 ## Phase 2 — Game Director engine — replaces ALL agent/logic-engine code
 New `APP/src/engine/`, pure deterministic TS, TDD each module (vitest ready):

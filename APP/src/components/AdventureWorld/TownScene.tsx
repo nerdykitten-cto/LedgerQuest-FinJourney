@@ -104,19 +104,19 @@ export const TownScene: React.FC<TownSceneProps> = ({
       </div>
 
       {/* Header Info */}
-      <div className="relative z-10 flex justify-between items-center p-6 bg-gradient-to-b from-[#0b1326] to-transparent">
+      <div className="relative z-10 flex flex-wrap justify-between items-center gap-2 p-3 md:p-6 bg-gradient-to-b from-[#0b1326] to-transparent">
         <div>
-          <h2 className="font-headline text-3xl font-black text-[#ffeebb] tracking-tighter uppercase">{name}</h2>
+          <h2 className="font-headline text-lg md:text-3xl font-black text-[#ffeebb] tracking-tighter uppercase">{name}</h2>
           <span className="font-label text-[10px] text-[#f4d03f] uppercase tracking-widest">{activeArea === 'center' ? 'Town Square' : 'Outskirts'}</span>
         </div>
-        <div className="flex gap-4">
-           <div className="flex items-center gap-2 bg-[#171f33]/80 px-3 py-1 doodle-border border-[#f4d03f]/30">
+        <div className="flex gap-2 md:gap-4">
+           <div className="flex items-center gap-2 bg-[#171f33]/80 px-2 md:px-3 py-1 doodle-border border-[#f4d03f]/30">
               <img src="/assets/ui/Icon_Energy_Yellow.png" className="w-4 h-4" alt="AP" />
-              <span className="font-headline text-lg font-bold text-[#f4d03f]">{stats.ap}</span>
+              <span className="font-headline text-sm md:text-lg font-bold text-[#f4d03f]">{stats.ap}</span>
            </div>
-           <div className="flex items-center gap-2 bg-[#171f33]/80 px-3 py-1 doodle-border border-[#ffeebb]/30">
+           <div className="flex items-center gap-2 bg-[#171f33]/80 px-2 md:px-3 py-1 doodle-border border-[#ffeebb]/30">
               <img src="/assets/ui/Icon_Gold.png" className="w-4 h-4" alt="Gold" />
-              <span className="font-headline text-lg font-bold text-[#ffeebb]">{stats.gold}</span>
+              <span className="font-headline text-sm md:text-lg font-bold text-[#ffeebb]">{stats.gold}</span>
            </div>
         </div>
       </div>
@@ -143,7 +143,7 @@ export const TownScene: React.FC<TownSceneProps> = ({
 
             {/* Shop Gate */}
             <div 
-              className="absolute left-[80%] top-[55%] flex flex-col items-center group cursor-pointer"
+              className="absolute left-[72%] md:left-[80%] top-[55%] -translate-x-1/2 flex flex-col items-center group cursor-pointer"
               onClick={() => setIsShopOpen(true)}
             >
               <div className="text-6xl mb-2 group-hover:scale-110 group-hover:-translate-y-2 transition-all">🏪</div>

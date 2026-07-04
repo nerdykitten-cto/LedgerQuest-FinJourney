@@ -138,13 +138,13 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
   const potions = inventory.filter(i => i.type === 'Consumable' && i.statBonus?.hpHeal !== undefined);
 
   return (
-    <div className={`relative w-full h-full bg-gradient-to-b from-[#060d20] to-[#1a0a1a] flex flex-col items-center p-6 overflow-hidden transition-all duration-300 ${flash ? 'brightness-200' : ''}`}>
+    <div className={`relative w-full h-full bg-gradient-to-b from-[#060d20] to-[#1a0a1a] flex flex-col items-center p-3 pt-20 md:p-4 overflow-x-hidden overflow-y-auto custom-scrollbar transition-all duration-300 ${flash ? 'brightness-200' : ''}`}>
       
       {/* Background Grid Pattern */}
       <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(#4c4634 1px, transparent 1px), linear-gradient(90deg, #4c4634 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
-      {/* HUD Info */}
-      <div className="absolute top-4 left-4 z-50">
+      {/* HUD Info - sits below the TV's LIVE_SIGNAL OSD */}
+      <div className="absolute top-8 left-3 md:top-12 md:left-6 z-50">
          <div className="bg-[#171f33]/80 px-4 py-2 doodle-border border-[#f4d03f]/50 flex items-center gap-2 shadow-xl">
             <img src="/assets/ui/Icon_Energy_Yellow.png" className="w-4 h-4 animate-pulse" alt="AP" />
             <span className="font-headline text-sm font-black text-[#f4d03f] tracking-tighter">{ap} AP</span>
@@ -157,18 +157,18 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
         </div>
       </div>
 
-      <h2 className="font-headline text-3xl font-black text-[#ffb4aa] tracking-tighter mb-6 uppercase italic drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">Combat Interface</h2>
+      <h2 className="hidden md:block font-headline text-sm md:text-lg font-black text-[#ffb4aa] tracking-tighter mb-2 mt-1 uppercase italic drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] shrink-0">Combat Interface</h2>
 
       {/* Potion Battle Shelf */}
       {potions.length > 0 && (
-        <div className="flex gap-2 mb-8 bg-[#0b1326]/90 border-2 border-[#ffeebb]/20 px-6 py-3 rounded-xl items-center z-10 shadow-2xl animate-in slide-in-from-top-4">
+        <div className="flex flex-wrap justify-center gap-2 mb-2 bg-[#0b1326]/90 border-2 border-[#ffeebb]/20 px-3 py-1.5 md:px-6 md:py-2 rounded-xl items-center z-10 shadow-2xl animate-in slide-in-from-top-4 shrink-0">
           <span className="font-label text-[10px] uppercase text-[#ffeebb]/40 tracking-widest font-black mr-2">Inventory:</span>
           {potions.map(potion => (
             <button
               key={potion.id}
               onClick={() => handleUsePotion(potion)}
               disabled={isEnemyTurn || enemy.hp <= 0}
-              className="bg-[#171f33] hover:bg-[#222a3e] text-[#ffeebb] hover:text-[#f4d03f] font-headline font-black text-[10px] px-4 py-2 border-2 border-[#4c4634] active:scale-95 transition-all flex items-center gap-2 disabled:opacity-30 shadow-md"
+              className="bg-[#171f33] hover:bg-[#222a3e] text-[#ffeebb] hover:text-[#f4d03f] font-headline font-black text-[10px] px-3 py-1.5 border-2 border-[#4c4634] active:scale-95 transition-all flex items-center gap-2 disabled:opacity-30 shadow-md"
             >
               {potion.sprite ? (
                 <img src={potion.sprite} className="w-4 h-4 object-contain" alt={potion.name} />
@@ -182,18 +182,18 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
       )}
 
       {/* Enemy Area */}
-      <div className={`flex flex-col items-center mb-12 relative ${shake === 'enemy' ? 'animate-shake' : ''}`}>
+      <div className={`flex flex-col items-center mb-3 relative shrink-0 ${shake === 'enemy' ? 'animate-shake' : ''}`}>
         {damageNumber && damageNumber.type === 'enemy' && (
           <div className="absolute -top-12 font-headline text-3xl font-black text-[#ffb4aa] animate-float-up pointer-events-none drop-shadow-lg z-50">
             -{damageNumber.value}
           </div>
         )}
-        <div className="w-24 h-24 relative mb-4">
+        <div className="w-12 h-12 md:w-14 md:h-14 relative mb-1">
            <div className={`absolute inset-0 bg-[#84231d]/20 rounded-full blur-2xl transition-all duration-500 ${isEnemyTurn ? 'scale-125 opacity-40' : 'scale-100 opacity-20'}`} />
            <img src="/assets/ui/Icon_Battle.png" className={`w-full h-full object-contain relative z-10 drop-shadow-2xl transition-transform duration-500 ${isEnemyTurn ? 'scale-110' : 'scale-100'}`} alt="Enemy" />
         </div>
-        <h3 className="font-headline text-xl font-black text-[#ffb4aa] mb-2 uppercase tracking-[0.2em]">{enemy.name}</h3>
-        <div className="w-64 h-3 bg-[#0b1326] border-2 border-[#4c4634] rounded-full overflow-hidden shadow-inner p-0.5">
+        <h3 className="font-headline text-base md:text-lg font-black text-[#ffb4aa] mb-1 uppercase tracking-[0.2em]">{enemy.name}</h3>
+        <div className="w-40 md:w-64 h-3 bg-[#0b1326] border-2 border-[#4c4634] rounded-full overflow-hidden shadow-inner p-0.5">
           <div 
             className="h-full bg-gradient-to-r from-[#5a1a1a] to-[#84231d] transition-all duration-700 shadow-[0_0_15px_#84231d]" 
             style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }}
@@ -202,14 +202,14 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
       </div>
 
       {/* Party Area */}
-      <div className={`flex justify-center gap-6 w-full mb-8 overflow-x-auto pb-6 custom-scrollbar ${shake === 'party' ? 'animate-shake' : ''}`}>
+      <div className={`flex [justify-content:safe_center] gap-2 md:gap-3 w-full mb-2 overflow-x-auto pb-2 custom-scrollbar shrink-0 ${shake === 'party' ? 'animate-shake' : ''}`}>
         {party.map((member) => {
           const equippedWeapon = inventory.find(i => i.equippedTo === member.id && (i.icon === 'swords' || i.statBonus?.attack));
           const equippedArmor = inventory.find(i => i.equippedTo === member.id && (i.icon === 'shield' || i.statBonus?.defense));
           const isTarget = damageNumber && damageNumber.type === 'player' && party.sort((a,b)=>a.hp-b.hp)[0]?.id === member.id;
           
           return (
-            <div key={member.id} className={`flex flex-col items-center min-w-[120px] p-4 rounded-xl bg-[#0b1326]/80 border-2 transition-all duration-300 relative group
+            <div key={member.id} className={`flex flex-col items-center min-w-[104px] p-2.5 md:p-3 rounded-xl bg-[#0b1326]/80 border-2 transition-all duration-300 relative group
               ${isEnemyTurn ? 'border-transparent scale-95 opacity-60' : 'border-white/5 hover:border-[#f4d03f]/30 hover:bg-[#171f33]'}
               ${member.hp <= 0 ? 'opacity-30 grayscale' : ''}
             `}>
@@ -234,14 +234,14 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
                 )}
               </div>
 
-              <div className="w-16 h-16 relative mb-3">
+              <div className="w-12 h-12 relative mb-2">
                  <div className={`absolute inset-0 rounded-full blur-xl transition-all ${member.hp > 0 ? 'bg-[#f4d03f]/10' : 'bg-transparent'}`} />
                  <img src={member.avatar} className={`w-full h-full object-cover relative z-10 rounded-full border-2 border-[#4c4634] shadow-xl ${member.hp <= 0 ? '' : 'group-hover:scale-110'}`} alt={member.name} />
               </div>
               
-              <span className="font-headline text-[10px] font-black text-[#ffeebb] mb-2 uppercase tracking-widest">{member.name}</span>
-              
-              <div className="w-full h-2 bg-[#171f33] border border-[#4c4634] rounded-full overflow-hidden mb-4">
+              <span className="font-headline text-[10px] font-black text-[#ffeebb] mb-1 uppercase tracking-widest">{member.name}</span>
+
+              <div className="w-full h-2 bg-[#171f33] border border-[#4c4634] rounded-full overflow-hidden mb-2 md:mb-3">
                 <div 
                   className={`h-full transition-all duration-700 ${member.hp / member.maxHp < 0.3 ? 'bg-[#84231d]' : 'bg-[#f4d03f]'}`} 
                   style={{ width: `${(member.hp / member.maxHp) * 100}%` }}
@@ -252,7 +252,7 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
                 <button 
                   onClick={() => handlePlayerAttack(member)}
                   disabled={ap < 1 || enemy.hp <= 0}
-                  className="w-full bg-[#171f33] border-2 border-[#4c4634] text-[#f4d03f] font-headline font-black text-[10px] py-2 hover:bg-[#f4d03f] hover:text-[#060d20] hover:border-[#f4d03f] transition-all active:scale-90 disabled:opacity-20 shadow-lg uppercase tracking-tighter"
+                  className="w-full bg-[#171f33] border-2 border-[#4c4634] text-[#f4d03f] font-headline font-black text-[10px] py-1.5 md:py-2 hover:bg-[#f4d03f] hover:text-[#060d20] hover:border-[#f4d03f] transition-all active:scale-90 disabled:opacity-20 shadow-lg uppercase tracking-tighter"
                 >
                   STRIKE
                 </button>
@@ -263,7 +263,7 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
       </div>
 
       {/* Battle Log */}
-      <div className="mt-auto w-full max-w-3xl bg-[#0b1326]/95 border-2 border-[#4c4634] p-6 text-center min-h-[80px] flex items-center justify-center shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+      <div className="mt-auto sticky bottom-0 z-20 w-full max-w-3xl bg-[#0b1326]/95 border-2 border-[#4c4634] p-2 text-center min-h-[44px] md:min-h-[48px] flex items-center justify-center shadow-[0_-10px_30px_rgba(0,0,0,0.5)] shrink-0">
         <p className="font-label text-sm text-[#f4d03f] uppercase tracking-[0.2em] font-black animate-in fade-in slide-in-from-bottom-2 duration-300">
           {battleLog}
         </p>

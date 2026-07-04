@@ -148,7 +148,7 @@ function App() {
      const q = quests.find(q => q.id === id);
      if (q && q.status === 'ready') {
         await dbService.updateQuestDB(id, { status: 'completed' });
-        await dbService.updateStatsDB({ exp: stats.exp + q.reward.exp, gold: stats.gold + q.reward.gold });
+        await dbService.updateStats(cur => ({ exp: cur.exp + q.reward.exp, gold: cur.gold + q.reward.gold }));
         
         if (q.reward.items && q.reward.items.length > 0) {
            for (const itemKey of q.reward.items) {
@@ -207,8 +207,8 @@ function App() {
 
   const handleTravel = useCallback(async (destination: string, cost: number) => {
     if (stats.ap >= cost) {
-      await dbService.updateStatsDB({ ap: stats.ap - cost });
-      await dbService.updateCampaign({ 
+      await dbService.updateStats(cur => ({ ap: Math.max(0, cur.ap - cost) }));
+      await dbService.updateCampaign({
         currentLocation: destination, 
         progressPercentage: Math.min(100, campaign.progressPercentage + 5) 
       });
@@ -224,8 +224,8 @@ function App() {
   }, [checkQuestObjective]);
 
   const handleActionCost = useCallback(async (cost: number) => {
-    await dbService.updateStatsDB({ ap: Math.max(0, stats.ap - cost) });
-  }, [stats.ap]);
+    await dbService.updateStats(cur => ({ ap: Math.max(0, cur.ap - cost) }));
+  }, []);
 
   const handleBattleVictory = useCallback(async () => {
     const activeQuest = quests.find(q => q.status === 'active');
@@ -233,10 +233,10 @@ function App() {
       const targetObj = activeQuest.objectives?.find(o => o.type === 'kill' && !o.isCompleted);
       if (targetObj) checkQuestObjective('kill', targetObj.target);
     }
-    await dbService.updateStatsDB({ exp: stats.exp + 100, gold: stats.gold + 50 });
+    await dbService.updateStats(cur => ({ exp: cur.exp + 100, gold: cur.gold + 50 }));
     await dbService.updateCampaign({ worldState: 'peace' });
     showNotify('Victory! +100 XP / +50 Gold');
-  }, [quests, stats.exp, stats.gold, checkQuestObjective, showNotify]);
+  }, [quests, checkQuestObjective, showNotify]);
 
   const handleBattleDefeat = useCallback(async () => {
     await dbService.updateCampaign({ worldState: 'peace' });
@@ -245,7 +245,7 @@ function App() {
 
   const handleShopPurchase = useCallback(async (item: any, cost: number) => {
     if (stats.gold >= cost) {
-      await dbService.updateStatsDB({ gold: stats.gold - cost });
+      await dbService.updateStats(cur => ({ gold: Math.max(0, cur.gold - cost) }));
       
       const existing = inventory.find(invItem => invItem.templateId === item.id && invItem.type === 'Consumable');
       if (existing) {
@@ -323,7 +323,7 @@ function App() {
     const totalAP = baseAP + bonusAP;
 
     await dbService.addExpenseDB(expense);
-    await dbService.updateStatsDB({ ap: stats.ap + totalAP });
+    await dbService.updateStats(cur => ({ ap: cur.ap + totalAP }));
     
     if (isOverBudget) {
       showNotify(`+${baseAP} AP. Warning: Monthly Budget exceeded!`);
@@ -338,7 +338,7 @@ function App() {
     if (task) {
       const reward = evaluator.evaluateTaskReward(task);
       await dbService.updateTaskDB(taskId, { isCompleted: true });
-      await dbService.updateStatsDB({ ap: stats.ap + reward });
+      await dbService.updateStats(cur => ({ ap: cur.ap + reward }));
       showNotify('+' + reward + ' AP: Feat Complete!');
     }
   };
@@ -348,10 +348,10 @@ function App() {
     if (habit) {
       const { adjustedAP, newDifficulty } = adjuster.adjustHabit(habit);
       await dbService.updateHabitDB(habitId, { streak: habit.streak + 1, lastCompleted: Date.now(), difficulty: newDifficulty });
-      await dbService.updateStatsDB({ ap: stats.ap + adjustedAP });
+      await dbService.updateStats(cur => ({ ap: cur.ap + adjustedAP }));
       showNotify('+' + adjustedAP + ' AP: Ritual Performed!');
     }
-  }, [habits, stats.ap, showNotify]);
+  }, [habits, showNotify]);
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -384,7 +384,7 @@ function App() {
   const confirmStartQuest = async (quest: Quest) => {
     if (stats.ap >= 5) {
       await dbService.updateQuestDB(quest.id, { status: 'active' });
-      await dbService.updateStatsDB({ ap: stats.ap - 5 });
+      await dbService.updateStats(cur => ({ ap: Math.max(0, cur.ap - 5) }));
       await dbService.updateCampaign({ activeQuestId: quest.id });
       setGatedQuest(null);
       showNotify('Embarking: ' + quest.title);
@@ -396,7 +396,7 @@ function App() {
 
   const handleUpdateBudget = async (e: React.FormEvent) => {
     e.preventDefault();
-    await dbService.updateStatsDB({ monthlyBudget: newBudget });
+    await dbService.updateStats(() => ({ monthlyBudget: newBudget }));
     setIsBudgetEditorOpen(false);
     showNotify('Monthly Budget calibrated.');
   };
@@ -473,7 +473,7 @@ function App() {
 
       <TopAppBar currentTab={currentTab} onTabChange={setCurrentTab} ap={stats.ap} />
 
-      <main className="max-w-[1200px] mx-auto px-6 md:px-10 mt-8 pb-32">
+      <main className="max-w-[1200px] mx-auto px-6 md:px-10 mt-8 pb-32 md:pb-10">
         {currentTab === 'ledger' && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
@@ -606,16 +606,16 @@ function App() {
         )}
 
         {currentTab === 'quests' && (
-          <div className="animate-in zoom-in-95 duration-500 h-[calc(100vh-12rem)] min-h-[600px] flex flex-col gap-8">
-             <div className="flex justify-between items-end gap-4">
-                <div><h1 className="font-headline text-3xl font-black text-primary mb-2 doodle-underline inline-block">Strategic Map</h1><p className="font-body text-lg text-on-surface-variant italic">Expend AP to navigate.</p></div>
+          <div className="animate-in zoom-in-95 duration-500 lg:h-[calc(100vh-11rem)] lg:min-h-[560px] flex flex-col gap-4 md:gap-6">
+             <div className="flex flex-wrap justify-between items-end gap-4">
+                <div><h1 className="font-headline text-2xl font-black text-primary mb-1 doodle-underline inline-block">Strategic Map</h1><p className="font-body text-sm text-on-surface-variant italic hidden sm:block">Expend AP to navigate.</p></div>
                 <div className="flex gap-4">
                    <button onClick={() => setIsWarRoomOpen(true)} className="bg-surface-container-high text-on-surface px-6 py-2 doodle-border font-label text-[10px] uppercase font-black hover:bg-primary transition-all">War Room</button>
                    <button onClick={() => setIsVaultOpen(true)} className="bg-surface-container-high text-on-surface px-6 py-2 doodle-border font-label text-[10px] uppercase font-black hover:bg-primary transition-all">Vault</button>
                 </div>
              </div>
-             <div className="flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8 overflow-hidden">
-                <div className="lg:col-span-8 bg-[#0a0f1a] relative overflow-hidden shadow-2xl rounded-2xl">
+             <div className="flex-grow min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:overflow-hidden">
+                <div className="lg:col-span-8 bg-[#0a0f1a] relative overflow-hidden shadow-2xl rounded-2xl h-[70vh] min-h-[420px] lg:h-auto lg:min-h-0">
                    <GameView 
                   stats={stats} 
                   campaign={campaign} 
@@ -631,7 +631,7 @@ function App() {
                   onEnterTown={handleEnterTown}
                   onExitTown={handleExitTown}
                 /></div>
-                <div className="lg:col-span-4 overflow-y-auto pr-4 custom-scrollbar"><QuestList quests={quests} onStartQuest={handleStartQuest} onClaimReward={handleClaimReward} /></div>
+                <div className="lg:col-span-4 lg:overflow-y-auto pr-4 custom-scrollbar"><QuestList quests={quests} onStartQuest={handleStartQuest} onClaimReward={handleClaimReward} /></div>
              </div>
           </div>
         )}
