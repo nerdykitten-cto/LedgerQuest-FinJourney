@@ -13,8 +13,9 @@ How to use this doc in a fresh session: read this file + `~/.claude` project mem
 - [x] Deduplicated assets: deleted `APP/public/assets/game/ui/` (exact duplicate of `APP/public/assets/ui/`, which is what code references).
 - [x] Stripped challenge branding: README.md title/intro; DevelopmentPlan.md marked LEGACY pointing here.
 - [x] Added vitest: `APP/vitest.config.ts` (unit tests in `src/**/*.test.ts`, Playwright stays in `APP/tests/`), `npm test` script, 4 passing smoke tests in `src/logicEngines.test.ts` pinning current behavior.
-- [ ] DEFERRED (user decision pending): delete `GAME/` (183MB deprecated Phaser legacy, untracked).
+- [x] Deleted `GAME/` (183MB deprecated Phaser legacy) from git and disk; `.gitignore` cleaned (GAME whitelist removed, test-results ignored).
 - Verified: `npm test` 4/4, `npm run build` passes.
+- Committed locally on `main`: `76e7377` (cleanup + vitest), `53f3769` (GAME removal). **Not pushed** — pushing `main` triggers Cloud Build → Cloud Run redeploy and burns TryGCP credits; push only at deploy-worthy checkpoints.
 
 ## Phase 1 — P0 playability (NEXT) — game unplayable without this
 All bugs runtime-verified in audit:
