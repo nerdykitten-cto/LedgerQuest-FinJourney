@@ -1,6 +1,7 @@
 # LedgerQuest Overhaul Plan — Global Release
 
-STATUS: Phase 4 complete (2026-07-05). Overhaul phases 0-4 all DONE — ship-ready.
+STATUS: Phase 4 complete (2026-07-05). Overhaul phases 0-4 all DONE — ship-ready. Pushed to remote `main` (deployed).
+NEXT: the technical overhaul is finished. The next body of work is a game-design review + playtest pass and the fixes that fall out of it — see **`PLANS/FuturePlans.md`** (proposed Phase 5). When asked "what's next", start there.
 CONTEXT: Competition prototype (didn't win, deadline passed). Goal now: fix, polish, publish globally. All "Antigravity" agent code is being replaced with custom deterministic TS algorithms — no external AI, no cloud cost, offline localStorage app.
 
 How to use this doc in a fresh session: read this file + `~/.claude` project memory (`ledgerquest-audit-2026-07`), then start the first unchecked phase. Each phase ends with a browser-verifiable checkpoint. Update STATUS line and checkboxes when a phase lands.
