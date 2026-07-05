@@ -225,3 +225,40 @@ describe('Director economy signals', () => {
     expect(d.getSignals().taskCompletionRate).toBeGreaterThan(0.5);
   });
 });
+
+describe('Director recruitment', () => {
+  const party = () => [
+    mkMember(),
+    mkMember({ id: 'p3', name: 'Elora', role: 'Arcanist' }),
+  ];
+
+  it('approves a recruit in town with enough gold and traces the signing', () => {
+    const d = new Director(memoryStorage());
+    const actions = d.onEvent({ type: 'recruit-requested', slot: 'front', party: party(), gold: 500, worldState: 'town' });
+    expect(actions).toHaveLength(1);
+    const a = actions[0];
+    expect(a.kind).toBe('recruit-member');
+    if (a.kind === 'recruit-member') {
+      expect(a.member.role).toBe('Vanguard');
+      expect(a.cost).toBe(120);
+    }
+    const last = d.getTraces().at(-1)!;
+    expect(last.act).toContain('Recruit');
+    expect(last.rationale).toBeTruthy();
+  });
+
+  it('denies a recruit outside town with a traced reason', () => {
+    const d = new Director(memoryStorage());
+    const actions = d.onEvent({ type: 'recruit-requested', slot: 'front', party: party(), gold: 500, worldState: 'peace' });
+    expect(actions[0].kind).toBe('deny');
+    expect(d.getTraces().at(-1)!.decide.toLowerCase()).toContain('deny');
+  });
+
+  it('dismisses regular members but never the leader', () => {
+    const d = new Director(memoryStorage());
+    const ok = d.onEvent({ type: 'dismiss-requested', memberId: 'p3', party: party() });
+    expect(ok[0].kind).toBe('dismiss-member');
+    const no = d.onEvent({ type: 'dismiss-requested', memberId: 'p1', party: party() });
+    expect(no[0].kind).toBe('deny');
+  });
+});

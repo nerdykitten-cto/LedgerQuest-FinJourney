@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { subscribeCampaign, updateCampaign, updateStats } from './persistenceService';
+import { subscribeCampaign, updateCampaign, updateStats, addHabitDB, removePartyMemberDB, addSavingsGoalDB, resetGameDB, subscribeEngineTraces } from './persistenceService';
 import type { CampaignState, PlayerStats } from './types/schemas';
 
 // persistenceService touches localStorage/window lazily inside each function,
@@ -69,5 +69,61 @@ describe('updateStats functional updates', () => {
     const stats = JSON.parse(store.get('player/stats')!) as PlayerStats;
     expect(stats.ap).toBe(18); // default ap 10 + 8
     expect(stats.level).toBe(1);
+  });
+});
+
+describe('addHabitDB', () => {
+  it('appends a habit and notifies same-tab subscribers', async () => {
+    await addHabitDB({ id: 'h9', name: 'No-spend day', streak: 0, lastCompleted: 0, skipCount: 0, difficulty: 2 });
+    const habits = JSON.parse(store.get('habits')!);
+    expect(habits.map((h: { id: string }) => h.id)).toContain('h9');
+    expect((window.dispatchEvent as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(0);
+  });
+});
+
+describe('removePartyMemberDB', () => {
+  it('removes exactly the given member', async () => {
+    store.set('party', JSON.stringify([
+      { id: 'p1', name: 'Althea' }, { id: 'p4', name: 'Thal' },
+    ]));
+    await removePartyMemberDB('p4');
+    const party = JSON.parse(store.get('party')!);
+    expect(party).toHaveLength(1);
+    expect(party[0].id).toBe('p1');
+  });
+});
+
+describe('addSavingsGoalDB', () => {
+  it('appends a savings goal', async () => {
+    await addSavingsGoalDB({ id: 's9', name: 'Rainy Day', targetAmount: 1000, currentAmount: 0 });
+    const goals = JSON.parse(store.get('savings')!);
+    expect(goals.map((g: { id: string }) => g.id)).toContain('s9');
+  });
+});
+
+describe('resetGameDB', () => {
+  it('clears engine state keys and reseeds the world', async () => {
+    store.set('engine_signals', '{"foo":1}');
+    store.set('engine_traces', '[]');
+    store.set('engine_lastSeen', '123');
+    store.set('engine_lastExpenseDay', '123');
+    store.set('engine_battleMemory', '{"records":[]}');
+    store.set('quests', '[{"id":"stale"}]');
+    await resetGameDB();
+    expect(store.has('engine_signals')).toBe(false);
+    expect(store.has('engine_traces')).toBe(false);
+    expect(store.has('engine_lastSeen')).toBe(false);
+    expect(store.has('engine_battleMemory')).toBe(false);
+    const quests = JSON.parse(store.get('quests')!);
+    expect(quests[0].id).not.toBe('stale');
+  });
+});
+
+describe('subscribeEngineTraces', () => {
+  it('reads director traces from engine_traces', () => {
+    store.set('engine_traces', JSON.stringify([{ id: 'tr-1', timestamp: 1, observe: 'o', infer: 'i', decide: 'd', act: 'a', rationale: 'r' }]));
+    let seen: unknown[] = [];
+    subscribeEngineTraces(t => { seen = t; })();
+    expect(seen).toHaveLength(1);
   });
 });

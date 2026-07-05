@@ -3,12 +3,13 @@ import type { PartyMember } from '../types/schemas';
 
 interface Props {
   party: PartyMember[];
+  recruitCost: number;
   onClose: () => void;
-  onAddMember: () => void;
+  onAddMember: (slot: 'front' | 'support') => void;
   onRemoveMember: (id: string) => void;
 }
 
-const WarRoom: React.FC<Props> = ({ party, onClose, onAddMember, onRemoveMember }) => {
+const WarRoom: React.FC<Props> = ({ party, recruitCost, onClose, onAddMember, onRemoveMember }) => {
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 md:p-10">
       <div className="absolute inset-0 bg-surface-dim/80 backdrop-blur-sm" onClick={onClose}></div>
@@ -53,10 +54,11 @@ const WarRoom: React.FC<Props> = ({ party, onClose, onAddMember, onRemoveMember 
                  </div>
                ))}
                {party.filter(p => p.role === 'Leader' || p.role === 'Vanguard').length < 2 && (
-                 <button onClick={onAddMember} className="bg-surface-container-low border-2 border-dashed border-outline-variant/30 flex items-center justify-center hover:bg-surface-variant cursor-pointer transition-colors group h-[200px]">
+                 <button onClick={() => onAddMember('front')} className="bg-surface-container-low border-2 border-dashed border-outline-variant/30 flex items-center justify-center hover:bg-surface-variant cursor-pointer transition-colors group h-[200px]">
                     <div className="text-center">
                        <span className="material-symbols-outlined text-4xl text-on-surface-variant/40 mb-2 group-hover:scale-125 group-hover:text-primary transition-all">add_circle</span>
                        <p className="font-label text-[10px] uppercase text-on-surface-variant/60 tracking-widest">Recruit Tank</p>
+                       <p className="font-label text-[10px] text-primary/70 mt-1">{recruitCost}g signing fee</p>
                     </div>
                  </button>
                )}
@@ -90,10 +92,11 @@ const WarRoom: React.FC<Props> = ({ party, onClose, onAddMember, onRemoveMember 
                  </div>
                ))}
                {party.filter(p => p.role !== 'Leader' && p.role !== 'Vanguard').length < 3 && (
-                 <button onClick={onAddMember} className="bg-surface-container-low border-2 border-dashed border-outline-variant/30 flex items-center justify-center hover:bg-surface-variant cursor-pointer transition-colors group h-[200px]">
+                 <button onClick={() => onAddMember('support')} className="bg-surface-container-low border-2 border-dashed border-outline-variant/30 flex items-center justify-center hover:bg-surface-variant cursor-pointer transition-colors group h-[200px]">
                     <div className="text-center">
                        <span className="material-symbols-outlined text-4xl text-on-surface-variant/40 mb-2 group-hover:scale-125 group-hover:text-tertiary transition-all">add_circle</span>
                        <p className="font-label text-[10px] uppercase text-on-surface-variant/60 tracking-widest">Recruit Support</p>
+                       <p className="font-label text-[10px] text-tertiary/70 mt-1">{recruitCost}g signing fee</p>
                     </div>
                  </button>
                )}

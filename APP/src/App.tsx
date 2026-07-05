@@ -4,7 +4,6 @@ import type {
   Expense, 
   PlayerStats, 
   Quest, 
-  LogicEngineTrace, 
   FinanceTask, 
   CampaignState,
   Habit,
@@ -14,6 +13,8 @@ import type {
   InventoryItem
 } from './types/schemas';
 import { Director, type BattleResult } from './engine/director';
+import type { DirectorTrace } from './engine/traceHub';
+import { recruitCost } from './engine/recruitment';
 import { adjustHabitReward } from './engine/difficultyEngine';
 import { taskReward, applyExp } from './engine/rewardEngine';
 import ExpenseForm from './components/ExpenseForm';
@@ -67,7 +68,7 @@ const ITEM_TEMPLATES: Record<string, Partial<InventoryItem>> = {
 
 function App() {
   const [currentTab, setCurrentTab] = useState('ledger');
-  const [archiveTab, setArchiveTab] = useState<'ledger' | 'budget'>('ledger');
+  const [archiveTab, setArchiveTab] = useState<'ledger' | 'budget' | 'savings' | 'engine'>('ledger');
   const [stats, setStats] = useState<PlayerStats>({ level: 1, exp: 0, ap: 10, gold: 0, monthlyBudget: 3000 });
   const [campaign, setCampaign] = useState<CampaignState>({ 
     currentLocation: 'Starting Village', 
@@ -80,8 +81,8 @@ function App() {
   const [tasks, setTasks] = useState<FinanceTask[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [budgets, setBudgets] = useState<BudgetStream[]>([]);
-  const [_savings, setSavings] = useState<SavingsGoal[]>([]);
-  const [_traces, setTraces] = useState<LogicEngineTrace[]>([]);
+  const [savings, setSavings] = useState<SavingsGoal[]>([]);
+  const [traces, setTraces] = useState<DirectorTrace[]>([]);
   const [party, setParty] = useState<PartyMember[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [notification, setNotification] = useState<string | null>(null);
@@ -111,7 +112,7 @@ function App() {
     const unsubCampaign = dbService.subscribeCampaign(setCampaign);
     const unsubTasks = dbService.subscribeTasks(setTasks);
     const unsubHabits = dbService.subscribeHabits(setHabits);
-    const unsubTraces = dbService.subscribeTraces(setTraces);
+    const unsubTraces = dbService.subscribeEngineTraces(setTraces);
     const unsubParty = dbService.subscribeParty(setParty);
     const unsubBudgets = dbService.subscribeBudgetStreams(setBudgets);
     const unsubSavings = dbService.subscribeSavingsGoals(setSavings);
@@ -396,10 +397,7 @@ function App() {
     e.preventDefault();
     if (!newHabit.name) return;
     const habit: Habit = { id: uuidv4(), name: newHabit.name, streak: 0, lastCompleted: 0, skipCount: 0, difficulty: newHabit.difficulty };
-    const raw = localStorage.getItem('habits');
-    const currentHabits = raw ? JSON.parse(raw) : [];
-    localStorage.setItem('habits', JSON.stringify([...currentHabits, habit]));
-    window.dispatchEvent(new Event('storage'));
+    await dbService.addHabitDB(habit);
     setNewHabit({ name: '', difficulty: 1 });
     setIsHabitCreatorOpen(false);
     showNotify('Ritual sealed!');
@@ -411,13 +409,68 @@ function App() {
   };
 
   const confirmStartQuest = async (quest: Quest) => {
-    if (stats.ap >= 5) {
+    const cost = quest.requirements?.apQuota ?? 5;
+    if (stats.ap >= cost) {
       await dbService.updateQuestDB(quest.id, { status: 'active' });
-      await dbService.updateStats(cur => ({ ap: Math.max(0, cur.ap - 5) }));
-      director.onEvent({ type: 'ap-spent', amount: 5 });
+      await dbService.updateStats(cur => ({ ap: Math.max(0, cur.ap - cost) }));
+      director.onEvent({ type: 'ap-spent', amount: cost });
       await dbService.updateCampaign({ activeQuestId: quest.id });
       setGatedQuest(null);
       showNotify('Embarking: ' + quest.title);
+    } else {
+      showNotify(`Need ${cost} AP to embark on this quest.`);
+    }
+  };
+
+  const handleRecruit = (slot: 'front' | 'support') => {
+    const actions = director.onEvent({
+      type: 'recruit-requested', slot, party, gold: stats.gold, worldState: campaign.worldState,
+    });
+    for (const a of actions) {
+      if (a.kind === 'recruit-member') {
+        dbService.addPartyMemberDB(a.member);
+        dbService.updateStats(cur => ({ gold: Math.max(0, cur.gold - a.cost) }));
+        showNotify(`${a.member.name} joins the formation! (-${a.cost} gold)`);
+      } else if (a.kind === 'deny') {
+        showNotify(a.reason);
+      }
+    }
+  };
+
+  const handleDismiss = (memberId: string) => {
+    const actions = director.onEvent({ type: 'dismiss-requested', memberId, party });
+    for (const a of actions) {
+      if (a.kind === 'dismiss-member') {
+        dbService.removePartyMemberDB(a.memberId);
+        showNotify(a.rationale);
+      } else if (a.kind === 'deny') {
+        showNotify(a.reason);
+      }
+    }
+  };
+
+  const [newGoal, setNewGoal] = useState({ name: '', target: 1000 });
+  const [depositDrafts, setDepositDrafts] = useState<Record<string, string>>({});
+
+  const handleAddSavingsGoal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGoal.name || newGoal.target <= 0) return;
+    await dbService.addSavingsGoalDB({ id: uuidv4(), name: newGoal.name, targetAmount: newGoal.target, currentAmount: 0 });
+    setNewGoal({ name: '', target: 1000 });
+    showNotify('Vault forged!');
+  };
+
+  const handleDeposit = async (goal: SavingsGoal, amount: number) => {
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    await dbService.updateSavingsGoalDB(goal.id, { currentAmount: goal.currentAmount + amount });
+    setDepositDrafts(d => ({ ...d, [goal.id]: '' }));
+    showNotify(`+$${amount} sealed into ${goal.name}`);
+  };
+
+  const handleResetGame = async () => {
+    if (window.confirm('Reset the entire adventure? Expenses, quests, party, gold and engine memory will all be wiped.')) {
+      await dbService.resetGameDB();
+      showNotify('The world is reborn.');
     }
   };
 
@@ -498,7 +551,7 @@ function App() {
         </div>
       )}
 
-      {isWarRoomOpen && <WarRoom party={party} onClose={() => setIsWarRoomOpen(false)} onAddMember={() => showNotify('Requires City visit.')} onRemoveMember={() => {}} />}
+      {isWarRoomOpen && <WarRoom party={party} recruitCost={recruitCost(party)} onClose={() => setIsWarRoomOpen(false)} onAddMember={handleRecruit} onRemoveMember={handleDismiss} />}
       {isVaultOpen && <GrandVault inventory={inventory} party={party} onClose={() => setIsVaultOpen(false)} />}
 
       <TopAppBar currentTab={currentTab} onTabChange={setCurrentTab} ap={stats.ap} />
@@ -612,11 +665,14 @@ function App() {
                   <div className="flex bg-surface-container-high rounded-full p-1 doodle-border shadow-inner">
                     <button onClick={() => setArchiveTab('ledger')} className={`px-6 py-2 rounded-full font-label text-[10px] uppercase tracking-widest transition-all ${archiveTab === 'ledger' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Ledger</button>
                     <button onClick={() => setArchiveTab('budget')} className={`px-6 py-2 rounded-full font-label text-[10px] uppercase tracking-widest transition-all ${archiveTab === 'budget' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Streams</button>
+                    <button onClick={() => setArchiveTab('savings')} className={`px-6 py-2 rounded-full font-label text-[10px] uppercase tracking-widest transition-all ${archiveTab === 'savings' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Vaults</button>
+                    <button onClick={() => setArchiveTab('engine')} className={`px-6 py-2 rounded-full font-label text-[10px] uppercase tracking-widest transition-all ${archiveTab === 'engine' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Engine Log</button>
                   </div>
                 </div>
              </div>
              <div className="bg-surface-container-low p-8 doodle-border shadow-2xl min-h-[600px]">
-                {archiveTab === 'ledger' ? <ExpenseList expenses={expenses} /> : (
+                {archiveTab === 'ledger' && <ExpenseList expenses={expenses} />}
+                {archiveTab === 'budget' && (
                   <div className="space-y-12">
                      <h3 className="font-headline text-2xl font-bold text-on-surface doodle-underline inline-block">Active Budget Streams</h3>
                      <div className="grid grid-cols-1 gap-8">{budgets.map(b => {
@@ -629,6 +685,73 @@ function App() {
                           </div>
                         );
                      })}</div>
+                  </div>
+                )}
+                {archiveTab === 'savings' && (
+                  <div className="space-y-12">
+                     <div className="flex flex-wrap justify-between items-end gap-6">
+                        <h3 className="font-headline text-2xl font-bold text-on-surface doodle-underline inline-block">Savings Vaults</h3>
+                        <form onSubmit={handleAddSavingsGoal} className="flex flex-wrap items-end gap-3">
+                           <input value={newGoal.name} onChange={e => setNewGoal(g => ({ ...g, name: e.target.value }))} placeholder="Vault name" className="bg-surface-container px-4 py-2 doodle-border font-body text-sm w-40 focus:outline-none focus:border-primary" />
+                           <input type="number" min={1} value={newGoal.target} onChange={e => setNewGoal(g => ({ ...g, target: Number(e.target.value) }))} className="bg-surface-container px-4 py-2 doodle-border font-body text-sm w-28 focus:outline-none focus:border-primary" />
+                           <button type="submit" className="bg-primary-container text-on-primary-container px-6 py-2 doodle-border font-label text-[10px] uppercase font-black hover:bg-primary hover:text-on-primary transition-all">Forge Vault</button>
+                        </form>
+                     </div>
+                     {savings.length === 0 && <p className="font-body text-sm text-on-surface-variant italic">No vaults yet. Forge one to start saving toward a goal.</p>}
+                     <div className="grid grid-cols-1 gap-8">{savings.map(g => {
+                        const perc = Math.min(100, (g.currentAmount / g.targetAmount) * 100);
+                        const done = g.currentAmount >= g.targetAmount;
+                        return (
+                          <div key={g.id} className="bg-surface-container p-6 doodle-border group hover:bg-surface-container-high transition-colors">
+                             <div className="flex justify-between items-end mb-4">
+                                <div>
+                                   <span className="font-label text-[10px] uppercase text-on-surface-variant">Vault: {g.name}{done ? ' — SEALED' : ''}</span>
+                                   <h4 className="font-headline text-2xl font-black text-on-surface">${g.currentAmount.toLocaleString()} <span className="text-sm font-normal text-on-surface-variant">of ${g.targetAmount.toLocaleString()}</span></h4>
+                                </div>
+                                <div className={`text-right font-black ${done ? 'text-tertiary' : 'text-primary'}`}>{Math.round(perc)}%</div>
+                             </div>
+                             <div className="h-4 w-full bg-surface/50 doodle-border p-0.5 mb-4"><div className={`h-full transition-all duration-1000 ${done ? 'bg-tertiary' : 'bg-primary'}`} style={{ width: `${perc}%` }}></div></div>
+                             {!done && (
+                               <form onSubmit={e => { e.preventDefault(); handleDeposit(g, Number(depositDrafts[g.id])); }} className="flex items-center gap-3">
+                                  <input type="number" min={1} value={depositDrafts[g.id] ?? ''} onChange={e => setDepositDrafts(d => ({ ...d, [g.id]: e.target.value }))} placeholder="Amount" className="bg-surface-container-low px-4 py-2 doodle-border font-body text-sm w-32 focus:outline-none focus:border-primary" />
+                                  <button type="submit" className="bg-surface-container-high px-6 py-2 doodle-border font-label text-[10px] uppercase font-black hover:bg-primary hover:text-on-primary transition-all">Deposit</button>
+                               </form>
+                             )}
+                          </div>
+                        );
+                     })}</div>
+                     <div className="border-t-2 border-dashed border-error/30 pt-8 mt-4">
+                        <div className="flex flex-wrap justify-between items-center gap-4">
+                           <div>
+                              <h4 className="font-headline text-lg font-black text-error uppercase">Danger Zone</h4>
+                              <p className="font-body text-xs text-on-surface-variant italic">Wipe every record and restart the adventure from day one.</p>
+                           </div>
+                           <button onClick={handleResetGame} className="bg-error text-on-error px-8 py-3 doodle-border font-label text-[10px] uppercase font-black hover:scale-105 transition-transform">Reset Adventure</button>
+                        </div>
+                     </div>
+                  </div>
+                )}
+                {archiveTab === 'engine' && (
+                  <div className="space-y-8">
+                     <div>
+                        <h3 className="font-headline text-2xl font-bold text-on-surface doodle-underline inline-block">Engine Log</h3>
+                        <p className="font-body text-sm text-on-surface-variant italic mt-2">Every Game Director decision — observe, infer, decide, act. Newest first.</p>
+                     </div>
+                     {traces.length === 0 && <p className="font-body text-sm text-on-surface-variant italic">The Director has made no decisions yet. Play a little.</p>}
+                     <div className="space-y-6">{[...traces].reverse().map(t => (
+                        <div key={t.id} className="bg-surface-container p-6 doodle-border space-y-4">
+                           <div className="flex flex-wrap justify-between items-baseline gap-2">
+                              <span className="font-headline font-black text-primary">{t.act}</span>
+                              <span className="font-label text-[10px] uppercase text-on-surface-variant">{new Date(t.timestamp).toLocaleString()}</span>
+                           </div>
+                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div><span className="font-label text-[10px] uppercase tracking-widest text-secondary block mb-1">Observe</span><p className="font-body text-sm text-on-surface">{t.observe}</p></div>
+                              <div><span className="font-label text-[10px] uppercase tracking-widest text-secondary block mb-1">Infer</span><p className="font-body text-sm text-on-surface">{t.infer}</p></div>
+                              <div><span className="font-label text-[10px] uppercase tracking-widest text-secondary block mb-1">Decide</span><p className="font-body text-sm text-on-surface">{t.decide}</p></div>
+                           </div>
+                           <p className="font-body text-sm text-on-surface-variant italic border-l-4 border-primary/30 pl-4">{t.rationale}</p>
+                        </div>
+                     ))}</div>
                   </div>
                 )}
              </div>

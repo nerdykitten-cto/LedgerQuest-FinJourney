@@ -34,6 +34,7 @@ import {
 import { forgeValidatedSideQuest, nextMainQuest, DEFAULT_WORLD } from './questForge';
 import { LOCATIONS } from './world';
 import { TraceHub, localStorageBackend, type EngineStorage, type DirectorTrace } from './traceHub';
+import { evaluateRecruit, evaluateDismiss, type RecruitSlot } from './recruitment';
 
 export { chooseTarget };
 export type { Archetype };
@@ -67,6 +68,14 @@ export type DirectorEvent =
   | { type: 'task-completed'; apEarned: number }
   | { type: 'habit-completed'; apEarned: number }
   | { type: 'ap-spent'; amount: number }
+  | {
+      type: 'recruit-requested';
+      slot: RecruitSlot;
+      party: PartyMember[];
+      gold: number;
+      worldState: CampaignState['worldState'];
+    }
+  | { type: 'dismiss-requested'; memberId: string; party: PartyMember[] }
   | { type: 'battle-requested'; progress: number }
   | {
       type: 'battle-finished';
@@ -88,6 +97,9 @@ export type DirectorAction =
     }
   | { kind: 'offer-quest'; quest: Quest; rationale: string }
   | { kind: 'spawn-enemy'; enemy: Enemy & { archetype: Archetype }; rationale: string }
+  | { kind: 'recruit-member'; member: PartyMember; cost: number; rationale: string }
+  | { kind: 'dismiss-member'; memberId: string; rationale: string }
+  | { kind: 'deny'; reason: string }
   | {
       kind: 'battle-reward';
       exp: number;
@@ -106,6 +118,9 @@ const KEYS = {
   signals: 'engine_signals',
   battleMemory: 'engine_battleMemory',
 } as const;
+
+/** Every localStorage key the engine persists — cleared on a full game reset. */
+export const ENGINE_STATE_KEYS = [...Object.values(KEYS), 'engine_traces'];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const startOfDay = (ts: number): number => {
@@ -165,6 +180,10 @@ export class Director {
       case 'ap-spent':
         this.setSignals(recordAp(this.getSignals(), { spent: event.amount }));
         return [];
+      case 'recruit-requested':
+        return this.onRecruitRequested(event);
+      case 'dismiss-requested':
+        return this.onDismissRequested(event);
       case 'battle-requested':
         return this.onBattleRequested(event);
       case 'battle-finished':
@@ -237,6 +256,57 @@ export class Director {
     }
 
     return [];
+  }
+
+  private onRecruitRequested(
+    event: Extract<DirectorEvent, { type: 'recruit-requested' }>
+  ): DirectorAction[] {
+    const { slot, party, gold, worldState } = event;
+    const observe = `Recruit request (${slot} row): party of ${party.length}, ${gold} gold, world '${worldState}'.`;
+    const decision = evaluateRecruit({ party, gold, worldState, slot });
+    if (!decision.ok) {
+      this.trace({
+        observe,
+        infer: 'Recruitment preconditions not met.',
+        decide: `Deny recruit: ${decision.reason}`,
+        act: 'Notify the player.',
+        rationale: decision.reason,
+      });
+      return [{ kind: 'deny', reason: decision.reason }];
+    }
+    this.trace({
+      observe,
+      infer: `Slot open and ${decision.cost} gold affordable.`,
+      decide: `Sign ${decision.member.name} the ${decision.member.role}.`,
+      act: `Recruit ${decision.member.name} for ${decision.cost} gold.`,
+      rationale: decision.rationale,
+    });
+    return [{ kind: 'recruit-member', member: decision.member, cost: decision.cost, rationale: decision.rationale }];
+  }
+
+  private onDismissRequested(
+    event: Extract<DirectorEvent, { type: 'dismiss-requested' }>
+  ): DirectorAction[] {
+    const decision = evaluateDismiss(event.party, event.memberId);
+    const observe = `Dismiss request for member '${event.memberId}' in a party of ${event.party.length}.`;
+    if (!decision.ok) {
+      this.trace({
+        observe,
+        infer: 'Dismissal would break the formation.',
+        decide: `Deny dismissal: ${decision.reason}`,
+        act: 'Notify the player.',
+        rationale: decision.reason,
+      });
+      return [{ kind: 'deny', reason: decision.reason }];
+    }
+    this.trace({
+      observe,
+      infer: 'Member is expendable (not the leader).',
+      decide: 'Approve dismissal.',
+      act: decision.rationale,
+      rationale: decision.rationale,
+    });
+    return [{ kind: 'dismiss-member', memberId: event.memberId, rationale: decision.rationale }];
   }
 
   private onBattleRequested(

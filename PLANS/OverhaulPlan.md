@@ -1,6 +1,6 @@
 # LedgerQuest Overhaul Plan — Global Release
 
-STATUS: Phase 2 complete (2026-07-05). Next up: **Phase 3**.
+STATUS: Phase 3 complete (2026-07-05). Next up: **Phase 4**.
 CONTEXT: Competition prototype (didn't win, deadline passed). Goal now: fix, polish, publish globally. All "Antigravity" agent code is being replaced with custom deterministic TS algorithms — no external AI, no cloud cost, offline localStorage app.
 
 How to use this doc in a fresh session: read this file + `~/.claude` project memory (`ledgerquest-audit-2026-07`), then start the first unchecked phase. Each phase ends with a browser-verifiable checkpoint. Update STATUS line and checkboxes when a phase lands.
@@ -39,13 +39,14 @@ New `APP/src/engine/`, pure deterministic TS, TDD per module (RED-GREEN verified
 - [x] Deleted `logicEngines.ts` + smoke test; GEMINI.md architecture section rewritten (Game Director modules; stale GAME/ ref dropped).
 - CHECKPOINT PASSED (browser, fresh save): expense +8 AP → side quest "The Food Menace" auto-forged (QC pass, 1 attempt) → embark −5 → town entry free → talk ✓ → Hunt spawns Debt Gnome scaled 50→46 HP (win rate below band; rationale in trace) → victory in 4 strikes → +110xp/+55g (0.91 diff × 1.20 perf) → LEVEL UP to 2 + party maxHp +10 → claim +150xp/+100g through level curve (no spurious level-up) → 5 traces, all with observe/infer/decide/act/rationale. `npm test` 108/108, `tsc -b` clean, `npm run build` ✓, console clean.
 
-## Phase 3 — Feature completion
-- [ ] WarRoom: real recruit (requires city visit + gold cost) and dismiss (currently toast/no-op).
-- [ ] Quest requirement consistency: seeded quest gets `requirements`; `confirmStartQuest` uses `req.apQuota` not hardcoded 5.
-- [ ] Route `handleAddHabit` through persistence API (currently raw localStorage writes in App.tsx).
-- [ ] Trace Viewer panel — "Engine Log" tab in Archive showing observe/infer/decide/act per decision (traces currently stored but zero UI).
-- [ ] Savings goals UI (schema+seed exist, `_savings` unused) + wire `resetGameDB` to a settings/reset button.
-- CHECKPOINT: every README-advertised feature works.
+## Phase 3 — Feature completion ✅ DONE (2026-07-05)
+- [x] WarRoom recruit/dismiss real: new `engine/recruitment.ts` (TDD, 11 tests) — recruit needs `worldState === 'town'` + gold (`100 + 20×(party−1)`), deterministic candidate pool (2 front / 3 support), stats scale to avg party level (+10 maxHp/level, mirrors rewardEngine); dismiss blocked for Leader. Wired as Director events `recruit-requested`/`dismiss-requested` → `recruit-member`/`dismiss-member`/`deny` actions, all traced. WarRoom passes slot (`'front'|'support'`) + shows signing fee; new `removePartyMemberDB`.
+- [x] Quest requirements: seeded quest gets `requirements {apQuota:5}` (matches questForge main-quest); `confirmStartQuest` uses `req.apQuota ?? 5` + notify when short on AP.
+- [x] `handleAddHabit` → new `dbService.addHabitDB` (raw localStorage block deleted).
+- [x] "Engine Log" tab in Grand Archive: renders `engine_traces` (DirectorTrace) newest-first — act headline, observe/infer/decide grid, rationale quote; new `subscribeEngineTraces`. Legacy `addTraceDB`/`subscribeTraces` (dead `traces` col API) deleted.
+- [x] "Vaults" tab in Grand Archive: savings goals list w/ progress bars + SEALED state, per-goal deposit form (`updateSavingsGoalDB`), "Forge Vault" creation (new `addSavingsGoalDB`); Danger Zone "Reset Adventure" button (confirm dialog) → `resetGameDB`, which now also clears `engine_*` keys (new `ENGINE_STATE_KEYS` export from director).
+- CHECKPOINT PASSED (browser, fresh save): seeded quest has requirements; New Ritual → habit lands in `habits` via API + UI updates; Embark uses apQuota (AP 10→5, quest active); War Room: leader dismiss denied ("The party leader cannot be dismissed."), Lia dismissed (party 4, Recruit Support appears w/ "160g signing fee"), recruit at peace denied ("Recruits gather in settlements…"), in town w/ 500g Mirelle joins (−160g → 340); Engine Log shows all 7 traces w/ observe/infer/decide/act+rationale; Vaults: deposit +$600 (12400→13000), "Emergency Fund" forged; Reset Adventure wipes engine keys + reseeds world (party 5, quest available, 10 AP). `npm test` 127/127, `tsc -b` clean, `npm run build` ✓, console clean. (preview_screenshot tool timed out — evidence via DOM assertions.)
+- New tests: `engine/recruitment.test.ts` (11), director recruitment suite (3), persistence adds/reset/engine-traces (5).
 
 ## Phase 4 — Quality & ship prep
 - [ ] Rewrite Playwright e2e to match real UI (currently fails at step 1: `text=10 AP` split-span locator; later steps assert stale text "Critical Incursion"/"Heal Potions:" vs actual "Combat Interface"/"Inventory:"). Extend to full loop incl. combat + claim.

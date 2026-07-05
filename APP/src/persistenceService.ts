@@ -15,7 +15,6 @@ import type {
   Expense, 
   PlayerStats, 
   Quest, 
-  LogicEngineTrace, 
   Subscription, 
   FinanceTask, 
   Habit,
@@ -31,6 +30,9 @@ import storyManifest from './data/storyManifest.json';
  * TOGGLE THIS FLAG TO SWITCH BETWEEN LOCAL AND FIREBASE
  */
 const USE_FIREBASE = false; 
+
+import { ENGINE_STATE_KEYS } from './engine/director';
+import type { DirectorTrace } from './engine/traceHub';
 
 const EXPENSES_COL = 'expenses';
 const QUESTS_COL = 'quests';
@@ -88,6 +90,14 @@ export const subscribeSavingsGoals = (callback: (goals: SavingsGoal[]) => void) 
     window.addEventListener('storage', handler);
     handler();
     return () => window.removeEventListener('storage', handler);
+  }
+};
+
+export const addSavingsGoalDB = async (goal: SavingsGoal) => {
+  if (USE_FIREBASE) await setDoc(doc(db, SAVINGS_COL, goal.id), goal);
+  else {
+    setLocal(SAVINGS_COL, [...getLocal(SAVINGS_COL) as SavingsGoal[], goal]);
+    window.dispatchEvent(new Event('storage'));
   }
 };
 
@@ -238,30 +248,21 @@ export const updateStats = async (updater: (current: PlayerStats) => Partial<Pla
   }
 };
 
-export const addTraceDB = async (trace: LogicEngineTrace) => {
-  if (USE_FIREBASE) await addDoc(collection(db, TRACES_COL), trace);
-  else {
-    setLocal(TRACES_COL, [trace, ...getLocal(TRACES_COL) as LogicEngineTrace[]]);
-    window.dispatchEvent(new Event('storage'));
-  }
-};
-
-export const subscribeTraces = (callback: (traces: LogicEngineTrace[]) => void) => {
-  if (USE_FIREBASE) {
-    const q = query(collection(db, TRACES_COL), orderBy('timestamp', 'desc'));
-    return onSnapshot(q, (snapshot) => {
-      const traces = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as unknown as LogicEngineTrace));
-      callback(traces);
-    });
-  } else {
-    const handler = () => callback(getLocal(TRACES_COL) as LogicEngineTrace[]);
-    window.addEventListener('storage', handler);
-    handler();
-    return () => window.removeEventListener('storage', handler);
-  }
-};
-
 // New collections
+export const subscribeEngineTraces = (callback: (traces: DirectorTrace[]) => void) => {
+  const handler = () => {
+    const raw = localStorage.getItem('engine_traces');
+    try {
+      callback(raw ? (JSON.parse(raw) as DirectorTrace[]) : []);
+    } catch {
+      callback([]);
+    }
+  };
+  window.addEventListener('storage', handler);
+  handler();
+  return () => window.removeEventListener('storage', handler);
+};
+
 export const subscribeSubscriptions = (callback: (subs: Subscription[]) => void) => {
   if (USE_FIREBASE) {
     return onSnapshot(collection(db, SUBS_COL), (snapshot) => {
@@ -331,6 +332,14 @@ export const subscribeHabits = (callback: (habits: Habit[]) => void) => {
   }
 };
 
+export const addHabitDB = async (habit: Habit) => {
+  if (USE_FIREBASE) await setDoc(doc(db, HABITS_COL, habit.id), habit);
+  else {
+    setLocal(HABITS_COL, [...getLocal(HABITS_COL) as Habit[], habit]);
+    window.dispatchEvent(new Event('storage'));
+  }
+};
+
 export const updateHabitDB = async (habitId: string, updates: Partial<Habit>) => {
   if (USE_FIREBASE) {
     await updateDoc(doc(db, HABITS_COL, habitId), updates);
@@ -382,6 +391,15 @@ export const updatePartyMemberDB = async (memberId: string, updates: Partial<Par
       m.id === memberId ? { ...m, ...updates } : m
     );
     setLocal(PARTY_COL, party);
+    window.dispatchEvent(new Event('storage'));
+  }
+};
+
+export const removePartyMemberDB = async (memberId: string) => {
+  if (USE_FIREBASE) {
+    await deleteDoc(doc(db, PARTY_COL, memberId));
+  } else {
+    setLocal(PARTY_COL, (getLocal(PARTY_COL) as PartyMember[]).filter(m => m.id !== memberId));
     window.dispatchEvent(new Event('storage'));
   }
 };
@@ -480,7 +498,8 @@ export const resetGameDB = async () => {
     localStorage.removeItem(BUDGET_COL);
     localStorage.removeItem(SAVINGS_COL);
     localStorage.removeItem(INVENTORY_COL);
-    
+    ENGINE_STATE_KEYS.forEach(k => localStorage.removeItem(k));
+
     initializeLocalData();
     window.dispatchEvent(new Event('storage'));
   }
@@ -508,7 +527,7 @@ export const initializeLocalData = () => {
   if ((getLocal(QUESTS_COL) as Quest[]).length === 0) {
     const q0 = storyManifest.chapters[0].mainQuests[0];
     const initialQuests: Quest[] = [
-      { ...q0, type: 'main', status: 'available' } as Quest
+      { ...q0, type: 'main', status: 'available', requirements: { apQuota: 5, taskCount: 0, habitCount: 0 } } as Quest
     ];
     setLocal(QUESTS_COL, initialQuests);
   }
