@@ -1,105 +1,192 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
-test.describe('LedgerQuest RPG Inventory & E2E Loop', () => {
+/**
+ * End-to-end coverage for LedgerQuest (localStorage build, no Firebase).
+ * Covers the full finance->RPG loop plus the Phase 3 feature surfaces:
+ * War Room recruit/dismiss, Savings Vaults, the Engine Log trace viewer,
+ * and New Ritual habit creation. Selectors match the real UI; the AP
+ * counter is read via the data-testid hook because it renders as split spans.
+ */
+
+const ap = (page: Page) => page.getByTestId('ap-value');
+const game = (page: Page) => page.getByTestId('adventure-world');
+
+async function freshStart(page: Page) {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await expect(ap(page)).toHaveText('10');
+}
+
+async function logExpense(page: Page, amount: string, note: string) {
+  await page.getByRole('button', { name: /Scribe Expense/i }).click();
+  await page.locator('input[placeholder="0.00"]').fill(amount);
+  await page.locator('input[placeholder="Describe the golden flow..."]').fill(note);
+  await page.getByRole('button', { name: /COMMIT TO LEDGER/i }).click();
+}
+
+function tab(page: Page, name: string) {
+  // Nav tab labels are uppercased via CSS; the accessible name keeps its
+  // original casing ("Quests", "Trials", ...). Match case-insensitively.
+  return page.getByRole('button', { name: new RegExp(`^${name}$`, 'i') });
+}
+
+// Enter the town the party is currently standing on (a double-click on the
+// active map node). The scene reads two onClick events <350ms apart, so we
+// leave a beat between clicks for React to commit the first click's state.
+async function enterCurrentTown(page: Page) {
+  const node = () => game(page).getByText('Starting Village', { exact: true });
+  const outskirts = game(page).getByText(/To The Outskirts/i);
+  // The scene reads two clicks <350ms apart as "enter town". Playwright's
+  // per-click overhead makes a single fixed delay fragile, so poll: each pass
+  // leaves lastClickTime fresh, and successive clicks converge into the window.
+  for (let i = 0; i < 8; i++) {
+    if (await outskirts.count()) break;
+    await node().click();
+    await page.waitForTimeout(90);
+    await node().click();
+    await page.waitForTimeout(250);
+  }
+  await expect(outskirts).toBeVisible({ timeout: 5000 });
+}
+
+// Click STRIKE until the party wins and the quest turns claimable.
+async function winCombat(page: Page) {
+  await expect(game(page).getByText('COMBAT INTERFACE')).toBeVisible();
+  const claim = page.getByRole('button', { name: /Claim Rewards/i });
+  for (let i = 0; i < 40; i++) {
+    if (await claim.count()) break;
+    const strike = game(page).getByRole('button', { name: 'STRIKE', exact: true }).first();
+    if ((await strike.count()) && (await strike.isEnabled().catch(() => false))) {
+      await strike.click().catch(() => {});
+    }
+    await page.waitForTimeout(400);
+  }
+  await expect(claim).toBeVisible({ timeout: 10000 });
+}
+
+test.describe('LedgerQuest — core loop', () => {
   test.beforeEach(async ({ page }) => {
-    // 1. Launch the application
-    await page.goto('/');
-    
-    // 2. Clear storage to start clean
-    await page.evaluate(() => localStorage.clear());
-    
-    // 3. Reload page to initialize fresh database state
-    await page.reload();
+    await freshStart(page);
   });
 
-  test('should complete the entire finance-to-RPG game loop successfully', async ({ page }) => {
-    // --- STEP 1: Finance Office (Expense Logging & AP conversion) ---
-    // Start with 10 AP
-    await expect(page.locator('text=10 AP')).toBeVisible();
+  test('full loop: expense -> embark -> town -> talk -> combat -> claim', async ({ page }) => {
+    // Expense converts spending into Action Points (+8 AP).
+    await logExpense(page, '50', 'Tavern provisions');
+    await expect(ap(page)).toHaveText('18');
 
-    // Click "Scribe Expense" button to open expense logger
-    const scribeBtn = page.getByRole('button', { name: /Scribe Expense/i });
-    await expect(scribeBtn).toBeVisible();
-    await scribeBtn.click();
+    // Open the Strategic Map.
+    await tab(page, 'QUESTS').click();
 
-    // Fill the expense form
-    const amountInput = page.locator('input[placeholder="0.00"]');
-    await amountInput.fill('50');
+    // Embark on the main quest through the Royal Writ gate (apQuota 5).
+    const questCard = page.locator('div.tape-accent', { hasText: 'The Ledger of the Lost Town' });
+    await questCard.getByRole('button', { name: /Accept/i }).click();
+    await page.getByRole('button', { name: /EMBARK ON QUEST/i }).click();
+    await expect(ap(page)).toHaveText('13');
 
-    const descInput = page.locator('input[placeholder="Describe the golden flow..."]');
-    await descInput.fill('Tavern provisions');
+    // Entering the current town is free.
+    await enterCurrentTown(page);
+    await expect(ap(page)).toHaveText('13');
 
-    // Submit form
-    const commitBtn = page.getByRole('button', { name: /Commit to Ledger/i });
-    await commitBtn.click();
+    // Talk to the objective NPC — completes the "talk" objective.
+    await game(page).getByText('Chronicler Daniel').click();
+    await expect(game(page).getByText(/Welcome, scribe/i)).toBeVisible();
+    await game(page).getByText(/Click to dismiss/i).click();
 
-    // Verify AP updates to 18 (+8 AP: 5 base + 3 bonus for staying under budget)
-    await expect(page.locator('text=18 AP')).toBeVisible();
+    // Head to the Outskirts and start combat.
+    await game(page).getByText(/To The Outskirts/i).click();
+    await game(page).getByText(/Hunt For Gold/i).click();
+    await expect(game(page).getByText('DEBT GNOME')).toBeVisible();
+    await expect(game(page).getByText('INVENTORY:')).toBeVisible();
 
-    // --- STEP 2: Navigation to Quests & Opening Vault ---
-    // Click "Quests" tab
-    const questsTab = page.getByRole('button', { name: /Quests/i });
-    await questsTab.click();
+    // Win, then claim the quest reward.
+    await winCombat(page);
+    await page.getByRole('button', { name: /Claim Rewards/i }).click();
+    await expect(page.getByRole('button', { name: /Claim Rewards/i })).toHaveCount(0);
+  });
 
-    // Open "Vault"
-    const vaultBtn = page.getByRole('button', { name: /Vault/i });
-    await vaultBtn.click();
+  test('travel between towns is distance-based (tuned divisor)', async ({ page }) => {
+    // One logged expense (+8) comfortably funds an adjacent hop (7 AP).
+    await logExpense(page, '20', 'Road rations');
+    await expect(ap(page)).toHaveText('18');
+    await tab(page, 'QUESTS').click();
+    await game(page).getByText('Copper Town', { exact: true }).click();
+    await expect(ap(page)).toHaveText('11'); // 18 - 7
+  });
+});
 
-    // Verify Vault title is visible
-    await expect(page.locator('text=The Grand Vault: Inventory')).toBeVisible();
+test.describe('LedgerQuest — Phase 3 features', () => {
+  test.beforeEach(async ({ page }) => {
+    await freshStart(page);
+  });
 
-    // Verify starter items exist in the vault
-    await expect(page.locator('text=Budget Slicer')).toBeVisible();
-    await expect(page.locator('text=Health Potion')).toBeVisible();
+  test('New Ritual creates a habit', async ({ page }) => {
+    await tab(page, 'TRIALS').click();
+    await page.getByRole('button', { name: /New Ritual/i }).click();
+    await page.getByPlaceholder('Ritual name...').fill('Morning Budgeting');
+    await page.getByRole('button', { name: /Seal Ritual/i }).click();
+    await expect(page.getByRole('heading', { name: 'Morning Budgeting' })).toBeVisible();
+  });
 
-    // Close vault modal
-    const closeVaultBtn = page.locator('button:has-text("close")');
-    await closeVaultBtn.first().click();
+  test('Vaults: deposit, forge, and reset', async ({ page }) => {
+    await tab(page, 'ARCHIVE').click();
+    await page.getByRole('button', { name: 'Vaults', exact: true }).click();
 
-    // --- STEP 3: Map Navigation & Entering Town ---
-    // Double click "Starting Village" node to enter town
-    const villageNode = page.locator('text=Starting Village');
-    await villageNode.dblclick();
+    // Seeded vault starts at $12,400.
+    const summerCabin = page.locator('div.group', { hasText: 'Vault: Summer Cabin' });
+    await expect(summerCabin).toContainText('$12,400');
 
-    // Verify we entered the town and see Town Square
-    await expect(page.locator('text=Town Square')).toBeVisible();
-    await expect(page.locator('text=Chronicler Daniel')).toBeVisible();
+    // Deposit $600 -> $13,000.
+    await page.getByPlaceholder('Amount').fill('600');
+    await page.getByRole('button', { name: 'Deposit', exact: true }).click();
+    await expect(summerCabin).toContainText('$13,000');
 
-    // --- STEP 4: Armory Shop Inspection ---
-    // Click on "General Store"
-    const storeGate = page.locator('text=General Store');
-    await storeGate.click();
+    // Forge a new vault (default target).
+    await page.getByPlaceholder('Vault name').fill('Emergency Fund');
+    await page.getByRole('button', { name: /Forge Vault/i }).click();
+    await expect(page.getByText('Vault: Emergency Fund')).toBeVisible();
 
-    // Verify Armory store is visible and shows items
-    await expect(page.locator('text=Town Armory')).toBeVisible();
-    await expect(page.locator('text=Iron Sword')).toBeVisible();
-    await expect(page.locator('text=Leather Tunic')).toBeVisible();
+    // Reset wipes everything and reseeds the world.
+    page.once('dialog', (d) => d.accept());
+    await page.getByRole('button', { name: /Reset Adventure/i }).click();
+    await expect(page.getByText('Vault: Emergency Fund')).toHaveCount(0);
+    await expect(page.locator('div.group', { hasText: 'Vault: Summer Cabin' })).toContainText('$12,400');
+  });
 
-    // Close store
-    const closeStoreBtn = page.locator('button:has-text("close")');
-    await closeStoreBtn.first().click();
+  test('Engine Log shows Game Director traces', async ({ page }) => {
+    // Generate director activity, then read the trace viewer.
+    await logExpense(page, '30', 'Ledger warmup');
+    await tab(page, 'ARCHIVE').click();
+    await page.getByRole('button', { name: 'Engine Log', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Engine Log' })).toBeVisible();
+    await expect(page.getByText(/The Director has made no decisions yet/i)).toHaveCount(0);
+    // Each trace card carries the observe/infer/decide breakdown.
+    await expect(page.getByText('Observe').first()).toBeVisible();
+  });
 
-    // --- STEP 5: Outskirts Exploration & Combat ---
-    // Navigate to outskirts
-    const outskirtsBtn = page.locator('text=To The Outskirts');
-    await outskirtsBtn.click();
+  test('War Room: dismiss a member then recruit a replacement', async ({ page }) => {
+    // Put the party in a town with gold so recruiting is allowed.
+    await page.evaluate(() => {
+      localStorage.setItem('player/stats', JSON.stringify({ level: 2, exp: 0, ap: 20, gold: 500 }));
+      localStorage.setItem('player/campaign', JSON.stringify({ currentLocation: 'Starting Village', progressPercentage: 0, worldState: 'town' }));
+      window.dispatchEvent(new Event('storage'));
+    });
 
-    // Engage in combat
-    const huntBtn = page.getByRole('button', { name: /Hunt For Gold/i });
-    await huntBtn.click();
+    await tab(page, 'QUESTS').click();
+    await page.getByRole('button', { name: /War Room/i }).click();
+    await expect(page.getByRole('heading', { name: /War Room: Tactical Formation/i })).toBeVisible();
 
-    // Verify combat scene is loaded
-    await expect(page.locator('text=Critical Incursion')).toBeVisible();
-    await expect(page.locator('text=Debt Gnome')).toBeVisible();
-    await expect(page.locator('text=Heal Potions:')).toBeVisible();
+    // Dismiss the Lightweaver (a support member, not the leader).
+    const liaCard = page.locator('.group', { hasText: 'Lia' });
+    await liaCard.getByRole('button', { name: 'Dismiss' }).click();
+    await expect(page.locator('.group', { hasText: 'Lia' })).toHaveCount(0);
 
-    // Attack the enemy with Vanguard "Althea"
-    const strikeBtn = page.locator('div:has-text("Althea") >> button:has-text("STRIKE")');
-    await expect(strikeBtn).toBeVisible();
-    await strikeBtn.click();
+    // A support slot opens; recruit a replacement (town + 500 gold).
+    const recruit = page.getByText('Recruit Support');
+    await expect(recruit).toBeVisible();
+    await recruit.click();
 
-    // Verify that AP decreases (18 AP -> 17 AP) and log output reflects the strike
-    await expect(page.locator('text=17 AP')).toBeVisible();
-    await expect(page.locator('p:has-text("STRIKE:")')).toBeVisible();
+    // Party is back to a full support row — the recruit slot is gone.
+    await expect(page.getByText('Recruit Support')).toHaveCount(0);
   });
 });

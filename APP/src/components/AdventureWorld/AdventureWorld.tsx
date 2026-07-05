@@ -82,7 +82,7 @@ export const AdventureWorld: React.FC<AdventureWorldProps> = ({
   };
 
   return (
-    <div className="relative w-full h-full bg-black overflow-hidden select-none">
+    <div data-testid="adventure-world" className="relative w-full h-full bg-black overflow-hidden select-none">
       {currentScene === 'map' && (
         <WorldMapScene 
           stats={stats} 

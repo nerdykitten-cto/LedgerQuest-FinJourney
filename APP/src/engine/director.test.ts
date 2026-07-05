@@ -32,16 +32,14 @@ const offerOf = (actions: DirectorAction[]) =>
   actions.filter(a => a.kind === 'offer-quest') as Extract<DirectorAction, { kind: 'offer-quest' }>[];
 
 describe('travelCost', () => {
-  it('derives cost from map distance, cheaper than the legacy flat 20', () => {
-    for (const [from, to] of [
-      ['Starting Village', 'Copper Town'],
-      ['Copper Town', 'Silver City'],
-      ['Silver City', 'Iron Citadel'],
-    ] as const) {
-      const c = travelCost(from, to);
-      expect(c).toBeGreaterThanOrEqual(4);
-      expect(c).toBeLessThan(20);
-    }
+  it('derives cost from map distance (divisor 7), cheaper than the legacy flat 20', () => {
+    // Pinned economy (Phase 4): adjacent hops <= +8 AP from one expense.
+    expect(travelCost('Starting Village', 'Copper Town')).toBe(7);
+    expect(travelCost('Copper Town', 'Silver City')).toBe(5);
+    expect(travelCost('Silver City', 'Iron Citadel')).toBe(6);
+    // Full cross-map trips stay a real cost, but still under the legacy 20.
+    expect(travelCost('Starting Village', 'Iron Citadel')).toBe(9);
+    expect(travelCost('Starting Village', 'Silver City')).toBe(11);
   });
 
   it('is symmetric and falls back to 20 for unknown places', () => {

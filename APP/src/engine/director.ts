@@ -49,7 +49,9 @@ export function travelCost(from: string, to: string): number {
   const b = LOCATIONS.find(l => l.name === to);
   if (!a || !b) return LEGACY_TRAVEL_COST;
   const dist = Math.hypot(a.x - b.x, a.y - b.y);
-  return Math.max(4, Math.round(dist / 5));
+  // Divisor tuned in Phase 4: adjacent inter-town hops land at 5-7 AP
+  // (under the +8 AP from one logged expense), full cross-map trips 8-11 AP.
+  return Math.max(4, Math.round(dist / 7));
 }
 
 // ---------- events & actions ----------

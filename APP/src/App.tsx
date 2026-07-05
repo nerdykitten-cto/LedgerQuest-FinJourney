@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import './App.css';
 import type { 
   Expense, 
@@ -21,7 +21,9 @@ import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import QuestList from './components/QuestList';
 import QuestGater from './components/QuestGater';
-import GameView from './components/GameView';
+// GameView (CRT TV + AdventureWorld scenes) is code-split into its own chunk;
+// it only loads when the player opens the Strategic Map tab.
+const GameView = lazy(() => import('./components/GameView'));
 import TopAppBar from './components/TopAppBar';
 import WarRoom from './components/WarRoom';
 import GrandVault from './components/GrandVault';
@@ -769,6 +771,7 @@ function App() {
              </div>
              <div className="flex-grow min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:overflow-hidden">
                 <div className="lg:col-span-8 bg-[#0a0f1a] relative overflow-hidden shadow-2xl rounded-2xl h-[70vh] min-h-[420px] lg:h-auto lg:min-h-0">
+                   <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-on-surface-variant font-label text-[10px] uppercase tracking-widest">Summoning world…</div>}>
                    <GameView 
                   stats={stats} 
                   campaign={campaign} 
@@ -783,7 +786,7 @@ function App() {
                   onShopPurchase={handleShopPurchase}
                   onEnterTown={handleEnterTown}
                   onExitTown={handleExitTown}
-                /></div>
+                /></Suspense></div>
                 <div className="lg:col-span-4 lg:overflow-y-auto pr-4 custom-scrollbar"><QuestList quests={quests} onStartQuest={handleStartQuest} onClaimReward={handleClaimReward} /></div>
              </div>
           </div>

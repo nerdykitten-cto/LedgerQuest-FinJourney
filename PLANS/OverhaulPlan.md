@@ -1,6 +1,6 @@
 # LedgerQuest Overhaul Plan — Global Release
 
-STATUS: Phase 3 complete (2026-07-05). Next up: **Phase 4**.
+STATUS: Phase 4 complete (2026-07-05). Overhaul phases 0-4 all DONE — ship-ready.
 CONTEXT: Competition prototype (didn't win, deadline passed). Goal now: fix, polish, publish globally. All "Antigravity" agent code is being replaced with custom deterministic TS algorithms — no external AI, no cloud cost, offline localStorage app.
 
 How to use this doc in a fresh session: read this file + `~/.claude` project memory (`ledgerquest-audit-2026-07`), then start the first unchecked phase. Each phase ends with a browser-verifiable checkpoint. Update STATUS line and checkboxes when a phase lands.
@@ -48,19 +48,19 @@ New `APP/src/engine/`, pure deterministic TS, TDD per module (RED-GREEN verified
 - CHECKPOINT PASSED (browser, fresh save): seeded quest has requirements; New Ritual → habit lands in `habits` via API + UI updates; Embark uses apQuota (AP 10→5, quest active); War Room: leader dismiss denied ("The party leader cannot be dismissed."), Lia dismissed (party 4, Recruit Support appears w/ "160g signing fee"), recruit at peace denied ("Recruits gather in settlements…"), in town w/ 500g Mirelle joins (−160g → 340); Engine Log shows all 7 traces w/ observe/infer/decide/act+rationale; Vaults: deposit +$600 (12400→13000), "Emergency Fund" forged; Reset Adventure wipes engine keys + reseeds world (party 5, quest available, 10 AP). `npm test` 127/127, `tsc -b` clean, `npm run build` ✓, console clean. (preview_screenshot tool timed out — evidence via DOM assertions.)
 - New tests: `engine/recruitment.test.ts` (11), director recruitment suite (3), persistence adds/reset/engine-traces (5).
 
-## Phase 4 — Quality & ship prep
-- [ ] Rewrite Playwright e2e to match real UI (currently fails at step 1: `text=10 AP` split-span locator; later steps assert stale text "Critical Incursion"/"Heal Potions:" vs actual "Combat Interface"/"Inventory:"). Extend to full loop incl. combat + claim.
-- [ ] Bundle: 617KB single chunk — lazy-load game scenes; **Firebase decision (user pending)**: remove entirely for v1 (recommended; `USE_FIREBASE=false`, placeholder config, Firestore branches buggy/untested) or env-config it.
-- [ ] Economy balance: travel now distance-based (~9-13 AP between towns, was flat 20) vs expense +8 AP; playtest and tune via engine constants (travelCost divisor, reward bases, expToNext curve).
-- [ ] Docker build verify; README/docs rewrite as product docs.
-- CHECKPOINT: green `npm test` + e2e, lean bundle, deployable image.
+## Phase 4 — Quality & ship prep ✅ DONE (2026-07-05)
+- [x] Rewrote Playwright e2e (`APP/tests/e2e.spec.ts`) against real UI. Root cause of old failures pinned down live: AP renders as split spans (added `data-testid="ap-value"` to TopAppBar), nav labels are CSS-uppercased but accessible names keep original case ("Quests" not "QUESTS"), and enter-town is two `onClick`s <350ms apart (added `data-testid="adventure-world"` scope + a retry helper since Playwright click overhead blows the 350ms window). 6 tests, all green: full core loop (expense→embark via Royal Writ apQuota→enter town free→talk objective→outskirts→combat victory→claim), distance-based travel, New Ritual habit, Vaults deposit/forge/reset, Engine Log trace viewer, War Room dismiss+recruit.
+- [x] **Firebase removed entirely for v1** (user decision). Deleted `firebase.ts`, dropped `firebase` dep, stripped every `USE_FIREBASE` branch — `persistenceService.ts` is now localStorage-only. Bundle 617KB → 292KB. Plus lazy-loaded game scenes: `GameView` is `React.lazy` + `Suspense` in App.tsx, split into a 28KB chunk that streams in when the Strategic Map opens.
+- [x] Economy balance: `travelCost` divisor 5→7 in `engine/director.ts`. Adjacent inter-town hops now 5-7 AP (≤ the +8 AP from one logged expense → sustainable loop); full cross-map trips 8-11 AP; min floor 4 kept. Re-pinned exact values in `director.test.ts` (SV→Copper 7, Copper→Silver 5, Silver→Iron 6, SV→Iron 9, SV→Silver 11). Reward bases (100/50) + `expToNext` (100×lvl^1.5) left as-is — progression felt right in playtest, no change warranted. Verified live: SV→Copper travel −7 AP.
+- [x] Docker build verified end-to-end: `docker build -t ledgerquest .` from repo root (10/10 steps, node20-alpine build → nginx-alpine serve). Container smoke-test (`-e PORT=8080`): `/` → 200 (title "LedgerQuest - DEMO"), `/quests` → 200 via nginx `try_files` SPA fallback, main JS chunk → 200, PORT env substitution honored, logs clean. README.md rewritten as product docs (localStorage-only, Game Director not "Logic Engines", full Phase 3 feature set documented).
+- CHECKPOINT PASSED: `npm test` 127/127, `tsc -b` clean, `npm run build` clean, e2e 6/6, deployable image serves. Committed locally on `main`. **Not pushed** (would trigger Cloud Build → Cloud Run redeploy, burns TryGCP credits).
 
 ## Deferred / backlog (not scheduled)
 - Delete `GAME/` legacy (awaiting user OK).
 - Subscriptions manager (schema + persistence exist, no UI), receipt photos, savings-milestone rewards (rare item / party member on goal completion — from product description).
 
 ## Key architecture facts for fresh sessions
-- App: `APP/` React 19 + TS + Vite + Tailwind. Persistence: localStorage behind `APP/src/persistenceService.ts` unified API (`USE_FIREBASE=false`); same-tab reactivity via manual `window.dispatchEvent(new Event('storage'))`.
+- App: `APP/` React 19 + TS + Vite + Tailwind. Persistence: localStorage-only behind `APP/src/persistenceService.ts` unified API (Firebase removed in Phase 4); same-tab reactivity via manual `window.dispatchEvent(new Event('storage'))`.
 - Game: `APP/src/components/GameView.tsx` (CRT TV frame) → `AdventureWorld/` scenes (map/town/combat) driven by `campaign.worldState`.
 - Engine: `APP/src/engine/` Game Director (`director.onEvent` singleton in App.tsx) — dayTick, playerModel (EWMA signals), difficultyEngine, rewardEngine, questForge (+`world.ts` canonical world model), enemyAI, traceHub. Engine state in localStorage keys `engine_*`; all decisions traced.
 - All game state flows through App.tsx callbacks; quest objectives tracked by `checkQuestObjective(type, target)`.

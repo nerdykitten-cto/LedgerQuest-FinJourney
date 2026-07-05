@@ -49,7 +49,7 @@ const TopAppBar: React.FC<Props> = ({ currentTab, onTabChange, ap }) => {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-surface-container-high px-4 py-2 doodle-border shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:jiggle transition-all cursor-help group border-primary/30">
             <img src="/assets/ui/Icon_Energy_Yellow.png" alt="" className="w-6 h-6 object-contain group-hover:animate-pulse" />
-            <span className="font-headline text-2xl font-bold text-primary">{ap}</span>
+            <span data-testid="ap-value" className="font-headline text-2xl font-bold text-primary">{ap}</span>
             <span className="font-label text-[10px] text-on-surface-variant opacity-60 uppercase tracking-tighter">AP</span>
           </div>
           
