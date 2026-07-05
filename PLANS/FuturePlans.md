@@ -11,6 +11,23 @@ next" pointer.
 
 ---
 
+## DEMO quick UI fixes (do at the start of the next session)
+
+Small, concrete fixes to land before/independent of the bigger design pass:
+
+- [ ] **TV frame crops its content when the browser fills/maximizes the screen.**
+  The CRT-TV game view (`GameView.tsx` frame + `AdventureWorld` scenes) crops at
+  large/maximized viewport widths — content spills past or is clipped by the bezel.
+  (User provided a screenshot of the cropping; get it from them at fix time.)
+  Likely an `overflow`/aspect-ratio/`min-h-0` sizing issue on the TV frame at wide
+  viewports — related to the Phase 1 flexbox `min-w-0`/`min-h-0` work, but now
+  manifesting at the *large* end rather than small. Repro by maximizing the window.
+- [ ] **Party-position marker on the world map shows the Vite logo.** In
+  `components/AdventureWorld/WorldMapScene.tsx`, the "Hero Icon" block renders
+  `<img src="/assets/game/hero.png">` at the party's current location — the asset
+  is resolving to the default Vite logo. Replace it with a **custom hand-made SVG
+  arrow marker** that points at / highlights the current-location node.
+
 ## Phase 5 (proposed) — Design review & playtest pass
 
 Do a structured designer/playtester review of the live app, write findings, then
