@@ -92,19 +92,47 @@ export const WorldMapScene: React.FC<WorldMapSceneProps> = ({
         </div>
       ))}
 
-      {/* Hero Icon */}
+      {/* Party marker — hand-made SVG arrow that hovers above the current node and
+          points down at it (replaces the old /assets/game/hero.png that resolved to
+          the default Vite logo). Anchored at the node, bobbing on the AP-gold ring. */}
       {LOCATIONS.filter(l => l.name === campaign.currentLocation).map(loc => (
-        <div 
+        <div
           key="hero-marker"
-          className="absolute -translate-x-1/2 -translate-y-full pointer-events-none transition-all duration-1000 ease-in-out z-[5]"
+          className="absolute -translate-x-1/2 -translate-y-full pointer-events-none transition-all duration-1000 ease-in-out z-[6]"
           style={{ left: `${loc.x}%`, top: `${loc.y}%` }}
         >
-          <img 
-            src="/assets/game/hero.png" 
-            className="w-12 h-12 md:w-16 md:h-16 animate-bounce" 
-            style={{ animationDuration: '2s' }}
-            alt="Hero"
-          />
+          {/* bob the marker (animate-bounce owns transform, so the vertical lift
+              lives on the parent above); mb keeps the tip just clear of the node */}
+          <div className="animate-bounce mb-1.5" style={{ animationDuration: '2s' }}>
+            <svg
+              viewBox="0 0 40 52"
+              className="w-9 h-12 md:w-11 md:h-14 drop-shadow-[0_3px_5px_rgba(0,0,0,0.6)]"
+              role="img"
+              aria-label="Your party is here"
+            >
+              {/* soft glow behind the pin */}
+              <ellipse cx="20" cy="18" rx="15" ry="15" fill="#f4d03f" opacity="0.18" />
+              {/* teardrop pin body */}
+              <path
+                d="M20 3 C11 3 4 10 4 19 C4 30 20 49 20 49 C20 49 36 30 36 19 C36 10 29 3 20 3 Z"
+                fill="#f4d03f"
+                stroke="#4c4634"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+              {/* inner disc */}
+              <circle cx="20" cy="18" r="8" fill="#171f33" stroke="#4c4634" strokeWidth="1.5" />
+              {/* downward chevron: reinforces that it points AT the node */}
+              <path
+                d="M14 15 L20 22 L26 15"
+                fill="none"
+                stroke="#f4d03f"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
         </div>
       ))}
     </div>

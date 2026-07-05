@@ -37,8 +37,13 @@ export default function GameView({
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center bg-[#0a0f1a] group overflow-hidden p-2">
       
-      {/* Retro TV/Monitor Enclosure - fills whatever space the parent gives it */}
-      <div className="relative w-full max-w-[1100px] flex-1 min-h-0 flex items-center justify-center transition-all duration-700">
+      {/* Retro TV/Monitor Enclosure — fill leftover space, then lock the TV to a
+          landscape 4:3 so wide/short AND tall viewports both show the whole scene
+          inside the bezel instead of cropping it (wide-viewport counterpart to the
+          Phase 1 min-w-0/min-h-0 work). `container-type:size` lets the TV width
+          track the available height via 100cqh, so it never spills past the frame. */}
+      <div className="relative w-full flex-1 min-h-0 flex items-center justify-center lg:[container-type:size]">
+       <div className="relative w-full h-full max-w-[1100px] transition-all duration-700 lg:h-auto lg:aspect-[4/3] lg:w-[min(100%,calc(100cqh*4/3))]">
         
         {/* Physical TV Chassis */}
         <div className="absolute inset-0 bg-[#333] rounded-2xl md:rounded-[40px] shadow-[inset_0_4px_15px_rgba(255,255,255,0.1),30px_30px_80px_rgba(0,0,0,0.9)] border-[4px] border-[#1a1a1a] overflow-hidden flex">
@@ -127,6 +132,8 @@ export default function GameView({
         <div className="absolute -bottom-6 right-1/4 bg-[#e5e5e5] px-8 py-2 border-2 border-gray-400 shadow-xl rotate-1 z-50 transform hover:rotate-0 transition-transform cursor-default hidden md:block">
            <span className="font-mono text-[10px] font-bold text-gray-700 uppercase tracking-[0.3em]">Channel: Ledger_RPG_PRO</span>
         </div>
+
+       </div>
 
       </div>
 
