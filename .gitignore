@@ -7,6 +7,8 @@
 !/APP/
 !/README.md
 !/PREVIOUSLY.md
+!/firebase.json
+!/.firebaserc
 
 # Test artifacts
 **/test-results/
