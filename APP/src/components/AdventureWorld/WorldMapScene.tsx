@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import type { PlayerStats, CampaignState } from '../../types/schemas';
+import { LOCATIONS } from '../../engine/world';
+import { travelCost } from '../../engine/director';
 
 interface WorldMapSceneProps {
   stats: PlayerStats;
@@ -8,13 +10,6 @@ interface WorldMapSceneProps {
   onEnterTown: (name: string) => void;
   showDialogue: (msg: string) => void;
 }
-
-const LOCATIONS = [
-  { name: 'Starting Village', x: 22.5, y: 80, description: 'A humble beginning for a grand ledger.' },
-  { name: 'Copper Town', x: 72.5, y: 70, description: 'The hub of base metal trade.' },
-  { name: 'Silver City', x: 90, y: 36.6, description: 'Glistening spires of high-yield capital.' },
-  { name: 'Iron Citadel', x: 50, y: 20, description: 'The fortress of impenetrable savings.' }
-];
 
 export const WorldMapScene: React.FC<WorldMapSceneProps> = ({ 
   stats, 
@@ -40,7 +35,7 @@ export const WorldMapScene: React.FC<WorldMapSceneProps> = ({
       return;
     }
 
-    const cost = 20; // Default travel cost
+    const cost = travelCost(campaign.currentLocation, name);
     if (stats.ap >= cost) {
       onTravel(name, cost);
     } else {

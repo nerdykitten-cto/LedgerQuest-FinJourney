@@ -5,6 +5,8 @@ import { CombatScene } from './CombatScene';
 import { TownScene } from './TownScene';
 import { DialogueBox } from './Shared/DialogueBox';
 
+import type { BattleResult } from '../../engine/director';
+
 interface AdventureWorldProps {
   stats: PlayerStats;
   campaign: CampaignState;
@@ -12,8 +14,8 @@ interface AdventureWorldProps {
   inventory: InventoryItem[];
   onTravel: (destination: string, cost: number) => void;
   onTalk: (npcName: string, message: string) => void;
-  onBattleVictory: () => void;
-  onBattleDefeat: () => void;
+  onBattleVictory: (result: BattleResult) => void;
+  onBattleDefeat: (result: BattleResult) => void;
   onBattleAction: () => void;
   onActionCost: (cost: number) => void;
   onShopPurchase: (item: any, cost: number) => void;

@@ -95,6 +95,7 @@ export interface Enemy {
   maxHp: number;
   attack: number;
   defense: number;
+  archetype?: 'Aggressor' | 'Tactician' | 'Opportunist';
 }
 
 export interface CampaignState {

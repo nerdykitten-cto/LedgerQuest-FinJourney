@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import type { 
   Expense, 
@@ -13,7 +13,9 @@ import type {
   SavingsGoal,
   InventoryItem
 } from './types/schemas';
-import { APEvaluator, ValueAdjuster, StoryTellingEngine } from './logicEngines';
+import { Director, type BattleResult } from './engine/director';
+import { adjustHabitReward } from './engine/difficultyEngine';
+import { taskReward, applyExp } from './engine/rewardEngine';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import QuestList from './components/QuestList';
@@ -25,9 +27,7 @@ import GrandVault from './components/GrandVault';
 import * as dbService from './persistenceService';
 import { v4 as uuidv4 } from 'uuid';
 
-const evaluator = new APEvaluator();
-const adjuster = new ValueAdjuster();
-const agent = new StoryTellingEngine();
+const director = new Director();
 
 const ITEM_TEMPLATES: Record<string, Partial<InventoryItem>> = {
   'Midas Elixir': {
@@ -124,6 +124,21 @@ function App() {
     };
   }, []);
 
+  // Game Director - day tick on boot (runs once habits have hydrated)
+  const didBoot = useRef(false);
+  useEffect(() => {
+    if (didBoot.current || habits.length === 0) return;
+    didBoot.current = true;
+    const actions = director.onEvent({ type: 'boot', now: Date.now(), habits, budgets });
+    for (const a of actions) {
+      if (a.kind === 'apply-day-tick') {
+        a.habits.forEach(h => dbService.updateHabitDB(h.id, { skipCount: h.skipCount, streak: h.streak }));
+        if (a.monthRolled) a.budgets.forEach(b => dbService.updateBudgetStreamDB(b.id, { spentAmount: b.spentAmount }));
+        showNotify(`Welcome back! ${a.missedDays} day(s) away - habit momentum adjusted.`);
+      }
+    }
+  }, [habits, budgets, showNotify]);
+
   const checkQuestObjective = useCallback(async (type: string, target: string) => {
      const activeQuest = quests.find(q => q.status === 'active');
      if (!activeQuest) return;
@@ -148,7 +163,10 @@ function App() {
      const q = quests.find(q => q.id === id);
      if (q && q.status === 'ready') {
         await dbService.updateQuestDB(id, { status: 'completed' });
-        await dbService.updateStats(cur => ({ exp: cur.exp + q.reward.exp, gold: cur.gold + q.reward.gold }));
+        await dbService.updateStats(cur => {
+          const leveled = applyExp(cur, q.reward.exp);
+          return { level: leveled.stats.level, exp: leveled.stats.exp, gold: cur.gold + q.reward.gold };
+        });
         
         if (q.reward.items && q.reward.items.length > 0) {
            for (const itemKey of q.reward.items) {
@@ -188,26 +206,23 @@ function App() {
      }
   };
 
-  // Story Engine - Logic Loop
+  // Game Director - world evaluation loop
   useEffect(() => {
-    const runAgent = async () => {
-      const { quest, trace } = await agent.process(expenses, stats, habits, campaign, quests);
-      if (quest && !quests.find(q => q.id === quest.id)) {
-        await dbService.addQuestDB(quest);
-        showNotify('New Quest Unlocked: ' + quest.title);
+    const actions = director.onEvent({ type: 'world-changed', campaign, quests, expenses });
+    for (const a of actions) {
+      if (a.kind === 'offer-quest' && !quests.find(q => q.id === a.quest.id)) {
+        dbService.addQuestDB(a.quest);
+        showNotify('New Quest Unlocked: ' + a.quest.title);
       }
-      if (trace.rationale !== 'Waiting for player to reach a town or complete active quests.') {
-         await dbService.addTraceDB(trace);
-      }
-    };
-    runAgent();
-  }, [expenses.length, campaign.currentLocation, quests.length, stats.ap]);
+    }
+  }, [expenses.length, campaign.currentLocation, campaign.worldState, quests.length]);
 
   // --- RPG ACTIONS ---
 
   const handleTravel = useCallback(async (destination: string, cost: number) => {
     if (stats.ap >= cost) {
       await dbService.updateStats(cur => ({ ap: Math.max(0, cur.ap - cost) }));
+      director.onEvent({ type: 'ap-spent', amount: cost });
       await dbService.updateCampaign({
         currentLocation: destination, 
         progressPercentage: Math.min(100, campaign.progressPercentage + 5) 
@@ -225,23 +240,37 @@ function App() {
 
   const handleActionCost = useCallback(async (cost: number) => {
     await dbService.updateStats(cur => ({ ap: Math.max(0, cur.ap - cost) }));
+    director.onEvent({ type: 'ap-spent', amount: cost });
   }, []);
 
-  const handleBattleVictory = useCallback(async () => {
+  const handleBattleVictory = useCallback(async (result: BattleResult) => {
     const activeQuest = quests.find(q => q.status === 'active');
     if (activeQuest) {
       const targetObj = activeQuest.objectives?.find(o => o.type === 'kill' && !o.isCompleted);
       if (targetObj) checkQuestObjective('kill', targetObj.target);
     }
-    await dbService.updateStats(cur => ({ exp: cur.exp + 100, gold: cur.gold + 50 }));
+    const actions = director.onEvent({ type: 'battle-finished', won: true, ...result, stats, party });
+    for (const a of actions) {
+      if (a.kind === 'battle-reward') {
+        await dbService.updateStats(cur => ({ level: a.stats.level, exp: a.stats.exp, gold: cur.gold + a.gold }));
+        for (const m of a.party) {
+          await dbService.updatePartyMemberDB(m.id, { level: m.level, maxHp: m.maxHp, hp: m.hp });
+        }
+        showNotify(
+          a.levelsGained > 0
+            ? `Victory! +${a.exp} XP / +${a.gold} Gold - LEVEL UP! Now level ${a.stats.level}`
+            : `Victory! +${a.exp} XP / +${a.gold} Gold`
+        );
+      }
+    }
     await dbService.updateCampaign({ worldState: 'peace' });
-    showNotify('Victory! +100 XP / +50 Gold');
-  }, [quests, checkQuestObjective, showNotify]);
+  }, [quests, stats, party, checkQuestObjective, showNotify]);
 
-  const handleBattleDefeat = useCallback(async () => {
+  const handleBattleDefeat = useCallback(async (result: BattleResult) => {
+    director.onEvent({ type: 'battle-finished', won: false, ...result, stats, party });
     await dbService.updateCampaign({ worldState: 'peace' });
     showNotify('Defeated... Escaped to safety.');
-  }, [showNotify]);
+  }, [stats, party, showNotify]);
 
   const handleShopPurchase = useCallback(async (item: any, cost: number) => {
     if (stats.gold >= cost) {
@@ -282,16 +311,13 @@ function App() {
   }, []);
 
   const handleBattleAction = useCallback(async () => {
-    const randomEnemy = {
-      id: uuidv4(),
-      name: 'Debt Gnome',
-      hp: 50,
-      maxHp: 50,
-      attack: 5,
-      defense: 2
-    };
-    await dbService.updateCampaign({ worldState: 'battle', activeEnemy: randomEnemy });
-  }, []);
+    const actions = director.onEvent({ type: 'battle-requested', progress: campaign.progressPercentage });
+    for (const a of actions) {
+      if (a.kind === 'spawn-enemy') {
+        await dbService.updateCampaign({ worldState: 'battle', activeEnemy: a.enemy });
+      }
+    }
+  }, [campaign.progressPercentage]);
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -324,6 +350,7 @@ function App() {
 
     await dbService.addExpenseDB(expense);
     await dbService.updateStats(cur => ({ ap: cur.ap + totalAP }));
+    director.onEvent({ type: 'expense-logged', now: Date.now(), apEarned: totalAP });
     
     if (isOverBudget) {
       showNotify(`+${baseAP} AP. Warning: Monthly Budget exceeded!`);
@@ -336,9 +363,10 @@ function App() {
   const handleCompleteTask = async (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (task) {
-      const reward = evaluator.evaluateTaskReward(task);
+      const reward = taskReward(task);
       await dbService.updateTaskDB(taskId, { isCompleted: true });
       await dbService.updateStats(cur => ({ ap: cur.ap + reward }));
+      director.onEvent({ type: 'task-completed', apEarned: reward });
       showNotify('+' + reward + ' AP: Feat Complete!');
     }
   };
@@ -346,9 +374,10 @@ function App() {
   const handleCompleteHabit = useCallback(async (habitId: string) => {
     const habit = habits.find(h => h.id === habitId);
     if (habit) {
-      const { adjustedAP, newDifficulty } = adjuster.adjustHabit(habit);
-      await dbService.updateHabitDB(habitId, { streak: habit.streak + 1, lastCompleted: Date.now(), difficulty: newDifficulty });
+      const { adjustedAP, newDifficulty } = adjustHabitReward(habit);
+      await dbService.updateHabitDB(habitId, { streak: habit.streak + 1, lastCompleted: Date.now(), difficulty: newDifficulty, skipCount: 0 });
       await dbService.updateStats(cur => ({ ap: cur.ap + adjustedAP }));
+      director.onEvent({ type: 'habit-completed', apEarned: adjustedAP });
       showNotify('+' + adjustedAP + ' AP: Ritual Performed!');
     }
   }, [habits, showNotify]);
@@ -385,6 +414,7 @@ function App() {
     if (stats.ap >= 5) {
       await dbService.updateQuestDB(quest.id, { status: 'active' });
       await dbService.updateStats(cur => ({ ap: Math.max(0, cur.ap - 5) }));
+      director.onEvent({ type: 'ap-spent', amount: 5 });
       await dbService.updateCampaign({ activeQuestId: quest.id });
       setGatedQuest(null);
       showNotify('Embarking: ' + quest.title);
@@ -547,7 +577,7 @@ function App() {
                               <div><h4 className="font-headline text-xl font-bold group-hover:text-tertiary">{h.name}</h4><p className="text-[10px] font-label uppercase text-on-surface-variant">LV.{h.difficulty} RITUAL</p></div>
                               <div className="flex items-center gap-1 text-primary"><span className="font-headline text-lg font-black">{h.streak}</span><img src="/assets/ui/Icon_Energy_Green.png" className="w-4 h-4" /></div>
                            </div>
-                           <button onClick={() => handleCompleteHabit(h.id)} className="w-full doodle-btn bg-tertiary text-on-tertiary py-3 font-headline font-black uppercase text-xs flex items-center justify-center gap-2 group-hover:scale-105 transition-all">Perform Ritual (+{adjuster.adjustHabit(h).adjustedAP} AP)</button>
+                           <button onClick={() => handleCompleteHabit(h.id)} className="w-full doodle-btn bg-tertiary text-on-tertiary py-3 font-headline font-black uppercase text-xs flex items-center justify-center gap-2 group-hover:scale-105 transition-all">Perform Ritual (+{adjustHabitReward(h).adjustedAP} AP)</button>
                         </div>
                       ))}
                    </div>
@@ -558,7 +588,7 @@ function App() {
                       {tasks.filter(t => !t.isCompleted).map(t => (
                         <div key={t.id} onClick={() => handleCompleteTask(t.id)} className="bg-surface-container p-6 doodle-border hover:bg-surface-variant flex justify-between group cursor-pointer shadow-md">
                            <div><span className="font-headline text-lg font-bold text-on-surface block group-hover:text-primary">{t.title}</span><span className="font-label text-[8px] uppercase text-on-surface-variant">{t.isNecessity ? 'Vital' : 'Minor'} Feat</span></div>
-                           <div className="text-right text-primary font-black">+{evaluator.evaluateTaskReward(t)} AP</div>
+                           <div className="text-right text-primary font-black">+{taskReward(t)} AP</div>
                         </div>
                       ))}
                       <button onClick={() => setIsTaskCreatorOpen(true)} className="w-full py-4 border-2 border-dashed border-outline/30 text-on-surface-variant font-label text-[10px] uppercase hover:text-primary transition-all">+ Scribe Feat</button>

@@ -39,6 +39,48 @@
         }
       ],
       "sideQuests": []
+    },
+    {
+      "id": "ch2",
+      "title": "Chapter 2: The Silver Standard",
+      "minProgress": 25,
+      "location": "Silver City",
+      "mainQuests": [
+        {
+          "id": "q2_main",
+          "title": "The Gilded Cage",
+          "description": "Silver City glitters, but its vaults whisper of a djinn that grants wishes against your future earnings.",
+          "difficulty": 5,
+          "reward": { "exp": 700, "gold": 400 },
+          "objectives": [
+            { "id": "obj2_1", "text": "Reach the spires of Silver City", "type": "travel", "target": "Silver City", "isCompleted": false },
+            { "id": "obj2_2", "text": "Consult the High Banker about the missing reserves", "type": "talk", "target": "High Banker", "isCompleted": false },
+            { "id": "obj2_3", "text": "Banish the Inflation Djinn", "type": "kill", "target": "Inflation Djinn", "isCompleted": false }
+          ]
+        }
+      ],
+      "sideQuests": []
+    },
+    {
+      "id": "ch3",
+      "title": "Chapter 3: The Iron Vault",
+      "minProgress": 45,
+      "location": "Iron Citadel",
+      "mainQuests": [
+        {
+          "id": "q3_main",
+          "title": "The Debt Everlasting",
+          "description": "At the heart of the Iron Citadel, a golem of compounding interest guards the final page of the ledger.",
+          "difficulty": 7,
+          "reward": { "exp": 1000, "gold": 600 },
+          "objectives": [
+            { "id": "obj3_1", "text": "March on the Iron Citadel", "type": "travel", "target": "Iron Citadel", "isCompleted": false },
+            { "id": "obj3_2", "text": "Receive Commander Fortis's battle plan", "type": "talk", "target": "Commander Fortis", "isCompleted": false },
+            { "id": "obj3_3", "text": "Shatter the Compound Golem", "type": "kill", "target": "Compound Golem", "isCompleted": false }
+          ]
+        }
+      ],
+      "sideQuests": []
     }
   ]
 }

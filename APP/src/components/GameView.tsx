@@ -1,6 +1,8 @@
 import { AdventureWorld } from './AdventureWorld/AdventureWorld';
 import type { PlayerStats, CampaignState, PartyMember, InventoryItem } from '../types/schemas';
 
+import type { BattleResult } from '../engine/director';
+
 interface GameViewProps {
   stats: PlayerStats;
   campaign: CampaignState;
@@ -8,8 +10,8 @@ interface GameViewProps {
   inventory: InventoryItem[];
   onTravel: (destination: string, cost: number) => void;
   onTalk: (npcName: string, message: string) => void;
-  onBattleVictory: () => void;
-  onBattleDefeat: () => void;
+  onBattleVictory: (result: BattleResult) => void;
+  onBattleDefeat: (result: BattleResult) => void;
   onBattleAction: () => void;
   onActionCost: (cost: number) => void;
   onShopPurchase: (item: any, cost: number) => void;

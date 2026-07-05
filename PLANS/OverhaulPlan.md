@@ -1,6 +1,6 @@
 # LedgerQuest Overhaul Plan — Global Release
 
-STATUS: Phase 1 complete (2026-07-04). Next up: **Phase 2**.
+STATUS: Phase 2 complete (2026-07-05). Next up: **Phase 3**.
 CONTEXT: Competition prototype (didn't win, deadline passed). Goal now: fix, polish, publish globally. All "Antigravity" agent code is being replaced with custom deterministic TS algorithms — no external AI, no cloud cost, offline localStorage app.
 
 How to use this doc in a fresh session: read this file + `~/.claude` project memory (`ledgerquest-audit-2026-07`), then start the first unchecked phase. Each phase ends with a browser-verifiable checkpoint. Update STATUS line and checkboxes when a phase lands.
@@ -27,17 +27,17 @@ All bugs runtime-verified in audit:
 - CHECKPOINT PASSED: full loop played in browser at 1280/1024/768/375: expense (+8 AP) → embark (−5) → dbl-click enter town (no charge) → talk (objective ✓) → outskirts → combat (4 strikes, −4 AP, atomic) → victory (+100xp/+50g) → claim (+150xp/+100g). `npm test` 10/10, `npm run build` ✓, console clean. Combat fits TV screen exactly at 1280×800 and 768; scrolls gracefully at 1024×768 (all STRIKEs + sticky log visible).
 - New: `APP/src/persistenceService.test.ts` (6 tests: location defaults/migration + functional updates).
 
-## Phase 2 — Game Director engine — replaces ALL agent/logic-engine code
-New `APP/src/engine/`, pure deterministic TS, TDD each module (vitest ready):
-- [ ] `dayTick.ts` — on boot compare lastSeen date; per missed day: uncompleted habit skipCount+1 & streak reset; budget month rollover. (Today `skipCount` is read by ValueAdjuster but NEVER written — half of habit logic dead.)
-- [ ] `playerModel.ts` — persisted signal tracker: daily log streak, budget pace ratio, task/habit completion rates, combat win/loss + avg strikes, potion usage, AP earn/spend rate, session gaps. EWMA per signal.
-- [ ] `difficultyEngine.ts` — skill score from signals, target 55-65% win rate; enemy HP/attack scaling, habit AP multipliers (preserve streak/skip rules from ValueAdjuster), pity bonuses on loss streaks. Rationale string per decision.
-- [ ] `rewardEngine.ts` — battle reward = base × difficulty × performance (replaces flat +100/+50 in App.tsx `handleBattleVictory`); level curve `expToNext = 100 × level^1.5` with stat gains (fixes level frozen at 1 forever).
-- [ ] `questForge.ts` — replaces `StoryTellingEngine`: manifest spine expanded to 4 chapters (one per map town in `storyManifest.json`); generated side quests themed by top spending category ("The {Category} Menace" — idea salvaged from deleted AntigravityAgent); `validateQuest()` QC: targets exist in world, AP-to-complete ≤ ~2 days average earnings, reward band clamp; reject → log → regenerate (max 3).
-- [ ] `enemyAI.ts` — archetypes (Aggressor=weakest / Tactician=highest MP / Opportunist=unarmored) + persisted memory of last 5 battles (counter potion spam, counter single-striker reliance); small bestiary replaces hardcoded 50HP Debt Gnome in App.tsx `handleBattleAction`.
-- [ ] `director.ts` + `traceHub.ts` — single entry `director.onEvent(...)` replacing App.tsx fragile agent `useEffect([expenses.length, currentLocation, quests.length, stats.ap])`; distance-based travel cost from LOCATIONS coords (replaces hardcoded 20 AP); unified trace {observe, infer, decide, act, rationale}, ring buffer 100, persisted.
-- [ ] Delete `logicEngines.ts` + its smoke test after parity; update GEMINI.md architecture section (still describes old Logic Engines).
-- CHECKPOINT: side quests generated from spending patterns, enemies scale with performance, level-ups fire, decisions traced.
+## Phase 2 — Game Director engine ✅ DONE (2026-07-05) — replaced ALL agent/logic-engine code
+New `APP/src/engine/`, pure deterministic TS, TDD per module (RED-GREEN verified, 108 tests total):
+- [x] `dayTick.ts` — lastSeen compare; per missed calendar day: uncompleted habit skipCount+1 & streak reset; month rollover flag + budget spentAmount reset. Bonus: `handleCompleteHabit` now resets skipCount to 0 on completion (skip bonus paid once).
+- [x] `playerModel.ts` — persisted signals (`engine_signals`): log streak, budget pace, task/habit completion rates, combat W/L + avg strikes, potion usage, AP earn/spend totals + daysActive, session gaps. EWMA (α=0.3).
+- [x] `difficultyEngine.ts` — 6-signal skill score; 55-65% win-rate band nudges ±0.1; multiplier clamped [0.5, 1.6]; pity −0.1×(lossStreak−1); `adjustHabitReward` = ValueAdjuster rules verbatim (parity-tested). Rationale per decision.
+- [x] `rewardEngine.ts` — battle reward = base(100/50) × difficulty × performance(0.7-1.3 from strikes/potions); `expToNext = 100 × level^1.5`; party +1 lvl/+10 maxHp/full heal per level-up; `taskReward` (APEvaluator parity). `handleClaimReward` exp also runs through `applyExp`.
+- [x] `questForge.ts` — manifest → 4 chapters (ch2 Silver City/Inflation Djinn, ch3 Iron Citadel/Compound Golem); "The {Category} Menace" side quests from top spend; `validateQuest` QC (targets vs world, apQuota ≤ 2×avg daily AP earn, reward ≤200exp/120gold per difficulty) with repair→regenerate (max 3) + duplicate skip. New `engine/world.ts` canonical LOCATIONS/NPCs/bosses (WorldMapScene imports it).
+- [x] `enemyAI.ts` — 6-enemy bestiary, 3 progress tiers, deterministic rotation; archetype targeting (Aggressor=lowest HP / Tactician=highest MP / Opportunist=unarmored) wired into CombatScene enemy turn; 5-battle memory (`engine_battleMemory`) counters potion spam (+20% ATK) / single-striker (+2 DEF). `Enemy.archetype?` added to schemas.
+- [x] `director.ts` + `traceHub.ts` — `director.onEvent(...)` singleton in App.tsx: boot day-tick, world-changed quest offers, battle-requested spawn, battle-finished scaled rewards, AP earn/spend + habit/task/expense signals. `travelCost(from,to)` from coords (min 4, ~9-13 AP between towns, fallback 20). Unified traces {observe, infer, decide, act, rationale}, ring buffer 100 (`engine_traces`). CombatScene reports `BattleResult` {strikes, potionsUsed, distinctStrikers}.
+- [x] Deleted `logicEngines.ts` + smoke test; GEMINI.md architecture section rewritten (Game Director modules; stale GAME/ ref dropped).
+- CHECKPOINT PASSED (browser, fresh save): expense +8 AP → side quest "The Food Menace" auto-forged (QC pass, 1 attempt) → embark −5 → town entry free → talk ✓ → Hunt spawns Debt Gnome scaled 50→46 HP (win rate below band; rationale in trace) → victory in 4 strikes → +110xp/+55g (0.91 diff × 1.20 perf) → LEVEL UP to 2 + party maxHp +10 → claim +150xp/+100g through level curve (no spurious level-up) → 5 traces, all with observe/infer/decide/act/rationale. `npm test` 108/108, `tsc -b` clean, `npm run build` ✓, console clean.
 
 ## Phase 3 — Feature completion
 - [ ] WarRoom: real recruit (requires city visit + gold cost) and dismiss (currently toast/no-op).
@@ -50,7 +50,7 @@ New `APP/src/engine/`, pure deterministic TS, TDD each module (vitest ready):
 ## Phase 4 — Quality & ship prep
 - [ ] Rewrite Playwright e2e to match real UI (currently fails at step 1: `text=10 AP` split-span locator; later steps assert stale text "Critical Incursion"/"Heal Potions:" vs actual "Combat Interface"/"Inventory:"). Extend to full loop incl. combat + claim.
 - [ ] Bundle: 617KB single chunk — lazy-load game scenes; **Firebase decision (user pending)**: remove entirely for v1 (recommended; `USE_FIREBASE=false`, placeholder config, Firestore branches buggy/untested) or env-config it.
-- [ ] Economy balance: travel 20 AP vs expense +8 AP too punishing; tune via difficultyEngine constants.
+- [ ] Economy balance: travel now distance-based (~9-13 AP between towns, was flat 20) vs expense +8 AP; playtest and tune via engine constants (travelCost divisor, reward bases, expToNext curve).
 - [ ] Docker build verify; README/docs rewrite as product docs.
 - CHECKPOINT: green `npm test` + e2e, lean bundle, deployable image.
 
@@ -61,5 +61,6 @@ New `APP/src/engine/`, pure deterministic TS, TDD each module (vitest ready):
 ## Key architecture facts for fresh sessions
 - App: `APP/` React 19 + TS + Vite + Tailwind. Persistence: localStorage behind `APP/src/persistenceService.ts` unified API (`USE_FIREBASE=false`); same-tab reactivity via manual `window.dispatchEvent(new Event('storage'))`.
 - Game: `APP/src/components/GameView.tsx` (CRT TV frame) → `AdventureWorld/` scenes (map/town/combat) driven by `campaign.worldState`.
+- Engine: `APP/src/engine/` Game Director (`director.onEvent` singleton in App.tsx) — dayTick, playerModel (EWMA signals), difficultyEngine, rewardEngine, questForge (+`world.ts` canonical world model), enemyAI, traceHub. Engine state in localStorage keys `engine_*`; all decisions traced.
 - All game state flows through App.tsx callbacks; quest objectives tracked by `checkQuestObjective(type, target)`.
 - Tests: `npm test` (vitest, src/**/*.test.ts), `npm run test:e2e` (Playwright, APP/tests/).

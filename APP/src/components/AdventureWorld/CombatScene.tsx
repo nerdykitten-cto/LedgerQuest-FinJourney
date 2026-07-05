@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { PartyMember, Enemy, InventoryItem } from '../../types/schemas';
 import { updateInventoryItemDB, updatePartyMemberDB, removeInventoryItemDB } from '../../persistenceService';
+import { chooseTarget } from '../../engine/enemyAI';
+import type { BattleResult } from '../../engine/director';
 
 interface CombatSceneProps {
   party: PartyMember[];
   enemy: Enemy;
   ap: number;
   inventory: InventoryItem[];
-  onVictory: () => void;
-  onDefeat: () => void;
+  onVictory: (result: BattleResult) => void;
+  onDefeat: (result: BattleResult) => void;
   onActionCost: (cost: number) => void;
   showDialogue: (msg: string) => void;
 }
@@ -31,6 +33,16 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
   const [flash, setFlash] = useState(false);
   const [damageNumber, setDamageNumber] = useState<{ value: number; type: 'player' | 'enemy' } | null>(null);
 
+  // Battle telemetry for the Game Director (playerModel signals + enemy memory)
+  const strikesRef = useRef(0);
+  const potionsRef = useRef(0);
+  const strikersRef = useRef(new Set<string>());
+  const battleResult = (): BattleResult => ({
+    strikes: strikesRef.current,
+    potionsUsed: potionsRef.current,
+    distinctStrikers: strikersRef.current.size,
+  });
+
   const triggerShake = (target: 'enemy' | 'party') => {
     setShake(target);
     setTimeout(() => setShake('none'), 300);
@@ -50,6 +62,8 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
     }
 
     onActionCost(1);
+    strikesRef.current += 1;
+    strikersRef.current.add(member.id);
 
     const weapon = inventory.find(i => i.equippedTo === member.id && i.type === 'Equipment' && i.statBonus?.attack !== undefined);
     const weaponBonus = weapon?.statBonus?.attack || 0;
@@ -68,7 +82,7 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
 
     if (newEnemyHp <= 0) {
       setBattleLog('OBJECTIVE SECURED. VICTORY CONFIRMED.');
-      setTimeout(onVictory, 1500);
+      setTimeout(() => onVictory(battleResult()), 1500);
     } else {
       setIsEnemyTurn(true);
     }
@@ -87,6 +101,7 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
     const healAmt = potion.statBonus?.hpHeal || 40;
     const newHp = Math.min(target.maxHp, target.hp + healAmt);
 
+    potionsRef.current += 1;
     setParty(party.map(m => m.id === target.id ? { ...m, hp: newHp } : m));
     setBattleLog(`POTION: consumed ${potion.name}. ${target.name} healed for ${healAmt} HP.`);
     setFlash(true);
@@ -104,11 +119,9 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
   useEffect(() => {
     if (isEnemyTurn && enemy.hp > 0) {
       const timer = setTimeout(() => {
-        const aliveMembers = party.filter(m => m.hp > 0);
-        if (aliveMembers.length === 0) return;
-
-        // Target low HP member (Aggressive AI)
-        const target = aliveMembers.sort((a, b) => a.hp - b.hp)[0];
+        // Archetype-driven targeting (engine/enemyAI)
+        const target = chooseTarget(enemy.archetype ?? 'Aggressor', party, inventory);
+        if (!target) return;
         
         const armor = inventory.find(i => i.equippedTo === target.id && i.type === 'Equipment' && i.statBonus?.defense !== undefined);
         const defenseBonus = armor?.statBonus?.defense || 0;
@@ -128,7 +141,7 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
 
         if (newParty.every(m => m.hp <= 0)) {
           setBattleLog('CRITICAL FAILURE. ESCAPING COMBAT ZONE...');
-          setTimeout(onDefeat, 1500);
+          setTimeout(() => onDefeat(battleResult()), 1500);
         }
       }, 1000);
       return () => clearTimeout(timer);
