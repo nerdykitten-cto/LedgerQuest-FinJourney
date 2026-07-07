@@ -35,7 +35,7 @@ export default function GameView({
   onExitTown
 }: GameViewProps) {
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center bg-[#0a0f1a] group overflow-hidden p-2">
+    <div className="relative w-full h-full flex flex-col items-center justify-center bg-[#0a0f1a] group overflow-hidden px-2 pt-2 pb-9 2xl:pb-12">
       
       {/* Retro TV/Monitor Enclosure — fill leftover space, then lock the TV to a
           landscape 4:3 so wide/short AND tall viewports both show the whole scene
@@ -43,13 +43,13 @@ export default function GameView({
           Phase 1 min-w-0/min-h-0 work). `container-type:size` lets the TV width
           track the available height via 100cqh, so it never spills past the frame. */}
       <div className="relative w-full flex-1 min-h-0 flex items-center justify-center lg:[container-type:size]">
-       <div className="relative w-full h-full max-w-[1100px] transition-all duration-700 lg:h-auto lg:aspect-[4/3] lg:w-[min(100%,calc(100cqh*4/3))]">
+       <div className="relative w-full h-full max-w-[1400px] transition-all duration-700 lg:h-auto lg:aspect-[4/3] lg:w-[min(100%,calc(100cqh*4/3))]">
         
         {/* Physical TV Chassis */}
         <div className="absolute inset-0 bg-[#333] rounded-2xl md:rounded-[40px] shadow-[inset_0_4px_15px_rgba(255,255,255,0.1),30px_30px_80px_rgba(0,0,0,0.9)] border-[4px] border-[#1a1a1a] overflow-hidden flex">
            
            {/* Left Speaker Side - hidden on small screens so the game gets the width */}
-           <div className="w-[8%] h-full bg-[#2a2a2a] border-r-2 border-[#1a1a1a] hidden md:flex flex-col items-center justify-center gap-3 opacity-60">
+           <div className="w-[12%] h-full bg-[#2a2a2a] border-r-2 border-[#1a1a1a] hidden lg:flex flex-col items-center justify-center gap-3 opacity-60">
               {[...Array(25)].map((_, i) => (
                 <div key={i} className="w-full h-[2px] bg-black/50 shadow-inner"></div>
               ))}
@@ -100,7 +100,7 @@ export default function GameView({
            </div>
 
            {/* Right Control Side - wide desktop only; collapses so the screen fills small viewports */}
-           <div className="w-[18%] h-full bg-[#2a2a2a] border-l-2 border-[#1a1a1a] hidden 2xl:flex flex-col items-center justify-start py-12 gap-12">
+           <div className="w-[12%] h-full bg-[#2a2a2a] border-l-2 border-[#1a1a1a] hidden lg:flex flex-col items-center justify-start py-8 gap-8">
               
               {/* Dial 1 */}
               <div className="flex flex-col items-center gap-3 scale-110">
@@ -129,7 +129,7 @@ export default function GameView({
         </div>
 
         {/* Physical Label (Old Tape) */}
-        <div className="absolute -bottom-6 right-1/4 bg-[#e5e5e5] px-8 py-2 border-2 border-gray-400 shadow-xl rotate-1 z-50 transform hover:rotate-0 transition-transform cursor-default hidden md:block">
+        <div className="absolute -bottom-5 right-1/4 bg-[#e5e5e5] px-8 py-2 border-2 border-gray-400 shadow-xl rotate-1 z-50 transform hover:rotate-0 transition-transform cursor-default hidden md:block">
            <span className="font-mono text-[10px] font-bold text-gray-700 uppercase tracking-[0.3em]">Channel: Ledger_RPG_PRO</span>
         </div>
 

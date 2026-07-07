@@ -1,6 +1,6 @@
 # LedgerQuest — Demo Polish Plan (Phase 5 series)
 
-STATUS: **Phase 1 DONE** (2026-07-07) — feedback button wired to Google Form. Next: Phase 2 (TV/scene sizing).
+STATUS: **Phase 2 DONE** (2026-07-07) — CRT panel enlarged + centered, cheat-sheet/tape clip fixed, map/town/combat fit with no scrollbar. Next: Phase 3 (Assets scaffold).
 CONTEXT: Technical overhaul (OverhaulPlan.md phases 0–4) is done + deployed. This
 plan is the design/feature polish pass for the public **demo** site (static,
 localStorage-only, hosted on Firebase Hosting `ledgerquest-demo.web.app`; Cloud
@@ -69,21 +69,26 @@ PROMPT** — the user pastes it into a new session to start the next phase clean
 
 ---
 
-## Phase 2 — TV / scene sizing overhaul  ·  (items 2 & 5)
+## Phase 2 — TV / scene sizing overhaul  ·  (items 2 & 5)  ·  ✅ DONE (2026-07-07)
 Goal: enlarge the CRT panel, center it, stop clipping the cheat-sheet, and make
 **map / town / combat all fit with no scrollbar** at the new size. Keep CRT chrome.
-- [ ] Enlarge the game cell on the Strategic Map tab (App.tsx `quests` layout):
-  give the game more of the page (e.g. wider than `lg:col-span-8` and/or taller
-  reserved height) without breaking the quest-list column.
-- [ ] Center fix: the center screen is offset because left speaker = `8%` and
-  right controls = `18%`. Balance them (equal side widths, or center the screen
-  region) so the picture is centered in the bezel.
-- [ ] Cheat-sheet clip: the `mt-4 … 2xl:flex` controls row (and the tape label)
-  are clipped because the cell has fixed height + overflow. Reserve vertical room
-  for them (include in the height budget) or move them inside the cell.
-- [ ] Revisit the 4:3 aspect lock from the last fix — with a bigger panel, pick a
-  ratio/size where **combat** (the tallest scene, 3 party cards + enemy + battle
-  log + inventory row) fits with **no inner scroll**. Coordinate with Phase 6.
+- [x] Enlarged the game cell: `App.tsx` game col `lg:col-span-8`→`9`, quest list
+  `4`→`3`; quests view height `calc(100vh-11rem)`→`10rem`; `GameView` panel
+  `max-w-[1100px]`→`[1400px]`.
+- [x] Center fix: balanced the two rails — left speaker `8%`→`12%`, right controls
+  `18%`→`12%`, both now `hidden lg:flex` (appear/disappear together) → screen
+  centered in bezel. Verified `centerOffset 0` at 1280/1536/1920/2560.
+- [x] Cheat-sheet/tape clip: reserved bottom room on the `GameView` root
+  (`p-2`→`px-2 pt-2 pb-9 2xl:pb-12`), pulled tape overhang `-bottom-6`→`-bottom-5`.
+  No clip at any width.
+- [x] Combat fit: `md:p-4` already overrode `pt-20` at desktop; trimmed heading
+  margins (`mb-2 mt-1`→`mb-1`) + enemy block (`mb-3`→`mb-1`) so combat clears the
+  smallest target (1280×800 inner box ~460px) with no inner scroll. `overflow-y-auto`
+  kept as a safety net — full reflow (drop it, 3-card polish) is Phase 6.
+- Verified (browser, preview_eval DOM assertions): 1280/1536/1920/2560 + mobile —
+  centered, rails symmetric, tape+cheat-sheet unclipped, map/town/combat no inner
+  scroll, no desktop page scroll (mobile stacked layout scrolls as before). Console
+  clean. tsc 0 / 127 tests / build green.
 - Files: `APP/src/App.tsx` (quests tab cell), `APP/src/components/GameView.tsx`,
   the three `AdventureWorld/*Scene.tsx`.
 - Checkpoint (browser, 1280 / 1536 / 1920 / 2560 wide + mobile): TV centered in

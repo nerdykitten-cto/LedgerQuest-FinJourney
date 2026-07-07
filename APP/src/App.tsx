@@ -761,7 +761,7 @@ function App() {
         )}
 
         {currentTab === 'quests' && (
-          <div className="animate-in zoom-in-95 duration-500 lg:h-[calc(100vh-11rem)] lg:min-h-[560px] flex flex-col gap-4 md:gap-6">
+          <div className="animate-in zoom-in-95 duration-500 lg:h-[calc(100vh-10rem)] lg:min-h-[560px] flex flex-col gap-4 md:gap-6">
              <div className="flex flex-wrap justify-between items-end gap-4">
                 <div><h1 className="font-headline text-2xl font-black text-primary mb-1 doodle-underline inline-block">Strategic Map</h1><p className="font-body text-sm text-on-surface-variant italic hidden sm:block">Expend AP to navigate.</p></div>
                 <div className="flex gap-4">
@@ -770,7 +770,7 @@ function App() {
                 </div>
              </div>
              <div className="flex-grow min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:overflow-hidden">
-                <div className="lg:col-span-8 bg-[#0a0f1a] relative overflow-hidden shadow-2xl rounded-2xl h-[70vh] min-h-[420px] lg:h-auto lg:min-h-0">
+                <div className="lg:col-span-9 bg-[#0a0f1a] relative overflow-hidden shadow-2xl rounded-2xl h-[70vh] min-h-[420px] lg:h-auto lg:min-h-0">
                    <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-on-surface-variant font-label text-[10px] uppercase tracking-widest">Summoning world…</div>}>
                    <GameView 
                   stats={stats} 
@@ -787,7 +787,7 @@ function App() {
                   onEnterTown={handleEnterTown}
                   onExitTown={handleExitTown}
                 /></Suspense></div>
-                <div className="lg:col-span-4 lg:overflow-y-auto pr-4 custom-scrollbar"><QuestList quests={quests} onStartQuest={handleStartQuest} onClaimReward={handleClaimReward} /></div>
+                <div className="lg:col-span-3 lg:overflow-y-auto pr-4 custom-scrollbar"><QuestList quests={quests} onStartQuest={handleStartQuest} onClaimReward={handleClaimReward} /></div>
              </div>
           </div>
         )}

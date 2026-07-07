@@ -170,7 +170,7 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
         </div>
       </div>
 
-      <h2 className="hidden md:block font-headline text-sm md:text-lg font-black text-[#ffb4aa] tracking-tighter mb-2 mt-1 uppercase italic drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] shrink-0">Combat Interface</h2>
+      <h2 className="hidden md:block font-headline text-sm md:text-lg font-black text-[#ffb4aa] tracking-tighter mb-1 uppercase italic drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] shrink-0">Combat Interface</h2>
 
       {/* Potion Battle Shelf */}
       {potions.length > 0 && (
@@ -195,7 +195,7 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
       )}
 
       {/* Enemy Area */}
-      <div className={`flex flex-col items-center mb-3 relative shrink-0 ${shake === 'enemy' ? 'animate-shake' : ''}`}>
+      <div className={`flex flex-col items-center mb-1 relative shrink-0 ${shake === 'enemy' ? 'animate-shake' : ''}`}>
         {damageNumber && damageNumber.type === 'enemy' && (
           <div className="absolute -top-12 font-headline text-3xl font-black text-[#ffb4aa] animate-float-up pointer-events-none drop-shadow-lg z-50">
             -{damageNumber.value}
