@@ -29,7 +29,7 @@ const ExpenseForm: React.FC<Props> = ({ onAddExpense }) => {
   };
 
   return (
-    <div className="bg-surface-container-high/30 p-6 doodle-border border-dashed border-outline/30 relative">
+    <div className="bg-surface-container-high/30 p-4 md:p-6 doodle-border border-dashed border-outline/30 relative">
       <div className="absolute -top-3 -right-3 w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center doodle-border animate-pulse group shadow-xl overflow-hidden">
         <img src="/assets/ui/Icon_ImageIcon_Lock02_btn.png" alt="" className="w-8 h-8 object-contain group-hover:rotate-12 transition-transform" />
       </div>
@@ -39,7 +39,7 @@ const ExpenseForm: React.FC<Props> = ({ onAddExpense }) => {
         Transmute Currency
       </h4>
       
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
         <div className="flex flex-col gap-2">
           <label className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant flex items-center gap-2">
              <img src="/assets/ui/Icon_Bag.png" alt="" className="w-4 h-4 object-contain opacity-60" /> Amount (Gold)

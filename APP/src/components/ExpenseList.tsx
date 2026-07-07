@@ -16,7 +16,7 @@ const ExpenseList: React.FC<Props> = ({ expenses }) => {
       </h3>
       
       {expenses.length === 0 ? (
-        <div className="doodle-border border-dashed border-outline/20 p-8 text-center bg-surface-container-low">
+        <div className="doodle-border border-dashed border-outline/20 p-5 md:p-8 text-center bg-surface-container-low">
           <p className="font-body text-sm text-on-surface-variant italic">The ledger is empty... for now.</p>
         </div>
       ) : (

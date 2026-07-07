@@ -18,7 +18,7 @@ const QuestList: React.FC<Props> = ({ quests, onStartQuest, onClaimReward }) => 
       </h3>
       
       {quests.length === 0 ? (
-        <div className="doodle-border border-dashed border-outline/20 p-8 text-center bg-surface-container-low">
+        <div className="doodle-border border-dashed border-outline/20 p-5 md:p-8 text-center bg-surface-container-low">
           <p className="font-body text-sm text-on-surface-variant italic">No tales are being told in this region...</p>
         </div>
       ) : (

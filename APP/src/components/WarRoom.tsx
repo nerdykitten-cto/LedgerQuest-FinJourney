@@ -25,7 +25,7 @@ const WarRoom: React.FC<Props> = ({ party, recruitCost, onClose, onAddMember, on
         </div>
 
         {/* Modal Content */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-12">
+        <div className="flex-1 overflow-y-auto p-5 md:p-8 space-y-12">
           
           {/* Row 1: Front Line */}
           <div className="space-y-6">
@@ -36,9 +36,9 @@ const WarRoom: React.FC<Props> = ({ party, recruitCost, onClose, onAddMember, on
               </h3>
               <div className="h-[1px] flex-1 bg-outline-variant ml-6 opacity-20"></div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-8">
                {party.filter(p => p.role === 'Leader' || p.role === 'Vanguard').map(m => (
-                 <div key={m.id} className="bg-surface-container-low border-2 border-primary/20 p-6 relative group hover:jiggle transition-all duration-300">
+                 <div key={m.id} className="bg-surface-container-low border-2 border-primary/20 p-4 md:p-6 relative group hover:jiggle transition-all duration-300">
                     <div className="flex flex-col items-center gap-4">
                        <div className="w-28 h-28 rounded-full border-4 border-primary shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] overflow-hidden bg-primary/5">
                           <img src={m.avatar} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" alt={m.name} />
@@ -74,9 +74,9 @@ const WarRoom: React.FC<Props> = ({ party, recruitCost, onClose, onAddMember, on
               </h3>
               <div className="h-[1px] flex-1 bg-outline-variant ml-6 opacity-20"></div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-8">
                {party.filter(p => p.role !== 'Leader' && p.role !== 'Vanguard').map(m => (
-                 <div key={m.id} className="bg-surface-container-low border-2 border-tertiary/20 p-6 relative group hover:jiggle transition-all duration-300">
+                 <div key={m.id} className="bg-surface-container-low border-2 border-tertiary/20 p-4 md:p-6 relative group hover:jiggle transition-all duration-300">
                     <div className="flex flex-col items-center gap-4">
                        <div className="w-28 h-28 rounded-full border-4 border-tertiary shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] overflow-hidden bg-tertiary/5">
                           <img src={m.avatar} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" alt={m.name} />

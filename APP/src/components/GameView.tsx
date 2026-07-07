@@ -35,7 +35,7 @@ export default function GameView({
   onExitTown
 }: GameViewProps) {
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center bg-[#0a0f1a] group overflow-hidden px-2 pt-2 pb-9 2xl:pb-12">
+    <div className="relative w-full h-full flex flex-col items-center justify-center bg-[#0a0f1a] group overflow-hidden px-1 pt-1 pb-1 md:px-2 md:pt-2 md:pb-9 2xl:pb-12">
       
       {/* Retro TV/Monitor Enclosure — fill leftover space, then lock the TV to a
           landscape 4:3 so wide/short AND tall viewports both show the whole scene
@@ -56,10 +56,10 @@ export default function GameView({
            </div>
 
            {/* Main Screen Area (Center) */}
-           <div className="flex-1 min-w-0 h-full relative bg-[#111] flex items-center justify-center p-1.5 md:p-3">
+           <div className="flex-1 min-w-0 h-full relative bg-[#111] flex items-center justify-center p-1 md:p-3">
 
               {/* Bezel - thin on small screens, chunky CRT on desktop */}
-              <div className="relative w-full h-full bg-[#1a1a1a] rounded-xl md:rounded-[28px] border-[6px] md:border-[8px] border-[#222] shadow-[inset_0_0_100px_rgba(0,0,0,1)] overflow-hidden flex items-center justify-center">
+              <div className="relative w-full h-full bg-[#1a1a1a] rounded-xl md:rounded-[28px] border-[4px] md:border-[8px] border-[#222] shadow-[inset_0_0_100px_rgba(0,0,0,1)] overflow-hidden flex items-center justify-center">
                  
                  {/* Glass Curvature & Reflections */}
                  <div className="absolute inset-0 pointer-events-none z-30 opacity-40 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.5)_100%)]"></div>

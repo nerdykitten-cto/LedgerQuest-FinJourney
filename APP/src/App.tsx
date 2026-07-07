@@ -503,7 +503,7 @@ function App() {
       {isBudgetEditorOpen && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-surface/90 backdrop-blur-md">
           <div className="w-full max-w-md relative animate-in zoom-in-95 duration-200">
-            <div className="tape-accent doodle-border bg-surface-container p-8 shadow-2xl">
+            <div className="tape-accent doodle-border bg-surface-container p-5 md:p-8 shadow-2xl">
               <h3 className="font-headline text-2xl font-bold text-primary mb-6">Calibrate Budget</h3>
               <form onSubmit={handleUpdateBudget} className="space-y-6">
                 <div className="flex flex-col gap-2">
@@ -528,7 +528,7 @@ function App() {
         <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-surface/90 backdrop-blur-md">
           <div className="w-full max-w-2xl relative animate-in zoom-in-95 duration-200">
             <button className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-surface-container-highest doodle-border z-10 flex items-center justify-center hover:scale-110 transition-transform" onClick={() => setIsScribeOpen(false)}><span className="material-symbols-outlined">close</span></button>
-            <div className="tape-accent doodle-border bg-surface-container p-8 shadow-2xl"><ExpenseForm onAddExpense={handleAddExpense} /></div>
+            <div className="tape-accent doodle-border bg-surface-container p-5 md:p-8 shadow-2xl"><ExpenseForm onAddExpense={handleAddExpense} /></div>
           </div>
         </div>
       )}
@@ -537,7 +537,7 @@ function App() {
         <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-surface/90 backdrop-blur-md">
           <div className="w-full max-w-lg relative animate-in zoom-in-95 duration-200">
             <button className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-surface-container-highest doodle-border z-10 flex items-center justify-center hover:scale-110 transition-transform" onClick={() => setIsTransmuteOpen(false)}><span className="material-symbols-outlined">close</span></button>
-            <div className="tape-accent doodle-border bg-surface-container p-8 shadow-2xl">
+            <div className="tape-accent doodle-border bg-surface-container p-5 md:p-8 shadow-2xl">
                <h2 className="font-headline text-2xl font-bold text-primary mb-6 flex items-center gap-2"><img src="/assets/ui/Icon_GearWheels.png" className="w-8 h-8" /> Transmute Budget</h2>
                <div className="space-y-6">
                   {budgets.map(b => (
@@ -558,28 +558,28 @@ function App() {
 
       <TopAppBar currentTab={currentTab} onTabChange={setCurrentTab} ap={stats.ap} />
 
-      <main className="max-w-[1200px] mx-auto px-6 md:px-10 mt-8 pb-32 md:pb-10">
+      <main className="max-w-[1200px] mx-auto px-4 md:px-10 mt-6 md:mt-8 pb-32 md:pb-10">
         {currentTab === 'ledger' && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
               <div><h2 className="font-headline text-3xl font-bold text-primary doodle-underline inline-block mb-2">Personal Ledger</h2><p className="font-body text-lg text-on-surface-variant italic">Annotating financial flow.</p></div>
               <div className="flex gap-4"><button onClick={() => setIsScribeOpen(true)} className="bg-primary text-on-primary px-6 py-3 font-headline font-bold doodle-border hover:scale-105 transition-all shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2"><img src="/assets/ui/Icon_Gold.png" className="w-6 h-6" /> Scribe Expense</button></div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-              <div onClick={() => { setNewBudget(totalIncome); setIsBudgetEditorOpen(true); }} className="bg-surface-container p-6 doodle-border shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between group cursor-pointer hover:bg-primary/5 transition-all">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 md:mb-12">
+              <div onClick={() => { setNewBudget(totalIncome); setIsBudgetEditorOpen(true); }} className="bg-surface-container p-4 md:p-6 doodle-border shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between group cursor-pointer hover:bg-primary/5 transition-all">
                 <span className="font-label text-[10px] uppercase text-on-surface-variant flex justify-between">Monthly Budget <span className="material-symbols-outlined text-xs">edit</span></span>
                 <div className="font-headline text-3xl font-black text-primary">${totalIncome.toLocaleString()}</div>
               </div>
-              <div className="bg-surface-container p-6 doodle-border shadow-[6px_6px_0px_0px_rgba(244,208,63,0.2)] flex flex-col justify-between group">
+              <div className="bg-surface-container p-4 md:p-6 doodle-border shadow-[6px_6px_0px_0px_rgba(244,208,63,0.2)] flex flex-col justify-between group">
                 <span className="font-label text-[10px] uppercase text-on-surface-variant">Total Expenses</span>
                 <div className="font-headline text-3xl font-black text-secondary">${totalExpenses.toLocaleString()}</div>
               </div>
-              <div className={`bg-surface-container p-6 doodle-border shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between group ${remainingBudget < 0 ? 'border-error animate-pulse' : ''}`}>
+              <div className={`bg-surface-container p-4 md:p-6 doodle-border shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between group ${remainingBudget < 0 ? 'border-error animate-pulse' : ''}`}>
                 <span className="font-label text-[10px] uppercase text-on-surface-variant">Remaining Safe</span>
                 <div className={`font-headline text-3xl font-black ${remainingBudget < 0 ? 'text-error' : 'text-tertiary'}`}>${remainingBudget.toLocaleString()}</div>
               </div>
             </div>
-            <div className="bg-surface-container-low p-8 doodle-border shadow-xl"><ExpenseList expenses={expenses} /></div>
+            <div className="bg-surface-container-low p-5 md:p-8 doodle-border shadow-xl"><ExpenseList expenses={expenses} /></div>
           </div>
         )}
 
@@ -596,7 +596,7 @@ function App() {
              {isTaskCreatorOpen && (
                <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-surface/90 backdrop-blur-md">
                   <div className="w-full max-w-md relative animate-in zoom-in-95 duration-200">
-                     <div className="tape-accent doodle-border bg-surface-container p-8 shadow-2xl">
+                     <div className="tape-accent doodle-border bg-surface-container p-5 md:p-8 shadow-2xl">
                         <h3 className="font-headline text-2xl font-bold text-primary mb-6">Scribe New Feat</h3>
                         <form onSubmit={handleAddTask} className="space-y-6">
                            <input className="w-full bg-transparent pencil-line py-2 outline-none font-headline text-xl" type="text" placeholder="Feat title..." value={newTask.title} onChange={e => setNewTask({...newTask, title: e.target.value})} required />
@@ -611,7 +611,7 @@ function App() {
              {isHabitCreatorOpen && (
                <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-surface/90 backdrop-blur-md">
                   <div className="w-full max-w-md relative animate-in zoom-in-95 duration-200">
-                     <div className="tape-accent doodle-border bg-surface-container p-8 shadow-2xl">
+                     <div className="tape-accent doodle-border bg-surface-container p-5 md:p-8 shadow-2xl">
                         <h3 className="font-headline text-2xl font-bold text-tertiary mb-6">New Ritual</h3>
                         <form onSubmit={handleAddHabit} className="space-y-6">
                            <input className="w-full bg-transparent pencil-line py-2 outline-none font-headline text-xl" type="text" placeholder="Ritual name..." value={newHabit.name} onChange={e => setNewHabit({...newHabit, name: e.target.value})} required />
@@ -622,12 +622,12 @@ function App() {
                </div>
              )}
 
-             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                <div className="lg:col-span-8 space-y-8">
+             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-12">
+                <div className="lg:col-span-8 space-y-6 md:space-y-8">
                    <h3 className="font-headline text-2xl font-bold text-on-surface uppercase border-l-4 border-tertiary pl-4">Daily Rituals</h3>
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {habits.map(h => (
-                        <div key={h.id} className="tape-accent doodle-border bg-surface-container p-6 hover:translate-y-[-4px] transition-transform group">
+                        <div key={h.id} className="tape-accent doodle-border bg-surface-container p-4 md:p-6 hover:translate-y-[-4px] transition-transform group">
                            <div className="flex justify-between items-start mb-6">
                               <div><h4 className="font-headline text-xl font-bold group-hover:text-tertiary">{h.name}</h4><p className="text-[10px] font-label uppercase text-on-surface-variant">LV.{h.difficulty} RITUAL</p></div>
                               <div className="flex items-center gap-1 text-primary"><span className="font-headline text-lg font-black">{h.streak}</span><img src="/assets/ui/Icon_Energy_Green.png" className="w-4 h-4" /></div>
@@ -637,11 +637,11 @@ function App() {
                       ))}
                    </div>
                 </div>
-                <div className="lg:col-span-4 space-y-8">
+                <div className="lg:col-span-4 space-y-6 md:space-y-8">
                    <h3 className="font-headline text-2xl font-bold text-on-surface uppercase border-l-4 border-primary pl-4">One-Time Feats</h3>
                    <div className="space-y-4">
                       {tasks.filter(t => !t.isCompleted).map(t => (
-                        <div key={t.id} onClick={() => handleCompleteTask(t.id)} className="bg-surface-container p-6 doodle-border hover:bg-surface-variant flex justify-between group cursor-pointer shadow-md">
+                        <div key={t.id} onClick={() => handleCompleteTask(t.id)} className="bg-surface-container p-4 md:p-6 doodle-border hover:bg-surface-variant flex justify-between group cursor-pointer shadow-md">
                            <div><span className="font-headline text-lg font-bold text-on-surface block group-hover:text-primary">{t.title}</span><span className="font-label text-[8px] uppercase text-on-surface-variant">{t.isNecessity ? 'Vital' : 'Minor'} Feat</span></div>
                            <div className="text-right text-primary font-black">+{taskReward(t)} AP</div>
                         </div>
@@ -672,16 +672,16 @@ function App() {
                   </div>
                 </div>
              </div>
-             <div className="bg-surface-container-low p-8 doodle-border shadow-2xl min-h-[600px]">
+             <div className="bg-surface-container-low p-5 md:p-8 doodle-border shadow-2xl min-h-[600px]">
                 {archiveTab === 'ledger' && <ExpenseList expenses={expenses} />}
                 {archiveTab === 'budget' && (
                   <div className="space-y-12">
                      <h3 className="font-headline text-2xl font-bold text-on-surface doodle-underline inline-block">Active Budget Streams</h3>
-                     <div className="grid grid-cols-1 gap-8">{budgets.map(b => {
+                     <div className="grid grid-cols-1 gap-5 md:gap-8">{budgets.map(b => {
                         const catTotal = expenses.filter(e => e.category === b.category).reduce((s, e) => s + e.amount, 0);
                         const perc = Math.min(100, (catTotal / b.allocatedAmount) * 100);
                         return (
-                          <div key={b.id} className="bg-surface-container p-6 doodle-border group hover:bg-surface-container-high transition-colors">
+                          <div key={b.id} className="bg-surface-container p-4 md:p-6 doodle-border group hover:bg-surface-container-high transition-colors">
                              <div className="flex justify-between items-end mb-4"><div><span className="font-label text-[10px] uppercase text-on-surface-variant">Stream: {b.category}</span><h4 className="font-headline text-2xl font-black text-on-surface">${catTotal.toLocaleString()} <span className="text-sm font-normal text-on-surface-variant">of ${b.allocatedAmount}</span></h4></div><div className="text-right text-primary font-black">{Math.round(perc)}%</div></div>
                              <div className="h-4 w-full bg-surface/50 doodle-border p-0.5"><div className={`h-full transition-all duration-1000 ${perc > 90 ? 'bg-secondary' : 'bg-primary'}`} style={{ width: `${perc}%` }}></div></div>
                           </div>
@@ -700,11 +700,11 @@ function App() {
                         </form>
                      </div>
                      {savings.length === 0 && <p className="font-body text-sm text-on-surface-variant italic">No vaults yet. Forge one to start saving toward a goal.</p>}
-                     <div className="grid grid-cols-1 gap-8">{savings.map(g => {
+                     <div className="grid grid-cols-1 gap-5 md:gap-8">{savings.map(g => {
                         const perc = Math.min(100, (g.currentAmount / g.targetAmount) * 100);
                         const done = g.currentAmount >= g.targetAmount;
                         return (
-                          <div key={g.id} className="bg-surface-container p-6 doodle-border group hover:bg-surface-container-high transition-colors">
+                          <div key={g.id} className="bg-surface-container p-4 md:p-6 doodle-border group hover:bg-surface-container-high transition-colors">
                              <div className="flex justify-between items-end mb-4">
                                 <div>
                                    <span className="font-label text-[10px] uppercase text-on-surface-variant">Vault: {g.name}{done ? ' — SEALED' : ''}</span>
@@ -741,7 +741,7 @@ function App() {
                      </div>
                      {traces.length === 0 && <p className="font-body text-sm text-on-surface-variant italic">The Director has made no decisions yet. Play a little.</p>}
                      <div className="space-y-6">{[...traces].reverse().map(t => (
-                        <div key={t.id} className="bg-surface-container p-6 doodle-border space-y-4">
+                        <div key={t.id} className="bg-surface-container p-4 md:p-6 doodle-border space-y-4">
                            <div className="flex flex-wrap justify-between items-baseline gap-2">
                               <span className="font-headline font-black text-primary">{t.act}</span>
                               <span className="font-label text-[10px] uppercase text-on-surface-variant">{new Date(t.timestamp).toLocaleString()}</span>
@@ -769,7 +769,7 @@ function App() {
                    <button onClick={() => setIsVaultOpen(true)} className="bg-surface-container-high text-on-surface px-6 py-2 doodle-border font-label text-[10px] uppercase font-black hover:bg-primary transition-all">Vault</button>
                 </div>
              </div>
-             <div className="flex-grow min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:overflow-hidden">
+             <div className="flex-grow min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-8 lg:overflow-hidden">
                 <div className="lg:col-span-9 bg-[#0a0f1a] relative overflow-hidden shadow-2xl rounded-2xl h-[70vh] min-h-[420px] lg:h-auto lg:min-h-0">
                    <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-on-surface-variant font-label text-[10px] uppercase tracking-widest">Summoning world…</div>}>
                    <GameView 
@@ -793,7 +793,7 @@ function App() {
         )}
       </main>
 
-      <footer className="fixed bottom-0 left-0 w-full z-50 p-6 md:hidden"><div className="bg-surface-container doodle-border shadow-2xl flex justify-around p-4 backdrop-blur-md"><button onClick={() => setCurrentTab('ledger')} className={`material-symbols-outlined ${currentTab === 'ledger' ? 'text-primary' : 'text-on-surface-variant'}`}>dashboard</button><button onClick={() => setCurrentTab('trials')} className={`material-symbols-outlined ${currentTab === 'trials' ? 'text-primary' : 'text-on-surface-variant'}`}>history_edu</button><button onClick={() => setCurrentTab('archive')} className={`material-symbols-outlined ${currentTab === 'archive' ? 'text-primary' : 'text-on-surface-variant'}`}>menu_book</button><button onClick={() => setCurrentTab('quests')} className={`material-symbols-outlined ${currentTab === 'quests' ? 'text-primary' : 'text-on-surface-variant'}`}>explore</button></div></footer>
+      <footer className="fixed bottom-0 left-0 w-full z-50 p-4 md:p-6 md:hidden"><div className="bg-surface-container doodle-border shadow-2xl flex justify-around p-4 backdrop-blur-md"><button onClick={() => setCurrentTab('ledger')} className={`material-symbols-outlined ${currentTab === 'ledger' ? 'text-primary' : 'text-on-surface-variant'}`}>dashboard</button><button onClick={() => setCurrentTab('trials')} className={`material-symbols-outlined ${currentTab === 'trials' ? 'text-primary' : 'text-on-surface-variant'}`}>history_edu</button><button onClick={() => setCurrentTab('archive')} className={`material-symbols-outlined ${currentTab === 'archive' ? 'text-primary' : 'text-on-surface-variant'}`}>menu_book</button><button onClick={() => setCurrentTab('quests')} className={`material-symbols-outlined ${currentTab === 'quests' ? 'text-primary' : 'text-on-surface-variant'}`}>explore</button></div></footer>
     </div>
   );
 }

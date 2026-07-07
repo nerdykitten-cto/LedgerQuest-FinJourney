@@ -97,7 +97,7 @@ const GrandVault: React.FC<Props> = ({ inventory, party, onClose }) => {
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 md:p-10">
       <div className="absolute inset-0 bg-[#060d20]/80 backdrop-blur-sm" onClick={onClose}></div>
-      <div className="relative z-20 w-full max-w-4xl max-h-[85vh] bg-[#171f33] border-4 border-[#4c4634] p-6 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col animate-in zoom-in-95 duration-200">
+      <div className="relative z-20 w-full max-w-4xl max-h-[85vh] bg-[#171f33] border-4 border-[#4c4634] p-4 md:p-6 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col animate-in zoom-in-95 duration-200">
         
         {/* Modal Header */}
         <div className="flex justify-between items-start mb-6">
@@ -171,7 +171,7 @@ const GrandVault: React.FC<Props> = ({ inventory, party, onClose }) => {
                 ))}
               </div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center opacity-30 p-8">
+              <div className="h-full flex flex-col items-center justify-center text-center opacity-30 p-5 md:p-8">
                 <span className="material-symbols-outlined text-5xl mb-3 text-[#ffeebb]">inventory_2</span>
                 <p className="font-body text-xs italic text-[#ffeebb]">Vault segment is currently empty.</p>
               </div>
@@ -269,7 +269,7 @@ const GrandVault: React.FC<Props> = ({ inventory, party, onClose }) => {
               </div>
             </div>
           ) : (
-            <div className="md:w-72 bg-[#0b1326]/50 border-2 border-dashed border-[#4c4634]/30 p-8 flex flex-col items-center justify-center text-center opacity-40">
+            <div className="md:w-72 bg-[#0b1326]/50 border-2 border-dashed border-[#4c4634]/30 p-5 md:p-8 flex flex-col items-center justify-center text-center opacity-40">
                <span className="material-symbols-outlined text-5xl mb-4 text-[#ffeebb]">info</span>
                <p className="font-body text-xs italic text-[#ffeebb]">Select an item to inspect its attributes or equip gear.</p>
             </div>
