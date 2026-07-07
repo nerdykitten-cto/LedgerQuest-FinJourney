@@ -53,9 +53,16 @@ const TopAppBar: React.FC<Props> = ({ currentTab, onTabChange, ap }) => {
             <span className="font-label text-[10px] text-on-surface-variant opacity-60 uppercase tracking-tighter">AP</span>
           </div>
           
-          <button className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-outline/30 hover:border-primary/50 transition-all overflow-hidden group">
-            <img src="/assets/ui/Icon_ImageIcon_Chat.png" alt="Profile" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
-          </button>
+          <a
+            href="https://forms.gle/1DH1yBBggYtuH12D9"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Send feedback"
+            title="Send feedback"
+            className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-outline/30 hover:border-primary/50 transition-all overflow-hidden group"
+          >
+            <img src="/assets/ui/Icon_ImageIcon_Chat.png" alt="Feedback" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+          </a>
         </div>
       </div>
     </header>
