@@ -655,20 +655,20 @@ function App() {
 
         {currentTab === 'archive' && (
           <div className="animate-in fade-in duration-500">
-             <div className="mb-8 flex justify-between items-end gap-4">
+             <div className="mb-6 md:mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
                 <div>
-                   <h1 className="font-headline text-4xl font-black text-primary doodle-underline inline-block">Grand Archive</h1>
+                   <h1 className="font-headline text-2xl md:text-4xl font-black text-primary doodle-underline inline-block">Grand Archive</h1>
                    <p className="font-body text-sm text-on-surface-variant italic mt-2">Historical financial records and goal calibration.</p>
                 </div>
-                <div className="flex flex-col md:flex-row items-end gap-4">
-                  <button onClick={() => { setNewBudget(totalIncome); setIsBudgetEditorOpen(true); }} className="bg-surface-container px-4 py-2 doodle-border font-label text-[10px] uppercase font-black hover:text-primary transition-all flex items-center gap-2 shadow-md mb-1">
+                <div className="flex flex-col md:flex-row items-stretch md:items-end gap-3 md:gap-4 w-full md:w-auto">
+                  <button onClick={() => { setNewBudget(totalIncome); setIsBudgetEditorOpen(true); }} className="bg-surface-container px-4 py-2 doodle-border font-label text-[10px] uppercase font-black hover:text-primary transition-all flex items-center justify-center gap-2 shadow-md md:mb-1">
                     <span className="material-symbols-outlined text-sm">tune</span> Calibrate Budget
                   </button>
-                  <div className="flex bg-surface-container-high rounded-full p-1 doodle-border shadow-inner">
-                    <button onClick={() => setArchiveTab('ledger')} className={`px-6 py-2 rounded-full font-label text-[10px] uppercase tracking-widest transition-all ${archiveTab === 'ledger' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Ledger</button>
-                    <button onClick={() => setArchiveTab('budget')} className={`px-6 py-2 rounded-full font-label text-[10px] uppercase tracking-widest transition-all ${archiveTab === 'budget' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Streams</button>
-                    <button onClick={() => setArchiveTab('savings')} className={`px-6 py-2 rounded-full font-label text-[10px] uppercase tracking-widest transition-all ${archiveTab === 'savings' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Vaults</button>
-                    <button onClick={() => setArchiveTab('engine')} className={`px-6 py-2 rounded-full font-label text-[10px] uppercase tracking-widest transition-all ${archiveTab === 'engine' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Engine Log</button>
+                  <div className="flex w-full md:w-auto bg-surface-container-high rounded-full p-1 doodle-border shadow-inner">
+                    <button onClick={() => setArchiveTab('ledger')} className={`flex-1 md:flex-none px-1.5 md:px-6 py-2 rounded-full font-label text-[9px] md:text-[10px] uppercase tracking-tight md:tracking-widest whitespace-nowrap transition-all ${archiveTab === 'ledger' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Ledger</button>
+                    <button onClick={() => setArchiveTab('budget')} className={`flex-1 md:flex-none px-1.5 md:px-6 py-2 rounded-full font-label text-[9px] md:text-[10px] uppercase tracking-tight md:tracking-widest whitespace-nowrap transition-all ${archiveTab === 'budget' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Streams</button>
+                    <button onClick={() => setArchiveTab('savings')} className={`flex-1 md:flex-none px-1.5 md:px-6 py-2 rounded-full font-label text-[9px] md:text-[10px] uppercase tracking-tight md:tracking-widest whitespace-nowrap transition-all ${archiveTab === 'savings' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Vaults</button>
+                    <button onClick={() => setArchiveTab('engine')} className={`flex-1 md:flex-none px-1.5 md:px-6 py-2 rounded-full font-label text-[9px] md:text-[10px] uppercase tracking-tight md:tracking-widest whitespace-nowrap transition-all ${archiveTab === 'engine' ? 'bg-primary text-on-primary font-black shadow-lg' : 'text-on-surface-variant font-bold hover:bg-surface-variant'}`}>Engine Log</button>
                   </div>
                 </div>
              </div>
