@@ -1,6 +1,20 @@
 # LedgerQuest — Demo Polish Plan (Phase 5 series)
 
-STATUS: **Phase 2 DONE** (2026-07-07) — CRT panel enlarged + centered, cheat-sheet/tape clip fixed, map/town/combat fit with no scrollbar. Next: Phase 3 (Assets scaffold).
+STATUS: **Phase 2 DONE** (2026-07-07) — CRT panel enlarged + centered, cheat-sheet/tape clip fixed, map/town/combat fit with no scrollbar. Next: **Phase 3 (Assets scaffold)**.
+
+POST-PHASE-2 MOBILE POLISH (2026-07-08, not a numbered phase — extra hardening):
+- `6e46936` de-cramp mobile across all pages (responsive padding/gaps, md: restores).
+- `8e8f1b1` Grand Vault mobile: category rail = grid-cols-3 (no overflow), AP badge scaled.
+- `23ec415` header md/tablet band: shifted desktop restores md:→lg:, nav tabs icon-only
+  in md band, Map pill xl: only (was colliding with Quests tab).
+- `ac840f2` Grand Archive iPhone-SE horizontal overflow (header stacks, pills fit).
+- `f227d3e` + `2c23f37` **world map drag-to-pan on phones**: `WorldMapScene.tsx` now
+  wraps the map in a pannable square layer (touch/pointer drag, 8px tap-vs-drag
+  threshold so a drag never travels; tap a node to travel / tap current node to
+  enter town). Phones get an oversized square layer (max(w,h)*1.2) so the whole
+  square map art is reachable edge-to-edge + auto-centres on the party; md+ fills
+  the window with no pan. `MOBILE_ZOOM` const tunes the phone zoom.
+All committed to `main`, tree clean; tsc 0 / 127 tests / build green throughout.
 CONTEXT: Technical overhaul (OverhaulPlan.md phases 0–4) is done + deployed. This
 plan is the design/feature polish pass for the public **demo** site (static,
 localStorage-only, hosted on Firebase Hosting `ledgerquest-demo.web.app`; Cloud
