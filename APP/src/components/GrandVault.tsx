@@ -100,9 +100,9 @@ const GrandVault: React.FC<Props> = ({ inventory, party, onClose }) => {
       <div className="relative z-20 w-full max-w-4xl max-h-[85vh] bg-[#171f33] border-4 border-[#4c4634] p-4 md:p-6 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col animate-in zoom-in-95 duration-200">
         
         {/* Modal Header */}
-        <div className="flex justify-between items-start mb-6">
-          <div className="relative">
-            <h2 className="font-headline text-3xl font-black text-[#f4d03f] doodle-underline inline-block uppercase tracking-tighter italic">The Grand Vault: Inventory</h2>
+        <div className="flex justify-between items-start gap-3 mb-4 md:mb-6">
+          <div className="relative min-w-0">
+            <h2 className="font-headline text-xl md:text-3xl font-black text-[#f4d03f] doodle-underline inline-block uppercase tracking-tighter italic">The Grand Vault: Inventory</h2>
             <p className="font-label text-[10px] uppercase tracking-widest text-[#ffeebb]/60 mt-2">Carrying: {totalWeight.toFixed(1)} / 100.0 lbs</p>
           </div>
           <button className="bg-[#84231d]/20 text-[#ffb4aa] px-3 py-1 doodle-border border-[#ffb4aa]/30 hover:rotate-6 transition-transform hover:bg-[#84231d]/40" onClick={onClose}>
@@ -113,24 +113,24 @@ const GrandVault: React.FC<Props> = ({ inventory, party, onClose }) => {
         {/* Modal Content Layout */}
         <div className="flex flex-col md:flex-row gap-6 flex-grow overflow-hidden">
           {/* Left: Sidebar Categories */}
-          <nav className="flex md:flex-col gap-2 md:w-48">
+          <nav className="grid grid-cols-3 md:flex md:flex-col gap-1.5 md:gap-2 md:w-48">
             <button 
               onClick={() => setActiveTab('All')}
-              className={`flex items-center gap-3 p-3 font-label text-[10px] uppercase font-black text-left active:scale-95 transition-transform doodle-border ${activeTab === 'All' ? 'bg-[#f4d03f] text-[#060d20] border-[#f4d03f]' : 'bg-[#0b1326] text-[#ffeebb] border-[#4c4634]'}`}
+              className={`flex items-center justify-center md:justify-start gap-1.5 md:gap-3 p-2 md:p-3 font-label text-[9px] md:text-[10px] uppercase font-black text-center md:text-left active:scale-95 transition-transform doodle-border ${activeTab === 'All' ? 'bg-[#f4d03f] text-[#060d20] border-[#f4d03f]' : 'bg-[#0b1326] text-[#ffeebb] border-[#4c4634]'}`}
             >
               <span className="material-symbols-outlined text-sm">grid_view</span>
               All Items
             </button>
             <button 
               onClick={() => setActiveTab('Consumable')}
-              className={`flex items-center gap-3 p-3 font-label text-[10px] uppercase font-black text-left active:scale-95 transition-transform doodle-border ${activeTab === 'Consumable' ? 'bg-[#f4d03f] text-[#060d20] border-[#f4d03f]' : 'bg-[#0b1326] text-[#ffeebb] border-[#4c4634]'}`}
+              className={`flex items-center justify-center md:justify-start gap-1.5 md:gap-3 p-2 md:p-3 font-label text-[9px] md:text-[10px] uppercase font-black text-center md:text-left active:scale-95 transition-transform doodle-border ${activeTab === 'Consumable' ? 'bg-[#f4d03f] text-[#060d20] border-[#f4d03f]' : 'bg-[#0b1326] text-[#ffeebb] border-[#4c4634]'}`}
             >
               <span className="material-symbols-outlined text-sm">liquor</span>
               Consumables
             </button>
             <button 
               onClick={() => setActiveTab('Equipment')}
-              className={`flex items-center gap-3 p-3 font-label text-[10px] uppercase font-black text-left active:scale-95 transition-transform doodle-border ${activeTab === 'Equipment' ? 'bg-[#f4d03f] text-[#060d20] border-[#f4d03f]' : 'bg-[#0b1326] text-[#ffeebb] border-[#4c4634]'}`}
+              className={`flex items-center justify-center md:justify-start gap-1.5 md:gap-3 p-2 md:p-3 font-label text-[9px] md:text-[10px] uppercase font-black text-center md:text-left active:scale-95 transition-transform doodle-border ${activeTab === 'Equipment' ? 'bg-[#f4d03f] text-[#060d20] border-[#f4d03f]' : 'bg-[#0b1326] text-[#ffeebb] border-[#4c4634]'}`}
             >
               <span className="material-symbols-outlined text-sm">shield</span>
               Equipment

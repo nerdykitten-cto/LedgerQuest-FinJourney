@@ -15,9 +15,9 @@ const TopAppBar: React.FC<Props> = ({ currentTab, onTabChange, ap }) => {
   ];
 
   return (
-    <header className="bg-surface border-b-2 border-outline-variant flex justify-between items-center px-6 md:px-10 h-20 w-full z-50 sticky top-0 shadow-lg select-none">
+    <header className="bg-surface border-b-2 border-outline-variant flex justify-between items-center px-4 md:px-10 h-20 w-full z-50 sticky top-0 shadow-lg select-none">
       <div className="flex items-center gap-4">
-        <h1 className="font-headline text-3xl font-black text-primary drop-shadow-[2px_2px_0px_rgba(0,0,0,1)] uppercase tracking-tighter">LedgerQuest <span className="text-xs text-on-surface-variant align-top opacity-50">- DEMO</span></h1>
+        <h1 className="font-headline text-xl md:text-3xl font-black text-primary drop-shadow-[2px_2px_0px_rgba(0,0,0,1)] uppercase tracking-tighter">LedgerQuest <span className="text-xs text-on-surface-variant align-top opacity-50">- DEMO</span></h1>
       </div>
       
       <nav className="hidden md:flex gap-8 h-full">
@@ -46,10 +46,10 @@ const TopAppBar: React.FC<Props> = ({ currentTab, onTabChange, ap }) => {
           Map
         </div>
         
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-surface-container-high px-4 py-2 doodle-border shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:jiggle transition-all cursor-help group border-primary/30">
-            <img src="/assets/ui/Icon_Energy_Yellow.png" alt="" className="w-6 h-6 object-contain group-hover:animate-pulse" />
-            <span data-testid="ap-value" className="font-headline text-2xl font-bold text-primary">{ap}</span>
+        <div className="flex items-center gap-2.5 md:gap-3">
+          <div className="flex items-center gap-1.5 md:gap-2 bg-surface-container-high px-2.5 md:px-4 py-1.5 md:py-2 doodle-border shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:jiggle transition-all cursor-help group border-primary/30">
+            <img src="/assets/ui/Icon_Energy_Yellow.png" alt="" className="w-5 h-5 md:w-6 md:h-6 object-contain group-hover:animate-pulse" />
+            <span data-testid="ap-value" className="font-headline text-lg md:text-2xl font-bold text-primary">{ap}</span>
             <span className="font-label text-[10px] text-on-surface-variant opacity-60 uppercase tracking-tighter">AP</span>
           </div>
           
@@ -59,7 +59,7 @@ const TopAppBar: React.FC<Props> = ({ currentTab, onTabChange, ap }) => {
             rel="noopener noreferrer"
             aria-label="Send feedback"
             title="Send feedback"
-            className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-outline/30 hover:border-primary/50 transition-all overflow-hidden group"
+            className="w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center border-2 border-outline/30 hover:border-primary/50 transition-all overflow-hidden group"
           >
             <img src="/assets/ui/Icon_ImageIcon_Chat.png" alt="Feedback" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
           </a>
