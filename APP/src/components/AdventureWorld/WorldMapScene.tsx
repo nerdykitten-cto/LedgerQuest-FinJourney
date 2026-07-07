@@ -13,8 +13,11 @@ interface WorldMapSceneProps {
 
 // Finger travel (px) before a gesture counts as a drag rather than a tap.
 const DRAG_THRESHOLD = 8;
-// How far the map is zoomed in on phones so there is room to pan around.
-const MOBILE_MAP_SCALE = 1.9;
+// On phones the (square) map is drawn this much larger than its covering fit so
+// the whole map is reachable edge-to-edge by panning, with a little margin.
+const MOBILE_ZOOM = 1.2;
+
+const clamp = (min: number, max: number, v: number) => Math.max(min, Math.min(max, v));
 
 export const WorldMapScene: React.FC<WorldMapSceneProps> = ({
   stats,
@@ -26,8 +29,15 @@ export const WorldMapScene: React.FC<WorldMapSceneProps> = ({
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  const [mobile, setMobile] = useState(false);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const centered = useRef(false);
+
+  // The pannable map layer is a square (the map art is square) sized so it
+  // overflows the window in BOTH axes on phones -> every edge is reachable.
+  const side = Math.max(size.w, size.h) * MOBILE_ZOOM;
+  const pannable = mobile && size.w > 0;
 
   // Gesture bookkeeping in a ref so a drag never re-renders until the pan moves.
   const drag = useRef({
@@ -40,33 +50,44 @@ export const WorldMapScene: React.FC<WorldMapSceneProps> = ({
     pointerId: -1,
   });
 
-  // Phones zoom in (drag-to-explore); md+ keeps the whole map in view (no pan).
+  // Track the window size + breakpoint (phones pan; md+ shows the whole map).
   useEffect(() => {
-    const apply = () => setScale(window.innerWidth < 768 ? MOBILE_MAP_SCALE : 1);
-    apply();
-    window.addEventListener('resize', apply);
-    return () => window.removeEventListener('resize', apply);
+    const measure = () => {
+      const el = containerRef.current;
+      if (el) setSize({ w: el.clientWidth, h: el.clientHeight });
+      setMobile(window.innerWidth < 768);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
   }, []);
 
   const clampPan = (x: number, y: number) => {
-    const el = containerRef.current;
-    if (!el) return { x: 0, y: 0 };
-    const maxX = ((scale - 1) * el.clientWidth) / 2;
-    const maxY = ((scale - 1) * el.clientHeight) / 2;
-    return {
-      x: Math.max(-maxX, Math.min(maxX, x)),
-      y: Math.max(-maxY, Math.min(maxY, y)),
-    };
+    const maxX = Math.max(0, (side - size.w) / 2);
+    const maxY = Math.max(0, (side - size.h) / 2);
+    return { x: clamp(-maxX, maxX, x), y: clamp(-maxY, maxY, y) };
   };
 
-  // Keep the pan in-bounds whenever the zoom level changes (e.g. rotate/resize).
+  // Once the layer is measured on a phone, centre it on the current location so
+  // the player starts looking at where their party is.
+  useEffect(() => {
+    if (!pannable || centered.current) return;
+    const loc = LOCATIONS.find(l => l.name === campaign.currentLocation);
+    if (loc) {
+      setPan(clampPan(side / 2 - (loc.x / 100) * side, side / 2 - (loc.y / 100) * side));
+    }
+    centered.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pannable, side]);
+
+  // Keep the pan in-bounds when the window/zoom changes (rotate, resize).
   useEffect(() => {
     setPan(p => clampPan(p.x, p.y));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scale]);
+  }, [side, mobile]);
 
   const onPointerDown = (e: React.PointerEvent) => {
-    if (scale <= 1) return; // nothing to pan on wide screens
+    if (!pannable) return; // nothing to pan on wide screens
     drag.current = {
       down: true,
       moved: false,
@@ -117,21 +138,26 @@ export const WorldMapScene: React.FC<WorldMapSceneProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-full overflow-hidden bg-[#060d20] select-none ${scale > 1 ? 'touch-none cursor-grab active:cursor-grabbing' : ''}`}
+      className={`relative w-full h-full overflow-hidden bg-[#060d20] select-none ${pannable ? 'touch-none cursor-grab active:cursor-grabbing' : ''}`}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
     >
-      {/* Pannable map layer — image, paths, nodes and hero marker move together. */}
+      {/* Pannable map layer — image, paths, nodes and hero marker move together.
+          On phones it is an oversized square positioned from the window centre;
+          on md+ it simply fills the window (no panning). */}
       <div
         data-testid="map-layer"
-        className="absolute inset-0 will-change-transform"
-        style={{
-          transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${scale})`,
-          transformOrigin: 'center center',
+        className={`absolute will-change-transform ${pannable ? '' : 'inset-0'}`}
+        style={pannable ? {
+          width: side,
+          height: side,
+          left: '50%',
+          top: '50%',
+          transform: `translate3d(calc(-50% + ${pan.x}px), calc(-50% + ${pan.y}px), 0)`,
           transition: drag.current.down ? 'none' : 'transform 0.12s ease-out',
-        }}
+        } : undefined}
       >
         {/* World Map Image */}
         <img
@@ -227,7 +253,7 @@ export const WorldMapScene: React.FC<WorldMapSceneProps> = ({
       </div>
 
       {/* Drag hint — phones only, where the map is pannable. */}
-      {scale > 1 && (
+      {pannable && (
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full bg-[#171f33]/80 border border-[#4c4634] pointer-events-none animate-in fade-in duration-700">
           <span className="font-label text-[8px] uppercase tracking-widest text-[#ffeebb]/70">Drag to explore &middot; Tap a village</span>
         </div>
