@@ -1,6 +1,9 @@
 # LedgerQuest — Demo Polish Plan (Phase 5 series)
 
-STATUS: **Phase 2 DONE** (2026-07-07) — CRT panel enlarged + centered, cheat-sheet/tape clip fixed, map/town/combat fit with no scrollbar. Next: **Phase 3 (Assets scaffold)**.
+STATUS: **Phase 3 DONE** (2026-07-08, `0169f50`) — /Assets/ drop-folder + single
+swap-point placeholders (emoji chars/enemies, inline-SVG items) wired through all
+render sites; seed party now 3 members; no broken PNGs. Next: **Phase 4 (War Room
+party management)** — needs Phase 3 assets (done) + Phase 2 sizing (done).
 
 POST-PHASE-2 MOBILE POLISH (2026-07-08, not a numbered phase — extra hardening):
 - `6e46936` de-cramp mobile across all pages (responsive padding/gaps, md: restores).
@@ -122,24 +125,33 @@ Goal: enlarge the CRT panel, center it, stop clipping the cheat-sheet, and make
 
 ---
 
-## Phase 3 — Assets scaffold + placeholders  ·  (item 3 groundwork)
+## Phase 3 — Assets scaffold + placeholders  ·  (item 3 groundwork)  ·  ✅ DONE (2026-07-08, `0169f50`)
 Goal: the asset pipeline + placeholders that Phases 4/5/6 render.
-- [ ] Create repo-root `/Assets/` staging folder with a `README.md` documenting
-  expected subfolders + naming: `characters/`, `enemies/`, `equipment/`,
-  `consumables/` (PNG/SVG, sizing guidance). This is where the user drops real art.
-- [ ] Character placeholders: emoji with **skin-tone modifiers** so the 3 starting
-  members read as distinct people; map each party member → an emoji in the seed.
-- [ ] Enemy placeholders: **oni-mask / creepy** emoji (👹👺💀🎭🧟) per bestiary entry.
-- [ ] Equipment + consumable placeholders: small **inline SVG** icons (weapon,
-  armor, shield, potion, etc.), themed to the app palette (`#f4d03f`/`#4c4634`).
-- [ ] Wire placeholders through schemas/rendering so avatars/enemy/item icons stop
-  referencing broken PNGs (e.g. the old `hero.png`). Keep a single swap-point so
-  real assets later replace placeholders with minimal edits.
-- Files: `APP/src/types/schemas.ts`, `APP/src/engine/world.ts` + `enemyAI.ts`
-  (enemy art), seed/party defaults in `persistenceService.ts`, a new
-  `APP/src/assets/placeholderIcons.tsx` (or similar) for the SVGs.
+- [x] Created repo-root `/Assets/` staging folder + `README.md` (subfolders
+  `characters/`/`enemies/`/`equipment/`/`consumables/`, naming keyed to in-code
+  ids, sizing guidance, swap instructions). Whitelisted in `.gitignore` (`!/Assets/`).
+- [x] Character placeholders: emoji + **skin-tone modifiers** in `PARTY_ART`
+  (p1 🧝🏻‍♀️ / p2 🧔🏾 / p3 🧙🏿‍♀️). Seed party reduced to the **3 starting members**
+  (Leader/tank, Vanguard/melee, Arcanist/support); recruit pool avatars → emoji.
+- [x] Enemy placeholders: oni-mask/creepy emoji per bestiary id (`ENEMY_ART`,
+  👺😈👻👹🧞🗿), 👹 fallback.
+- [x] Equipment + consumable placeholders: inline SVG icons (sword/shield/armor/
+  potion/quest) in the app palette (`#f4d03f`/`#4c4634`).
+- [x] Wired through render: no broken PNG refs remain. **Single swap-point** =
+  `APP/src/assets/placeholders.tsx` — `<Sprite>` (chars/enemies, `isAssetPath`
+  emoji↔path), `<ItemIcon>` (items, `USE_REAL_ITEM_ART` flag). Real art later =
+  per-asset one-line edit.
+- Files touched: NEW `APP/src/assets/placeholders.tsx` (+ `.test.ts`, 13 tests),
+  `persistenceService.ts` (seed), `engine/recruitment.ts` (pool), `WarRoom.tsx`,
+  `AdventureWorld/CombatScene.tsx` + `TownScene.tsx`, `GrandVault.tsx`. (No schema
+  change needed — enemy art resolved by id in `placeholders.tsx`; `avatar` reused.)
 - Checkpoint: fresh save shows 3 distinct emoji party members + emoji enemies in
   combat + SVG item icons; no broken-image glyphs anywhere; tests/tsc/build green.
+- VERIFIED (browser, preview_eval): fresh save = 3 distinct emoji members (War
+  Room), 2 SVG item icons (Vault), zero non-path `<img>` on page, console clean.
+  tsc 0 / **140** tests / build green. NOTE: enemy-in-combat emoji is wired +
+  unit-tested (`enemyArt`) but not driven live (battle requires travel/AP); if
+  Phase 6 opens combat, eyeball it there.
 
 **HANDOFF PROMPT (Phase 3):**
 > Continue LedgerQuest demo polish. Read `PLANS/DemoPolishPlan.md` (+ OverhaulPlan
