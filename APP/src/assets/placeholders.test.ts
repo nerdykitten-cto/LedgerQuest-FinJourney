@@ -4,6 +4,7 @@ import {
   partyArt,
   enemyArt,
   itemArtKind,
+  isBakedItemArt,
   PARTY_ART,
   ENEMY_ART,
   DEFAULT_ENEMY_ART,
@@ -47,6 +48,12 @@ describe('partyArt', () => {
     const set = new Set([PARTY_ART.p1, PARTY_ART.p2, PARTY_ART.p3]);
     expect(set.size).toBe(3);
   });
+  it('seed members now point at baked character art', () => {
+    for (const id of ['p1', 'p2', 'p3'] as const) {
+      expect(PARTY_ART[id]).toMatch(/^\/assets\/game\/characters\/.+\.png$/);
+      expect(isAssetPath(PARTY_ART[id])).toBe(true);
+    }
+  });
   it('returns a non-empty emoji fallback for unknown ids', () => {
     expect(partyArt('nobody')).not.toBe('');
     expect(isAssetPath(partyArt('nobody'))).toBe(false);
@@ -85,5 +92,18 @@ describe('itemArtKind', () => {
   });
   it('classifies quest items', () => {
     expect(itemArtKind(item({ type: 'Quest', icon: 'inventory_2' }))).toBe('quest');
+  });
+});
+
+describe('isBakedItemArt', () => {
+  it('matches baked equipment/consumable dirs only', () => {
+    expect(isBakedItemArt('/assets/game/equipment/iron-sword.png')).toBe(true);
+    expect(isBakedItemArt('/assets/game/consumables/x.png')).toBe(true);
+  });
+  it('rejects legacy / non-baked sprite paths (no 404 leak)', () => {
+    expect(isBakedItemArt('/assets/game/weapons/bat_1.png')).toBe(false);
+    expect(isBakedItemArt('/assets/ui/Icon_Shield.png')).toBe(false);
+    expect(isBakedItemArt(undefined)).toBe(false);
+    expect(isBakedItemArt('')).toBe(false);
   });
 });

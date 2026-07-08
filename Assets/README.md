@@ -1,13 +1,36 @@
-# /Assets — real-art drop folder
+# /Assets — art staging + character pipeline
 
-Staging zone for the **real** game art that will replace the emoji / inline-SVG
-placeholders currently rendered by the demo. Drop finished files here; a build
-step (or a quick manual copy) moves web-ready files into `APP/public/assets/…`
-and the single swap-point in code (`APP/src/assets/placeholders.tsx`) is flipped
-to point at them.
+Staging zone for game art that replaces the emoji / inline-SVG placeholders in
+the demo. Two sources feed `APP/public/assets/…`:
 
-Nothing in this folder is imported by the app directly. It is a human handoff
-zone — art in, then integrated.
+1. **`imported_assets/`** — a layered Unity paper-doll dump (body parts + gear,
+   ~889 sprites). **Gitignored** (raw, large). `tools/compose_characters.py`
+   composes it into finished characters + equipment icons.
+2. The per-slot folders below — a manual drop-zone for one-off finished PNGs.
+
+## Character pipeline — `tools/compose_characters.py`
+
+Composes the paper-doll parts into chibi characters and gear icons.
+
+- **Characters** = skin-tinted base body + face (eye/brow/mouth/hair/beard) +
+  clothing (top+sleeves, bottom). Exported as a head+shoulders **bust** (the
+  avatar, reads in the app's round frames) and a **full** body.
+- **Equipment** = helmet / eyewear / gloves / boots / back / weapon parts trimmed
+  into square inventory icons.
+- Deterministic: `HEROES` = fixed specs for p1/p2/p3; `make_random_spec(seed)`
+  spins more for recruits/rosters.
+
+```
+python3 Assets/tools/compose_characters.py
+# → APP/public/assets/game/characters/{p1,p2,p3}.png        (bust avatars)
+# → APP/public/assets/game/characters/{p1,p2,p3}_full.png   (full body)
+# → APP/public/assets/game/equipment/<slug>.png             (icons)
+```
+
+The committed outputs (in `APP/public/...`) are what the app loads; regenerate
+by re-running the script. Edit `HEROES` / `EQUIPMENT` in the script to re-cast.
+
+Nothing in *this* folder is imported by the app directly — it is source + staging.
 
 ## Structure
 

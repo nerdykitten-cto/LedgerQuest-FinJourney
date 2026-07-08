@@ -33,9 +33,11 @@ export const isAssetPath = (s: string | undefined): boolean =>
 
 /** Seed party ids → distinct emoji (skin-tone modifiers read as distinct people). */
 export const PARTY_ART: Record<string, string> = {
-  p1: '🧝🏻‍♀️', // Althea — Leader / tank (front)
-  p2: '🧔🏾', // Kael — Vanguard / melee (front)
-  p3: '🧙🏿‍♀️', // Elora — Arcanist / support
+  // Baked by Assets/tools/compose_characters.py (head+shoulders bust). Emoji
+  // fallback (DEFAULT_PARTY_ART) still covers ids without art.
+  p1: '/assets/game/characters/p1.png', // Althea — Leader / tank (front)
+  p2: '/assets/game/characters/p2.png', // Kael — Vanguard / melee (front)
+  p3: '/assets/game/characters/p3.png', // Elora — Arcanist / support
 };
 
 export const DEFAULT_PARTY_ART = '🧑🏽';
@@ -82,8 +84,13 @@ export const itemArtKind = (item: ItemLike): ItemArtKind => {
   return 'armor';
 };
 
-/** Flip to true once real equipment/consumable art exists (then set item.sprite). */
-export const USE_REAL_ITEM_ART = false;
+/** Real item art lives under these baked dirs (Assets/tools/compose_characters.py).
+ *  Only sprites in them are used; legacy sprite paths fall back to the SVG. */
+export const isBakedItemArt = (s: string | undefined): boolean =>
+  !!s && /^\/assets\/game\/(equipment|consumables)\//.test(s.trim());
+
+/** Master switch for baked equipment/consumable PNGs (else inline-SVG placeholder). */
+export const USE_REAL_ITEM_ART = true;
 
 /* ------------------------------------------------------------------ components */
 
@@ -182,7 +189,7 @@ interface ItemIconProps {
  * art exists (USE_REAL_ITEM_ART + a real sprite path), renders the PNG instead.
  */
 export const ItemIcon: React.FC<ItemIconProps> = ({ item, size = 48, className }) => {
-  if (USE_REAL_ITEM_ART && isAssetPath(item.sprite)) {
+  if (USE_REAL_ITEM_ART && isBakedItemArt(item.sprite)) {
     return (
       <img
         src={item.sprite}

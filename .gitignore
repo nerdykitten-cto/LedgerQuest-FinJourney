@@ -37,3 +37,6 @@
 **/pubspec.lock
 **/.packages
 **/generated/
+
+# Raw imported art dump — keep out of git (composed output is committed instead)
+/Assets/imported_assets/
