@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { InventoryItem, PartyMember } from '../types/schemas';
 import { updateInventoryItemDB, updatePartyMemberDB, removeInventoryItemDB } from '../persistenceService';
+import { ItemIcon } from '../assets/placeholders';
 
 interface Props {
   inventory: InventoryItem[];
@@ -151,11 +152,7 @@ const GrandVault: React.FC<Props> = ({ inventory, party, onClose }) => {
                         ${selectedItem?.id === item.id ? 'border-[#f4d03f] scale-105 shadow-md shadow-[#f4d03f]/10' : 'border-[#4c4634]/60'}
                       `}
                     >
-                      {item.sprite ? (
-                        <img src={item.sprite} className="w-12 h-12 object-contain" alt={item.name} />
-                      ) : (
-                        <span className={`material-symbols-outlined text-4xl ${selectedItem?.id === item.id ? 'text-[#f4d03f]' : 'text-[#ffeebb]/50'}`}>{item.icon}</span>
-                      )}
+                      <ItemIcon item={item} size={48} />
                       {item.type === 'Consumable' && item.quantity > 1 && (
                         <span className="absolute bottom-1 right-1 font-label text-[8px] bg-[#f4d03f] text-black px-1.5 font-bold rounded">x{item.quantity}</span>
                       )}
@@ -183,11 +180,7 @@ const GrandVault: React.FC<Props> = ({ inventory, party, onClose }) => {
             <div className="md:w-72 bg-[#0b1326] border-2 border-[#4c4634] p-4 flex flex-col h-full shadow-2xl relative animate-in slide-in-from-right-4">
               <div className="flex justify-center mb-6">
                 <div className="w-24 h-24 bg-[#171f33] border border-[#4c4634]/50 flex items-center justify-center text-[#f4d03f] shadow-inner relative p-3">
-                  {selectedItem.sprite ? (
-                    <img src={selectedItem.sprite} className="w-full h-full object-contain" alt={selectedItem.name} />
-                  ) : (
-                    <span className="material-symbols-outlined text-5xl">{selectedItem.icon}</span>
-                  )}
+                  <ItemIcon item={selectedItem} size={72} />
                 </div>
               </div>
               

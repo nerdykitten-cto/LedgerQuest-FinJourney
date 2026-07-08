@@ -1,5 +1,6 @@
 import React from 'react';
 import type { PartyMember } from '../types/schemas';
+import { Sprite } from '../assets/placeholders';
 
 interface Props {
   party: PartyMember[];
@@ -41,7 +42,7 @@ const WarRoom: React.FC<Props> = ({ party, recruitCost, onClose, onAddMember, on
                  <div key={m.id} className="bg-surface-container-low border-2 border-primary/20 p-4 md:p-6 relative group hover:jiggle transition-all duration-300">
                     <div className="flex flex-col items-center gap-4">
                        <div className="w-28 h-28 rounded-full border-4 border-primary shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] overflow-hidden bg-primary/5">
-                          <img src={m.avatar} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" alt={m.name} />
+                          <Sprite art={m.avatar} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" emojiClassName="text-6xl" alt={m.name} />
                        </div>
                        <div className="text-center">
                           <span className="font-headline text-xl font-black text-primary block uppercase tracking-tighter">{m.name}</span>
@@ -79,7 +80,7 @@ const WarRoom: React.FC<Props> = ({ party, recruitCost, onClose, onAddMember, on
                  <div key={m.id} className="bg-surface-container-low border-2 border-tertiary/20 p-4 md:p-6 relative group hover:jiggle transition-all duration-300">
                     <div className="flex flex-col items-center gap-4">
                        <div className="w-28 h-28 rounded-full border-4 border-tertiary shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] overflow-hidden bg-tertiary/5">
-                          <img src={m.avatar} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" alt={m.name} />
+                          <Sprite art={m.avatar} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" emojiClassName="text-6xl" alt={m.name} />
                        </div>
                        <div className="text-center">
                           <span className="font-headline text-xl font-black text-tertiary block uppercase tracking-tighter">{m.name}</span>

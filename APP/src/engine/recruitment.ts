@@ -23,14 +23,14 @@ interface Candidate {
 }
 
 const FRONT_POOL: Candidate[] = [
-  { name: 'Bram', role: 'Vanguard', avatar: '/assets/game/hero.png', baseHp: 120, baseMp: 10 },
-  { name: 'Sigrid', role: 'Vanguard', avatar: '/assets/game/party_member_1.png', baseHp: 130, baseMp: 8 },
+  { name: 'Bram', role: 'Vanguard', avatar: '🧝🏼‍♂️', baseHp: 120, baseMp: 10 },
+  { name: 'Sigrid', role: 'Vanguard', avatar: '🧝🏾‍♀️', baseHp: 130, baseMp: 8 },
 ];
 
 const SUPPORT_POOL: Candidate[] = [
-  { name: 'Mirelle', role: 'Arcanist', avatar: '/assets/game/party_member_2.png', baseHp: 80, baseMp: 50 },
-  { name: 'Fenwick', role: 'Sharpshooter', avatar: '/assets/game/party_member_3.png', baseHp: 90, baseMp: 15 },
-  { name: 'Isolde', role: 'Lightweaver', avatar: '/assets/game/party_member_4.png', baseHp: 70, baseMp: 40 },
+  { name: 'Mirelle', role: 'Arcanist', avatar: '🧙🏽‍♀️', baseHp: 80, baseMp: 50 },
+  { name: 'Fenwick', role: 'Sharpshooter', avatar: '🧑🏼‍🎤', baseHp: 90, baseMp: 15 },
+  { name: 'Isolde', role: 'Lightweaver', avatar: '🧙🏾‍♀️', baseHp: 70, baseMp: 40 },
 ];
 
 export const isFrontRole = (role: string): boolean => FRONT_ROLES.includes(role);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { PartyMember, Enemy, InventoryItem } from '../../types/schemas';
 import { updateInventoryItemDB, updatePartyMemberDB, removeInventoryItemDB } from '../../persistenceService';
+import { Sprite, ItemIcon, enemyArt } from '../../assets/placeholders';
 import { chooseTarget } from '../../engine/enemyAI';
 import type { BattleResult } from '../../engine/director';
 
@@ -183,11 +184,7 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
               disabled={isEnemyTurn || enemy.hp <= 0}
               className="bg-[#171f33] hover:bg-[#222a3e] text-[#ffeebb] hover:text-[#f4d03f] font-headline font-black text-[10px] px-3 py-1.5 border-2 border-[#4c4634] active:scale-95 transition-all flex items-center gap-2 disabled:opacity-30 shadow-md"
             >
-              {potion.sprite ? (
-                <img src={potion.sprite} className="w-4 h-4 object-contain" alt={potion.name} />
-              ) : (
-                <span className="material-symbols-outlined text-xs">science</span>
-              )}
+              <ItemIcon item={potion} size={16} />
               {potion.name} <span className="text-[#f4d03f]">x{potion.quantity}</span>
             </button>
           ))}
@@ -203,7 +200,7 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
         )}
         <div className="w-12 h-12 md:w-14 md:h-14 relative mb-1">
            <div className={`absolute inset-0 bg-[#84231d]/20 rounded-full blur-2xl transition-all duration-500 ${isEnemyTurn ? 'scale-125 opacity-40' : 'scale-100 opacity-20'}`} />
-           <img src="/assets/ui/Icon_Battle.png" className={`w-full h-full object-contain relative z-10 drop-shadow-2xl transition-transform duration-500 ${isEnemyTurn ? 'scale-110' : 'scale-100'}`} alt="Enemy" />
+           <Sprite art={enemyArt(enemy.id || enemy.name)} className={`w-full h-full relative z-10 drop-shadow-2xl transition-transform duration-500 ${isEnemyTurn ? 'scale-110' : 'scale-100'}`} emojiClassName="text-4xl md:text-5xl" alt={enemy.name} />
         </div>
         <h3 className="font-headline text-base md:text-lg font-black text-[#ffb4aa] mb-1 uppercase tracking-[0.2em]">{enemy.name}</h3>
         <div className="w-40 md:w-64 h-3 bg-[#0b1326] border-2 border-[#4c4634] rounded-full overflow-hidden shadow-inner p-0.5">
@@ -249,7 +246,7 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
 
               <div className="w-12 h-12 relative mb-2">
                  <div className={`absolute inset-0 rounded-full blur-xl transition-all ${member.hp > 0 ? 'bg-[#f4d03f]/10' : 'bg-transparent'}`} />
-                 <img src={member.avatar} className={`w-full h-full object-cover relative z-10 rounded-full border-2 border-[#4c4634] shadow-xl ${member.hp <= 0 ? '' : 'group-hover:scale-110'}`} alt={member.name} />
+                 <Sprite art={member.avatar} className={`w-full h-full relative z-10 rounded-full border-2 border-[#4c4634] shadow-xl ${member.hp <= 0 ? '' : 'group-hover:scale-110'}`} emojiClassName="text-3xl" alt={member.name} />
               </div>
               
               <span className="font-headline text-[10px] font-black text-[#ffeebb] mb-1 uppercase tracking-widest">{member.name}</span>

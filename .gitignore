@@ -5,6 +5,7 @@
 !/.gitignore
 !/PLANS/
 !/APP/
+!/Assets/
 !/README.md
 !/PREVIOUSLY.md
 !/firebase.json

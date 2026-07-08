@@ -12,6 +12,7 @@ import type {
   InventoryItem
 } from './types/schemas';
 import storyManifest from './data/storyManifest.json';
+import { PARTY_ART } from './assets/placeholders';
 
 import { ENGINE_STATE_KEYS } from './engine/director';
 import type { DirectorTrace } from './engine/traceHub';
@@ -308,11 +309,9 @@ export const initializeLocalData = () => {
 
   if ((getLocal(PARTY_COL) as PartyMember[]).length === 0) {
     const initialParty: PartyMember[] = [
-      { id: 'p1', name: 'Althea', avatar: '/assets/game/main_character.png', role: 'Leader', hp: 100, maxHp: 100, mp: 20, maxMp: 20, level: 1, equipment: {} },
-      { id: 'p2', name: 'Kael', avatar: '/assets/game/party_member_1.png', role: 'Vanguard', hp: 120, maxHp: 120, mp: 10, maxMp: 10, level: 1, equipment: {} },
-      { id: 'p3', name: 'Elora', avatar: '/assets/game/party_member_2.png', role: 'Arcanist', hp: 80, maxHp: 80, mp: 50, maxMp: 50, level: 1, equipment: {} },
-      { id: 'p4', name: 'Thal', avatar: '/assets/game/party_member_3.png', role: 'Sharpshooter', hp: 90, maxHp: 90, mp: 15, maxMp: 15, level: 1, equipment: {} },
-      { id: 'p5', name: 'Lia', avatar: '/assets/game/party_member_4.png', role: 'Lightweaver', hp: 70, maxHp: 70, mp: 40, maxMp: 40, level: 1, equipment: {} }
+      { id: 'p1', name: 'Althea', avatar: PARTY_ART.p1, role: 'Leader', hp: 100, maxHp: 100, mp: 20, maxMp: 20, level: 1, equipment: {} },
+      { id: 'p2', name: 'Kael', avatar: PARTY_ART.p2, role: 'Vanguard', hp: 120, maxHp: 120, mp: 10, maxMp: 10, level: 1, equipment: {} },
+      { id: 'p3', name: 'Elora', avatar: PARTY_ART.p3, role: 'Arcanist', hp: 80, maxHp: 80, mp: 50, maxMp: 50, level: 1, equipment: {} }
     ];
     setLocal(PARTY_COL, initialParty);
   }
@@ -325,7 +324,6 @@ export const initializeLocalData = () => {
         name: 'Budget Slicer',
         type: 'Equipment',
         icon: 'swords',
-        sprite: '/assets/game/weapons/bat_1.png',
         description: 'A keen blade used to trim unnecessary expenses.',
         stats: '+10 Attack',
         statBonus: { attack: 10 },
@@ -338,7 +336,6 @@ export const initializeLocalData = () => {
         name: 'Health Potion',
         type: 'Consumable',
         icon: 'science',
-        sprite: '/assets/ui/Icon_Energy_Green.png',
         description: 'Restores 40 HP.',
         stats: '+40 HP',
         statBonus: { hpHeal: 40 },

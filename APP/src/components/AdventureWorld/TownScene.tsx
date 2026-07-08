@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { PlayerStats } from '../../types/schemas';
+import { ItemIcon } from '../../assets/placeholders';
 
 interface TownSceneProps {
   name: string;
@@ -224,7 +225,7 @@ export const TownScene: React.FC<TownSceneProps> = ({
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div className="w-12 h-12 bg-white/5 rounded p-2 border border-white/10 group-hover:scale-110 transition-transform">
-                       <img src={item.sprite} className="w-full h-full object-contain" alt={item.name} />
+                       <ItemIcon item={item} size={40} className="w-full h-full" />
                     </div>
                     <span className="font-headline text-xl font-black text-[#f4d03f]">${item.cost}</span>
                   </div>
