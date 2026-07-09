@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { InventoryItem, PartyMember } from '../types/schemas';
 import { updateInventoryItemDB, updatePartyMemberDB, removeInventoryItemDB } from '../persistenceService';
 import { ItemIcon } from '../assets/placeholders';
+import { planEquip, planUnequip, planHeal } from '../engine/equipment';
 
 interface Props {
   inventory: InventoryItem[];
@@ -19,52 +20,33 @@ const GrandVault: React.FC<Props> = ({ inventory, party, onClose }) => {
     return item.type === activeTab;
   });
 
-  const getSlot = (item: InventoryItem): 'weapon' | 'armor' => {
-    return (item.icon === 'swords' || item.statBonus?.attack !== undefined) ? 'weapon' : 'armor';
-  };
-
   const handleEquip = async (memberId: string) => {
     if (!selectedItem) return;
-    const slot = getSlot(selectedItem);
-
-    // Find the member to equip
     const member = party.find(m => m.id === memberId);
     if (!member) return;
 
-    // 1. Unequip any item of the same slot currently equipped on this member
-    const currentlyEquipped = inventory.find(i => 
-      i.equippedTo === memberId && getSlot(i) === slot
-    );
-    if (currentlyEquipped) {
-      await updateInventoryItemDB(currentlyEquipped.id, { equippedTo: undefined });
+    const plan = planEquip(selectedItem, memberId, inventory);
+    if (plan.unequipItemId) {
+      await updateInventoryItemDB(plan.unequipItemId, { equippedTo: undefined });
     }
-
-    // 2. Equip the new item
-    await updateInventoryItemDB(selectedItem.id, { equippedTo: memberId });
+    await updateInventoryItemDB(plan.itemId, { equippedTo: plan.memberId });
     await updatePartyMemberDB(memberId, {
-      equipment: {
-        ...member.equipment,
-        [slot]: selectedItem.name
-      }
+      equipment: { ...member.equipment, [plan.slot]: plan.displayName },
     });
 
-    // Update selected item state to show equipped changes
     setSelectedItem({ ...selectedItem, equippedTo: memberId });
   };
 
   const handleUnequip = async () => {
-    if (!selectedItem || !selectedItem.equippedTo) return;
-    const slot = getSlot(selectedItem);
-    const memberId = selectedItem.equippedTo;
-    const member = party.find(m => m.id === memberId);
+    if (!selectedItem) return;
+    const plan = planUnequip(selectedItem);
+    if (!plan) return;
+    const member = party.find(m => m.id === plan.memberId);
 
-    await updateInventoryItemDB(selectedItem.id, { equippedTo: undefined });
+    await updateInventoryItemDB(plan.itemId, { equippedTo: undefined });
     if (member) {
-      await updatePartyMemberDB(memberId, {
-        equipment: {
-          ...member.equipment,
-          [slot]: undefined
-        }
+      await updatePartyMemberDB(plan.memberId, {
+        equipment: { ...member.equipment, [plan.slot]: undefined },
       });
     }
 
@@ -72,23 +54,19 @@ const GrandVault: React.FC<Props> = ({ inventory, party, onClose }) => {
   };
 
   const handleUseConsumable = async (memberId: string) => {
-    if (!selectedItem || selectedItem.type !== 'Consumable') return;
+    if (!selectedItem) return;
     const member = party.find(m => m.id === memberId);
     if (!member) return;
+    const plan = planHeal(selectedItem, member);
+    if (!plan) return;
 
-    const hpHeal = selectedItem.statBonus?.hpHeal || 40;
-    const newHp = Math.min(member.maxHp, member.hp + hpHeal);
-
-    // Apply healing
-    await updatePartyMemberDB(memberId, { hp: newHp });
-
-    // Decrement item quantity or remove it
-    if (selectedItem.quantity > 1) {
-      await updateInventoryItemDB(selectedItem.id, { quantity: selectedItem.quantity - 1 });
-      setSelectedItem({ ...selectedItem, quantity: selectedItem.quantity - 1 });
-    } else {
-      await removeInventoryItemDB(selectedItem.id);
+    await updatePartyMemberDB(plan.memberId, { hp: plan.newHp });
+    if (plan.removeItem) {
+      await removeInventoryItemDB(plan.itemId);
       setSelectedItem(null);
+    } else {
+      await updateInventoryItemDB(plan.itemId, { quantity: plan.newQuantity });
+      setSelectedItem({ ...selectedItem, quantity: plan.newQuantity });
     }
   };
 

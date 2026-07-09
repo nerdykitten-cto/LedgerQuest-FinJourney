@@ -17,6 +17,7 @@ import type { DirectorTrace } from './engine/traceHub';
 import { recruitCost } from './engine/recruitment';
 import { adjustHabitReward } from './engine/difficultyEngine';
 import { taskReward, applyExp } from './engine/rewardEngine';
+import { planEquip, planUnequip, planHeal } from './engine/equipment';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import QuestList from './components/QuestList';
@@ -451,6 +452,40 @@ function App() {
     }
   };
 
+  const handleWarHeal = (memberId: string, itemId: string) => {
+    const member = party.find(m => m.id === memberId);
+    const item = inventory.find(i => i.id === itemId);
+    if (!member || !item) return;
+    const plan = planHeal(item, member);
+    if (!plan) return;
+    dbService.updatePartyMemberDB(plan.memberId, { hp: plan.newHp });
+    if (plan.removeItem) dbService.removeInventoryItemDB(plan.itemId);
+    else dbService.updateInventoryItemDB(plan.itemId, { quantity: plan.newQuantity });
+    showNotify(`${member.name} recovers ${plan.newHp - member.hp} HP`);
+  };
+
+  const handleWarEquip = (itemId: string, memberId: string) => {
+    const item = inventory.find(i => i.id === itemId);
+    const member = party.find(m => m.id === memberId);
+    if (!item || !member) return;
+    const plan = planEquip(item, memberId, inventory);
+    if (plan.unequipItemId) dbService.updateInventoryItemDB(plan.unequipItemId, { equippedTo: undefined });
+    dbService.updateInventoryItemDB(plan.itemId, { equippedTo: plan.memberId });
+    dbService.updatePartyMemberDB(memberId, { equipment: { ...member.equipment, [plan.slot]: plan.displayName } });
+    showNotify(`${member.name} equips ${item.name}`);
+  };
+
+  const handleWarUnequip = (itemId: string) => {
+    const item = inventory.find(i => i.id === itemId);
+    if (!item) return;
+    const plan = planUnequip(item);
+    if (!plan) return;
+    const member = party.find(m => m.id === plan.memberId);
+    dbService.updateInventoryItemDB(plan.itemId, { equippedTo: undefined });
+    if (member) dbService.updatePartyMemberDB(plan.memberId, { equipment: { ...member.equipment, [plan.slot]: undefined } });
+    showNotify(`Unequipped ${item.name}`);
+  };
+
   const [newGoal, setNewGoal] = useState({ name: '', target: 1000 });
   const [depositDrafts, setDepositDrafts] = useState<Record<string, string>>({});
 
@@ -553,7 +588,7 @@ function App() {
         </div>
       )}
 
-      {isWarRoomOpen && <WarRoom party={party} recruitCost={recruitCost(party)} onClose={() => setIsWarRoomOpen(false)} onAddMember={handleRecruit} onRemoveMember={handleDismiss} />}
+      {isWarRoomOpen && <WarRoom party={party} inventory={inventory} recruitCost={recruitCost(party)} onClose={() => setIsWarRoomOpen(false)} onAddMember={handleRecruit} onRemoveMember={handleDismiss} onHeal={handleWarHeal} onEquip={handleWarEquip} onUnequip={handleWarUnequip} />}
       {isVaultOpen && <GrandVault inventory={inventory} party={party} onClose={() => setIsVaultOpen(false)} />}
 
       <TopAppBar currentTab={currentTab} onTabChange={setCurrentTab} ap={stats.ap} />
