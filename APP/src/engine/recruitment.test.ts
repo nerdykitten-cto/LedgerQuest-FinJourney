@@ -33,7 +33,13 @@ describe('evaluateRecruit', () => {
   });
 
   it('denies when the slot row is already full', () => {
-    const res = evaluateRecruit({ party: seedParty(), gold: 500, worldState: 'town', slot: 'front' });
+    // front capacity is 3; fill it (Leader + two Vanguards) so the row is full
+    const fullFront = [
+      mkMember(),
+      mkMember({ id: 'p2', name: 'Kael', role: 'Vanguard' }),
+      mkMember({ id: 'p6', name: 'Gorm', role: 'Vanguard' }),
+    ];
+    const res = evaluateRecruit({ party: fullFront, gold: 500, worldState: 'town', slot: 'front' });
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.reason.toLowerCase()).toContain('full');
   });

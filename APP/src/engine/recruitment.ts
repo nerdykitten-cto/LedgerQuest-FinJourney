@@ -11,7 +11,7 @@ export type RecruitSlot = 'front' | 'support';
 /** Roles rendered in the WarRoom front row. */
 export const FRONT_ROLES = ['Leader', 'Vanguard'];
 
-export const FRONT_CAPACITY = 2;
+export const FRONT_CAPACITY = 3;
 export const SUPPORT_CAPACITY = 3;
 
 interface Candidate {

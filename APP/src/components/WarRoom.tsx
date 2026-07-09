@@ -133,7 +133,7 @@ const WarRoom: React.FC<Props> = ({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               {party.filter(p => p.role === 'Leader' || p.role === 'Vanguard').map(m => renderCard(m, 'primary'))}
-              {party.filter(p => p.role === 'Leader' || p.role === 'Vanguard').length < 2 && (
+              {party.filter(p => p.role === 'Leader' || p.role === 'Vanguard').length < 3 && (
                 <button onClick={() => onAddMember('front')} className="bg-surface-container-low border-2 border-dashed border-outline-variant/30 flex items-center justify-center hover:bg-surface-variant cursor-pointer transition-colors group min-h-[180px]">
                   <div className="text-center">
                     <span className="material-symbols-outlined text-4xl text-on-surface-variant/40 mb-2 group-hover:scale-125 group-hover:text-primary transition-all">add_circle</span>
