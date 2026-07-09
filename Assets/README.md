@@ -3,22 +3,33 @@
 Staging zone for game art that replaces the emoji / inline-SVG placeholders in
 the demo. Two sources feed `APP/public/assets/…`:
 
-1. **`imported_assets/`** — a layered Unity paper-doll dump (body parts + gear,
-   ~889 sprites). **Gitignored** (raw, large). `tools/compose_characters.py`
-   composes it into finished characters + equipment icons.
+1. **`imported_assets/spine/`** — the "2D Art Maker" (Layer Lab) **Spine** asset:
+   `Casual Character.json` (skeleton) + `images/` (part masks). **Gitignored**
+   (raw, ~10 MB). `tools/compose_characters.py` composes it.
 2. The per-slot folders below — a manual drop-zone for one-off finished PNGs.
 
 ## Character pipeline — `tools/compose_characters.py`
 
-Composes the paper-doll parts into chibi characters and gear icons.
+The art is a Spine skeletal rig — each part is placed by a bone transform + an
+attachment offset and drawn in slot order. The script **reproduces Spine's
+setup-pose placement exactly** (hand-guessing anchors looks wrong):
 
-- **Characters** = skin-tinted base body + face (eye/brow/mouth/hair/beard) +
-  clothing (top+sleeves, bottom). Exported as a head+shoulders **bust** (the
-  avatar, reads in the app's round frames) and a **full** body.
-- **Equipment** = helmet / eyewear / gloves / boots / back / weapon parts trimmed
-  into square inventory icons.
-- Deterministic: `HEROES` = fixed specs for p1/p2/p3; `make_random_spec(seed)`
-  spins more for recruits/rosters.
+- bone world transforms (walk hierarchy: translate·rotate·scale);
+- region attachments → image centre at `bone·(x,y)`, rotated;
+- mesh attachments (arms/legs/pant-legs) → least-squares affine from the skinned
+  setup-pose vertices;
+- draw order = slot order (back → front).
+
+Base body + hair are white masks → tinted (skin tone / hair colour); eyes, mouth
+and clothing are already coloured.
+
+- **Characters** = base body + face (eye/brow/mouth/hair/optional beard) +
+  clothing (top+sleeves, bottom, boots) + optional back. Exported as a
+  head+shoulders **bust** (the avatar, reads in the app's round frames) and a
+  **full** body. 3 curated `HEROES` (p1 light/Leader, p2 medium+beard/Vanguard,
+  p3 dark/Arcanist) — each = one skin per category + skin/hair tint.
+- **Equipment** = weapon / helmet / gloves / boots / back / eyewear part images
+  trimmed into square inventory icons (`EQUIPMENT` map).
 
 ```
 python3 Assets/tools/compose_characters.py
@@ -27,8 +38,9 @@ python3 Assets/tools/compose_characters.py
 # → APP/public/assets/game/equipment/<slug>.png             (icons)
 ```
 
-The committed outputs (in `APP/public/...`) are what the app loads; regenerate
-by re-running the script. Edit `HEROES` / `EQUIPMENT` in the script to re-cast.
+The committed outputs (in `APP/public/...`) are what the app loads; regenerate by
+re-running. Recast via the `HEROES` / `EQUIPMENT` dicts (category skin ids +
+tints). To add a hero, add a spec and point its `avatar` in `PARTY_ART`.
 
 Nothing in *this* folder is imported by the app directly — it is source + staging.
 
