@@ -185,15 +185,67 @@ at broken art — Phase 3 fixes art; this phase fixes composition + management U
   a member with a potion (HP up, qty down); swap a weapon (stat changes, persists);
   recruit/dismiss still work; UI fits with no scroll. tests/tsc/build green.
 
+### PREP NOTES (surveyed 2026-07-09 — start here, saves re-discovery)
+- **Already done (Phase 3):** the 3-member seed exists in `persistenceService.ts`
+  (`initializeLocalData`): p1 Althea **Leader**, p2 Kael **Vanguard**, p3 Elora
+  **Arcanist**, all with real `avatar` busts. `WarRoom.tsx` already sorts front =
+  role in {Leader,Vanguard}, support = else → p1/p2 front, p3 support. So
+  "seed + formation rows" is basically **done**; just verify it renders.
+- **Combat ALREADY reads equipped stats** (`AdventureWorld/CombatScene.tsx`):
+  strike dmg `= member.level*10 + (equippedWeapon.statBonus.attack) + rand(0..9)`,
+  crit ×1.5; enemy counter `= enemy.attack − (equippedArmor.statBonus.defense) +
+  rand(0..4)`, min 1. So equip is "reflected in combat" the moment `equippedTo`
+  is set — **no combat changes needed**, just set the flag.
+- **Source of truth for equipped = `InventoryItem.equippedTo` (member id)** — that
+  is what combat reads. `PartyMember.equipment{weapon,armor}` only stores a display
+  name (written by the Vault; combat ignores it). Keep writing it for display, or
+  drop it — don't rely on it for stats.
+- **Equip logic already exists** in `GrandVault.tsx` (`getSlot`, `handleEquip`,
+  `handleUnequip`): weapon = `icon==='swords' || statBonus.attack`, else armor;
+  unequip same-slot first, then set `equippedTo`. **Extract this into a new
+  `engine/equipment.ts` (pure decision fns, TDD)** and reuse from BOTH War Room and
+  Vault (dedupe) — that satisfies the "TDD equip logic" requirement.
+- **Heal:** potion = `type:'Consumable'`, `statBonus.hpHeal` (health-potion = 40).
+  In-combat potion use lives in `CombatScene` (auto-targets most-hurt). War Room
+  heal = **let the player pick a member + potion** → `hp = min(maxHp, hp+hpHeal)`,
+  `quantity−1` (remove item at 0). New pure fn in `engine/equipment.ts`, TDD.
+- **Wiring gaps:** `WarRoom.tsx` props today = `party, recruitCost, onClose,
+  onAddMember, onRemoveMember` — **inventory is NOT passed in.** Add `inventory`
+  (App already holds it) + `onHeal(memberId,itemId)` + `onEquip/onUnequip` handlers
+  in `App.tsx` (rendered at ~`App.tsx:556`). Persist via existing
+  `updatePartyMemberDB` / `updateInventoryItemDB` / `removeInventoryItemDB`.
+- **Icons:** baked equipment PNGs render via `<ItemIcon item=.. />` (Phase 3);
+  potion falls back to inline SVG. Reuse `ItemIcon` in the War Room equip/heal UI.
+- **Scope note:** Phase 4 = **weapon + armor** slots only (schema
+  `equipment:{weapon?,armor?}`). The fuller helmet/gloves/boots/back slot system
+  (art is baked) is a **schema expansion — DEFER**, don't balloon this phase.
+- **Layout:** `WarRoom.tsx` is a full-screen modal (fixed inset) with member cards
+  `h-[200px]`; heal/equip UI must fit the enlarged panel with no page scroll.
+
 **HANDOFF PROMPT (Phase 4):**
-> Continue LedgerQuest demo polish. Read `PLANS/DemoPolishPlan.md` (+ OverhaulPlan
-> + project memory) and do **Phase 4 — War Room party management** (item 3).
-> Requires Phase 3 assets. Seed 3 starting members (tank/front, melee/front,
-> support) in their formation rows; implement heal-from-inventory (potion → HP,
-> qty−1), weapon/armor swap (stat effect + persists), keep recruit/dismiss working,
-> scale the UI to the enlarged panel with no scroll. Working notes: Read gated →
-> grep/python edits; TDD the heal/equip engine logic. Keep tests/tsc/build green,
-> commit locally (no push), then stop and show me.
+> Continue LedgerQuest demo polish. Read `PLANS/DemoPolishPlan.md` (Phase 4 + its
+> PREP NOTES) + `PLANS/OverhaulPlan.md` + project memory first. Do **Phase 4 — War
+> Room party management**. The 3-member seed (p1 Leader / p2 Vanguard / p3 Arcanist,
+> real busts) + baked equipment icons + combat-reads-equipped-stats already exist
+> (see PREP NOTES) — do NOT redo them. Build: (1) create `engine/equipment.ts` with
+> pure, TDD'd decisions for equip/unequip (weapon vs armor slot, unequip same slot
+> first) and heal-from-inventory (`hp=min(maxHp,hp+hpHeal)`, `qty−1`, remove at 0);
+> reuse it to dedupe the inline logic in `GrandVault.tsx`. (2) Wire the War Room UI:
+> pass `inventory` into `WarRoom.tsx` + add App handlers `onHeal`/`onEquip`/
+> `onUnequip` (persist via `updatePartyMemberDB`/`updateInventoryItemDB`/
+> `removeInventoryItemDB`); equipped source of truth = `InventoryItem.equippedTo`.
+> Let the player select a member and use a potion (HP up, qty down) or equip/unequip
+> a weapon/armor (stat change persists + shows in combat). Keep recruit/dismiss
+> working; render equip/consumable icons with `<ItemIcon>`; scale the modal to the
+> enlarged panel with NO page scroll. Scope = weapon+armor slots only (defer the
+> helmet/gloves/boots/back expansion). Working notes: a `cbm-code-discovery-gate`
+> hook BLOCKS Read on source → read via grep/sed, edit via Bash python exact-string
+> replace; Write/Edit fine for files you create + non-source. Dev server
+> `preview_start "ledgerquest-dev"`; `preview_screenshot` times out on the CRT
+> animation → verify via `preview_eval` DOM assertions, and `localStorage.clear()` +
+> reload before checks. TDD the equipment/heal engine logic. Keep `npm test` +
+> `npx tsc -b` + `npm run build` green (currently 143 tests), commit locally (NO
+> push), then stop and show me.
 
 ---
 
