@@ -61,6 +61,17 @@ HEROES = {  # tank/front, melee/front, support
                skins=outfit(7, 5, 7, "hair_short/hair_short_c_5", 41, 20, 1, beard=4, back=14)),
     "p3": dict(skin="dark",   hair="auburn",  # Elora — Arcanist
                skins=outfit(18, 7, 10, "hair_short/hair_short_c_20", 13, 30, 12)),
+    # ---- recruitable cast (avatars for engine/recruitment.ts pool) ----
+    "bram":    dict(skin="medium", hair="blonde",  # Bram — Vanguard (front/melee tank)
+               skins=outfit(5, 4, 6, "hair_short/hair_short_c_8", 33, 12, 7, beard=2, back=5)),
+    "sigrid":  dict(skin="light",  hair="blonde",  # Sigrid — Vanguard (front/melee)
+               skins=outfit(9, 3, 5, "hair_short/hair_short_c_15", 28, 8, 6, back=9)),
+    "mirelle": dict(skin="light",  hair="auburn",  # Mirelle — Arcanist (support/mage)
+               skins=outfit(12, 6, 8, "hair_short/hair_short_c_22", 50, 40, 20)),
+    "fenwick": dict(skin="medium", hair="brown",   # Fenwick — Sharpshooter (support/ranged)
+               skins=outfit(6, 4, 6, "hair_short/hair_short_c_12", 45, 25, 15, back=20)),
+    "isolde":  dict(skin="dark",   hair="grey",    # Isolde — Lightweaver (support)
+               skins=outfit(14, 8, 9, "hair_short/hair_short_c_26", 55, 45, 22)),
 }
 
 # ---- equipment slug -> raw part image (under images/) ----
