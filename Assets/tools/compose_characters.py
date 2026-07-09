@@ -58,7 +58,7 @@ HEROES = {  # tank/front, melee/front, support
     "p1": dict(skin="light",  hair="brown",  # Althea — Leader
                skins=outfit(3, 2, 4, "hair_short/hair_short_c_10", 24, 5, 3)),
     "p2": dict(skin="medium", hair="black",  # Kael — Vanguard
-               skins=outfit(7, 5, 7, "hair_short/hair_short_c_5", 41, 11, 1, beard=4, back=14)),
+               skins=outfit(7, 5, 7, "hair_short/hair_short_c_5", 41, 20, 1, beard=4, back=14)),
     "p3": dict(skin="dark",   hair="auburn",  # Elora — Arcanist
                skins=outfit(18, 7, 10, "hair_short/hair_short_c_20", 13, 30, 12)),
 }
@@ -100,9 +100,18 @@ def mul(A, B):
 def xform(M, x, y):
     return (M[0][0] * x + M[0][1] * y + M[0][2], M[1][0] * x + M[1][1] * y + M[1][2])
 
+# Small pose correction: rotate the right arm about the shoulder joint (top of
+# the arm). Positive = toward body; this leans it slightly away, no translation
+# so the arm stays anchored at the shoulder.
+BONE_TWEAK = {
+    "Shoulder_r": {"drot": -15.0, "dx": 0.0, "dy": 0.0},
+}
+
 WORLD = {}
 for b in BONES:
-    L = matrix(b.get("x", 0), b.get("y", 0), b.get("rotation", 0), b.get("scaleX", 1), b.get("scaleY", 1))
+    tw = BONE_TWEAK.get(b["name"], {})
+    L = matrix(b.get("x", 0) + tw.get("dx", 0), b.get("y", 0) + tw.get("dy", 0),
+               b.get("rotation", 0) + tw.get("drot", 0), b.get("scaleX", 1), b.get("scaleY", 1))
     p = b.get("parent")
     WORLD[b["name"]] = mul(WORLD[p], L) if p else L
 
@@ -179,17 +188,17 @@ def build(skin_names, skin=None, hair=None):
     att = {}
     for sn in skin_names:
         for slot, atts in SKINS[sn].get("attachments", {}).items():
-            for _, a in atts.items():
-                att[slot] = a
+            for att_key, a in atts.items():
+                # Spine: a missing "name" means the image == the attachment key.
+                att[slot] = (a, a.get("name") or a.get("path") or att_key)
     canvas = Image.new("RGBA", (CW, CH), (0, 0, 0, 0))
     for s in SLOTS:
         slot = s["name"]
         if slot not in att:
             continue
-        a = att[slot]
+        a, name = att[slot]
         W = WORLD[SLOT_BONE[slot]]
         typ = a.get("type", "region")
-        name = a.get("name", a.get("path"))
         if not name:
             continue
         try:
@@ -228,7 +237,8 @@ def build(skin_names, skin=None, hair=None):
                 for _v in range(n):
                     wx, wy = xform(W, verts[i], verts[i+1]); i += 2
                     pts.append((wx, wy))
-            srcpx = [(uvs[2*k] * img.width, (1 - uvs[2*k+1]) * img.height) for k in range(n)]
+            # uv v=0 is the image top (== world top here), so sample v*H directly.
+            srcpx = [(uvs[2*k] * img.width, uvs[2*k+1] * img.height) for k in range(n)]
             dstpx = [to_screen(*pts[k]) for k in range(n)]
             _paste_affine(canvas, img, srcpx, dstpx)
     return canvas

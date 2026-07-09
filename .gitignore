@@ -40,3 +40,7 @@
 
 # Raw imported art dump — keep out of git (composed output is committed instead)
 /Assets/imported_assets/
+
+# Python
+**/__pycache__/
+*.pyc
