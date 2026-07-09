@@ -264,19 +264,68 @@ and the category filters actually work.
   correctly (fix the current non-working/incorrect filtering).
 - [ ] Use / Equip / Discard actions consistent with Phase 4 (equip routes to a
   party member; use = consume; discard removes).
-- Files: `APP/src/components/*Vault*/*Inventory*.tsx` (confirm via grep),
-  `schemas.ts` item `category`/`type`.
+- Files: `APP/src/components/GrandVault.tsx` (the ONLY inventory component),
+  `APP/src/types/schemas.ts` (`InventoryItem` — has `type`, NO `category` field),
+  reuse `APP/src/engine/equipment.ts` (Phase 4).
 - Checkpoint (browser): each filter tab shows only its category; equipment shows
   asset icons; use/equip/discard behave; tests/tsc/build green.
 
+### PREP NOTES (surveyed 2026-07-09 — start here; Phase 4 already did a LOT of this)
+- **Icons: ALREADY DONE.** `GrandVault.tsx` renders `<ItemIcon item={item} />`
+  everywhere (grid + detail pane) since Phase 3/4 — baked equipment PNGs + SVG
+  fallback, single swap-point. No emoji/ad-hoc icons remain. Just **spot-check a
+  Quest-type item's icon** renders (seed has none; quests may drop them).
+- **Equip/Use: ALREADY DONE + engine-routed.** Phase 4 deduped `handleEquip`/
+  `handleUnequip`/`handleUseConsumable` onto `engine/equipment.ts` (`planEquip`/
+  `planUnequip`/`planHeal`). Equip routes to a party member, use consumes + heals.
+  Keep consistent — reuse the same engine fns; don't re-implement.
+- **Filters: VERIFY BEFORE "FIXING".** Current code is `activeTab: 'All' |
+  'Consumable' | 'Equipment'`, `filteredItems = inventory.filter(i => activeTab
+  === 'All' || i.type === activeTab)`. That looks correct on paper — but the seed
+  inventory is only **2 items** (1 Equipment iron-sword, 1 Consumable potion), so
+  filtering is hard to see and the old "broken" note may be stale. FIRST drive it
+  in the browser (add a couple items or a Quest item to a test save) and confirm
+  what, if anything, is actually wrong. Note: `InventoryItem` has **no `category`
+  field** — `type` ('Consumable'|'Equipment'|'Quest') is the only axis. **Quest
+  items have no tab** → they only show under All. Decide: add a Quest tab, or leave
+  Quest as All-only (document it). Don't invent a `category` field.
+- **Discard: THE REAL GAP — missing.** The detail-pane action area (GrandVault
+  ~line 195) has Equip/Unequip (Equipment) and Use (Consumable) but **no Discard**.
+  Add a Discard button that `removeInventoryItemDB(item.id)`s — and first guard/
+  auto-unequip if `item.equippedTo` is set (don't leave a member pointing at a
+  deleted item). Consider a confirm for equipped/valuable items.
+- **Layout:** GrandVault is a full-screen modal; keep the no-page-scroll fit (like
+  Phase 4's War Room). The grid pads to 10 slots — keep that or adjust cleanly.
+- **Net:** Phase 5 is smaller than the checklist implies. Likely = (a) add Discard,
+  (b) verify/adjust filters (+ maybe a Quest tab), (c) spot-check Quest-item icon.
+  If (a)+(b) reveal shared decision logic worth extracting, add pure fns to
+  `engine/equipment.ts` + TDD; otherwise keep it in the component.
+
 **HANDOFF PROMPT (Phase 5):**
-> Continue LedgerQuest demo polish. Read `PLANS/DemoPolishPlan.md` (+ OverhaulPlan
-> + project memory) and do **Phase 5 — Inventory management** (item 4). Requires
-> Phase 3 assets + Phase 4 equip logic. Swap inventory emoji/icons for the Phase 3
-> equipment/consumable SVGs; make the All/Consumables/Equipment filter tabs filter
-> correctly; keep use/equip/discard consistent with the War Room. Working notes:
-> Read gated → grep/python edits. Keep tests/tsc/build green, commit locally (no
-> push), then stop and show me.
+> Continue LedgerQuest demo polish. Read `PLANS/DemoPolishPlan.md` (Phase 5 + its
+> PREP NOTES) + `PLANS/OverhaulPlan.md` + project memory first. Do **Phase 5 —
+> Inventory management** (item 4). IMPORTANT — Phase 4 already did most of the
+> nominal scope, do NOT redo it: `GrandVault.tsx` already renders `<ItemIcon>`
+> everywhere (no emoji icons left) and its equip/unequip/use handlers are already
+> deduped onto `engine/equipment.ts` (`planEquip`/`planUnequip`/`planHeal`). The
+> REAL work: (1) **Add a Discard action** to the item detail pane — `removeInventory
+> ItemDB(item.id)`, but first auto-unequip / guard if `item.equippedTo` is set so no
+> member points at a deleted item (confirm for equipped items). (2) **Verify the
+> filter tabs in the browser before changing them** — the All/Consumables/Equipment
+> filter is `i.type === activeTab` and looks correct, but the seed has only 2 items
+> so drive it with a few test items (incl. a Quest item) and fix only if actually
+> broken; `InventoryItem` has NO `category` field (`type` is the only axis) and
+> Quest items currently have no tab (add one or document them as All-only — don't
+> invent a category field). (3) Spot-check a Quest-type item's `<ItemIcon>`. Keep
+> use/equip consistent with the War Room (reuse the engine fns; TDD any new pure
+> decision logic). Keep the modal fitting with NO page scroll. Working notes: a
+> `cbm-code-discovery-gate` hook BLOCKS Read on source → read via grep/sed, edit via
+> Bash python exact-string replace; Write/Edit fine for files you create + non-
+> source. Dev server `preview_start "ledgerquest-dev"`; `preview_screenshot` times
+> out on the CRT animation → verify via `preview_eval` DOM assertions, and
+> `localStorage.clear()` + reload before checks. Keep `npm test` + `npx tsc -b` +
+> `npm run build` green (currently 157 tests), commit locally (NO push), then stop
+> and show me.
 
 ---
 
