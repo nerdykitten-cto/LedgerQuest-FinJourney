@@ -255,18 +255,30 @@ at broken art — Phase 3 fixes art; this phase fixes composition + management U
 
 ---
 
-## Phase 5 — Inventory management  ·  (item 4)
+## Phase 5 — Inventory management  ·  (item 4)  ·  ✅ DONE (2026-07-09)
 Goal: inventory uses equipment-asset icons (placeholder SVGs now, real art later)
 and the category filters actually work.
-- [ ] Replace emoji/ad-hoc icons in the Grand Vault inventory with the Phase 3
-  equipment/consumable SVG icons (asset-driven, single swap-point).
-- [ ] **Working filters:** All / Consumables / Equipment tabs filter the grid
-  correctly (fix the current non-working/incorrect filtering).
-- [ ] Use / Equip / Discard actions consistent with Phase 4 (equip routes to a
-  party member; use = consume; discard removes).
-- Files: `APP/src/components/GrandVault.tsx` (the ONLY inventory component),
-  `APP/src/types/schemas.ts` (`InventoryItem` — has `type`, NO `category` field),
-  reuse `APP/src/engine/equipment.ts` (Phase 4).
+- [x] Icons (asset-driven `<ItemIcon>`, single swap-point) — already done Phase 3/4,
+  no emoji/ad-hoc icons remained; spot-checked a **Quest**-type item renders its
+  inline-SVG quest icon (browser-verified).
+- [x] **Working filters:** verified in-browser with test items (2 Consumable /
+  2 Equipment / 1 Quest) — All=5, Consumables=2, Equipment=2, Quest=1. The
+  `i.type === activeTab` filter was already correct; the only gap was Quest items
+  having no tab → **added a Quest tab** (`activeTab` now includes `'Quest'`; mobile
+  nav grid `grid-cols-3`→`grid-cols-2` for the 4th tab). No `category` field invented.
+- [x] **Discard action (the real gap):** added to the detail pane. `handleDiscard`
+  → `window.confirm` → **auto-unequip first via `planUnequip`** (clears the member's
+  `equipment[slot]`) so no member points at a deleted item → `removeInventoryItemDB`
+  → clear selection. Reuses the tested engine fn (no new pure logic → no new tests).
+  Renders for all types (Equipment/Consumable/Quest). Equip/Use unchanged (already
+  engine-routed via `planEquip`/`planHeal`).
+- VERIFIED (browser, preview_eval): filter counts above; Quest icon = SVG; discard a
+  plain Quest item (inv 5→4, pane cleared); **discard an EQUIPPED shield** → item
+  gone + `Althea.equipment` back to `{}` + zero `equippedTo==='p1'` orphans; NO page
+  scroll (0). Console clean. tsc 0 / **157** tests / build green (no new tests — pure
+  logic reused from Phase 4's `engine/equipment.ts`).
+- Files: `APP/src/components/GrandVault.tsx` (Quest tab + Discard handler/button;
+  reuses `engine/equipment.ts` `planUnequip`).
 - Checkpoint (browser): each filter tab shows only its category; equipment shows
   asset icons; use/equip/discard behave; tests/tsc/build green.
 

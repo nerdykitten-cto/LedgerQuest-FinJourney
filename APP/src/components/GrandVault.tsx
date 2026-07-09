@@ -12,7 +12,7 @@ interface Props {
 
 const GrandVault: React.FC<Props> = ({ inventory, party, onClose }) => {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-  const [activeTab, setActiveTab] = useState<'All' | 'Consumable' | 'Equipment'>('All');
+  const [activeTab, setActiveTab] = useState<'All' | 'Consumable' | 'Equipment' | 'Quest'>('All');
 
   // Filter items by category tab
   const filteredItems = inventory.filter(item => {
@@ -70,6 +70,23 @@ const GrandVault: React.FC<Props> = ({ inventory, party, onClose }) => {
     }
   };
 
+  const handleDiscard = async () => {
+    if (!selectedItem) return;
+    if (!window.confirm(`Discard ${selectedItem.name}? This cannot be undone.`)) return;
+    // Auto-unequip first so no party member points at a deleted item.
+    const unequip = planUnequip(selectedItem);
+    if (unequip) {
+      const member = party.find(m => m.id === unequip.memberId);
+      if (member) {
+        await updatePartyMemberDB(unequip.memberId, {
+          equipment: { ...member.equipment, [unequip.slot]: undefined },
+        });
+      }
+    }
+    await removeInventoryItemDB(selectedItem.id);
+    setSelectedItem(null);
+  };
+
   // Calculate carrying weight
   const totalWeight = inventory.reduce((sum, item) => sum + (item.weight * (item.quantity || 1)), 0);
 
@@ -92,7 +109,7 @@ const GrandVault: React.FC<Props> = ({ inventory, party, onClose }) => {
         {/* Modal Content Layout */}
         <div className="flex flex-col md:flex-row gap-6 flex-grow overflow-hidden">
           {/* Left: Sidebar Categories */}
-          <nav className="grid grid-cols-3 md:flex md:flex-col gap-1.5 md:gap-2 md:w-48">
+          <nav className="grid grid-cols-2 md:flex md:flex-col gap-1.5 md:gap-2 md:w-48">
             <button 
               onClick={() => setActiveTab('All')}
               className={`flex items-center justify-center md:justify-start gap-1.5 md:gap-3 p-2 md:p-3 font-label text-[9px] md:text-[10px] uppercase font-black text-center md:text-left active:scale-95 transition-transform doodle-border ${activeTab === 'All' ? 'bg-[#f4d03f] text-[#060d20] border-[#f4d03f]' : 'bg-[#0b1326] text-[#ffeebb] border-[#4c4634]'}`}
@@ -113,6 +130,13 @@ const GrandVault: React.FC<Props> = ({ inventory, party, onClose }) => {
             >
               <span className="material-symbols-outlined text-sm">shield</span>
               Equipment
+            </button>
+            <button 
+              onClick={() => setActiveTab('Quest')}
+              className={`flex items-center justify-center md:justify-start gap-1.5 md:gap-3 p-2 md:p-3 font-label text-[9px] md:text-[10px] uppercase font-black text-center md:text-left active:scale-95 transition-transform doodle-border ${activeTab === 'Quest' ? 'bg-[#f4d03f] text-[#060d20] border-[#f4d03f]' : 'bg-[#0b1326] text-[#ffeebb] border-[#4c4634]'}`}
+            >
+              <span className="material-symbols-outlined text-sm">flag</span>
+              Quest
             </button>
           </nav>
 
@@ -237,6 +261,14 @@ const GrandVault: React.FC<Props> = ({ inventory, party, onClose }) => {
                     </div>
                   </div>
                 )}
+
+                <button
+                  onClick={handleDiscard}
+                  className="w-full mt-1 bg-transparent text-[#ffb4aa]/70 hover:text-[#ffb4aa] font-headline font-bold text-[10px] py-2 border border-[#84231d]/40 hover:border-[#84231d] hover:bg-[#84231d]/10 active:scale-95 transition-all uppercase tracking-wider flex items-center justify-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-xs">delete</span>
+                  Discard
+                </button>
               </div>
             </div>
           ) : (
