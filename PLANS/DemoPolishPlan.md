@@ -166,18 +166,24 @@ Goal: the asset pipeline + placeholders that Phases 4/5/6 render.
 
 ---
 
-## Phase 4 — War Room party management  ·  (item 3)
+## Phase 4 — War Room party management  ·  (item 3)  ·  ✅ DONE (2026-07-09, `c5a9aa8`)
 Goal: fix the blank/broken War Room into a working, scaled party manager for the
 demo. (Root cause to confirm: fresh save seeds too few members and avatars point
 at broken art — Phase 3 fixes art; this phase fixes composition + management UI.)
-- [ ] Seed the **3-member** starting party (tank/front, melee/front, support) with
-  classes + stats + placeholder emoji; render each in its correct formation row
-  (Front line / Support & Ranged).
-- [ ] **Heal from inventory:** use a consumable (potion) on a selected member →
-  restores HP, decrements item qty (through the persistence/engine API, TDD).
-- [ ] **Weapon/equipment swap:** equip a weapon/armor from inventory onto a member
-  → stat effect applies + reflected in combat; unequip returns item to inventory.
-- [ ] Neat, **scaled** layout (matches the enlarged panel from Phase 2; no overflow).
+- [x] Seed the **3-member** starting party (already done Phase 3) — verified renders
+  in correct rows (Althea/Leader + Kael/Vanguard front; Elora/Arcanist support).
+- [x] **Heal from inventory:** select a member + potion → `hp=min(maxHp,hp+hpHeal)`,
+  qty−1, remove at 0. Pure `planHeal` (TDD) + App `handleWarHeal`. Verified 30→70,
+  qty 3→2; Use button disabled at full HP.
+- [x] **Weapon/equipment swap:** equip/unequip weapon|armor via pure `planEquip`/
+  `planUnequip` (TDD) — source of truth `InventoryItem.equippedTo` (combat already
+  reads it, no combat change). Verified equippedTo=p1 + slot fills + unequip returns.
+- [x] Neat, **scaled** layout — modal `max-h-[92vh]`, inner scroll only; verified
+  NO page scroll (0/0) at the enlarged panel, console clean.
+- Extracted the duplicated equip/heal decisions into `engine/equipment.ts` (pure,
+  14 tests) and deduped `GrandVault.tsx` to reuse it. Files: NEW `engine/equipment.ts`
+  + `.test.ts`, `WarRoom.tsx` (inventory prop + select + heal/equip UI), `App.tsx`
+  (handlers + props), `GrandVault.tsx` (dedupe). tsc 0 / **157** tests / build green.
 - Files: `APP/src/components/WarRoom*.tsx` (confirm via grep), `engine/recruitment.ts`
   (existing recruit/dismiss), inventory/equip logic in `persistenceService.ts` +
   a new `engine/equipment.ts` if needed, `schemas.ts` (equipped slots).
