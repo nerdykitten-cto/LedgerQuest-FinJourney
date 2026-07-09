@@ -306,6 +306,37 @@ that a first-run / freshly-reset player is walked through.
 
 ---
 
+## Phase 9 — Map & World interactions  ·  (future, user-directed 2026-07-09)
+**LOCKED:** keep the existing `world_map.png` — NO new map art. Only small changes
+on top of it.
+- [ ] **Typed location pointers:** reposition the 4 `LOCATIONS` nodes so each sits
+  on a matching-looking spot of the current map art, and give each a **typed
+  pointer icon** by settlement kind (village hut / town / city spires / citadel)
+  instead of the generic gold ring. (`engine/world.ts` — add a `type` per
+  location + corrected `x,y`; `WorldMapScene.tsx` — icon per type.)
+- [ ] **Zoom-into-village:** clicking a village pointer plays a **fade-in + scale
+  zoom** transition from the node into the village interior (replaces today's
+  instant town-enter). (`WorldMapScene.tsx` → `App.tsx` enter flow → `TownScene`.)
+- [ ] **Village interior hotspots:** the zoomed-in village view highlights its
+  **sub-locations** on different parts of the frame (clickable hotspots) rather
+  than the current row of centred NPC emoji. (`TownScene.tsx`.)
+- Files: `engine/world.ts`, `AdventureWorld/WorldMapScene.tsx`, `TownScene.tsx`,
+  `App.tsx` (enter/worldState), plus the follow-on cluster below.
+- **OPEN (resolve at phase start):** (a) interior = illustrated per-village vs a
+  stylized/generated hotspot layout; (b) the sub-location set (Shop / Quest-giver
+  / Arena / Inn-heal / Exit — standard vs per-village); (c) keep the 4 locations.
+
+### Follow-on cluster (same or next phase — user "will request")
+- [ ] **Battle encounters:** rework how/when encounters trigger (currently the
+  `worldState` peace→battle machine in `App.tsx` + `pickEnemy`). Details TBD.
+- [ ] **NPC dialogue:** beyond today's single static line per NPC — a real
+  dialogue system (branches? multi-line? quest hooks). Details TBD.
+- [ ] **Story / narrative:** DECIDE whether the early demo carries a light
+  narrative arc through the 4 locations, or stays systems-only. Details TBD.
+- Checkpoint + HANDOFF PROMPT: to be written once the OPEN items above are decided.
+
+---
+
 ## Ops (not a code phase) — retire Cloud Run, deploy Firebase (item 6)
 Done by the user in the GCP Console:
 1. Cloud Build → Triggers → disable/delete the `LedgerQuest-FinJourney` trigger
