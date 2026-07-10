@@ -341,6 +341,105 @@ and the category filters actually work.
 
 ---
 
+## Phase 5.5 — Gear & equipment slots  ·  (new, user-directed 2026-07-10)
+Goal: expand the 2-slot gear system (`weapon`, `armor`) into distinct equipment
+slots — **weapon, body armor, helmet, shield, gloves** — with a small variety of
+items (**≥4 each**, ~20 total) that the player can mix-and-match per party member.
+Slot into the schedule **before Phase 6** (Battle UI must render the new slots).
+
+Why a dedicated phase (deferred from Phase 4, which was weapon+armor only): this
+touches the schema, the equip engine, combat stat math, BOTH gear UIs (War Room +
+Grand Vault), item content, and art — too big to bolt onto a bug-fix.
+
+- [ ] **Schema** (`types/schemas.ts`): grow `PartyMember.equipment` to
+  `{ weapon?, armor?, helmet?, shield?, gloves? }` (values = display name, as today).
+  Add an explicit **`slot`** field to `InventoryItem`
+  (`'weapon'|'armor'|'helmet'|'shield'|'gloves'`) so slotting is data-driven, not
+  guessed. Keep `type` ('Equipment'|'Consumable'|'Quest') as-is — `slot` only applies
+  to `type:'Equipment'`. Migration: existing saves have no `slot` → derive a fallback
+  from the old heuristic so old saves don't break (see engine below).
+- [ ] **Engine** (`engine/equipment.ts`, TDD): widen `EquipSlot` to the 5 slots.
+  Rewrite `equipSlotOf` to prefer `item.slot`, falling back to the current
+  sword/attack→weapon, else→armor heuristic for legacy items with no `slot`.
+  `planEquip`/`planUnequip` are already generic over `slot` — verify + extend tests
+  to cover all 5 slots and same-slot swap per slot.
+- [ ] **Combat** (`AdventureWorld/CombatScene.tsx`): today it reads one `equippedWeapon`
+  (attack) + one `equippedArmor` (defense). Change defense to **sum `statBonus.defense`
+  across body+helmet+shield+gloves** (all equipped defensive slots on the striking/
+  defending member). Keep the source of truth = `InventoryItem.equippedTo`; combat
+  resolves each member's equipped items by scanning inventory for `equippedTo===member.id`.
+- [ ] **UI — Grand Vault** (`GrandVault.tsx`): equip flow already routes via the engine;
+  ensure a helmet/shield/gloves item equips to its correct slot and the detail pane +
+  the "E" grid badge reflect it. (Filter tabs unchanged — still by `type`; all 5 gear
+  kinds are `type:'Equipment'`.)
+- [ ] **UI — War Room** (`WarRoom.tsx`): show the member's 5 gear slots (not just
+  weapon/armor); equip/unequip each; fits the enlarged panel with **no page scroll**.
+- [ ] **Content** (seed/shop templates in `persistenceService.ts` + `TownScene.tsx`,
+  and the `App.tsx` template map): add ≥4 items per slot (~20). Give each a `slot`,
+  a `statBonus`, and a `sprite`.
+- [ ] **Art**: helmets/gloves/body partly baked (`iron-helm`, `leather-gloves`,
+  `leather-tunic`). **No shield PNG is baked yet** — either pick from
+  `public/assets/game/weapons/` (16 assets) as stand-ins or drop new PNGs into
+  `public/assets/game/equipment/` (the `isBakedItemArt` whitelist already covers
+  `equipment|consumables|weapons`). Keep the single-swap-point (`ItemIcon`).
+- Files: `types/schemas.ts`, `engine/equipment.ts` (+ `.test.ts`),
+  `components/AdventureWorld/CombatScene.tsx`, `components/GrandVault.tsx`,
+  `components/WarRoom.tsx`, `persistenceService.ts` (seed), `App.tsx` (template map),
+  `components/AdventureWorld/TownScene.tsx` (shop), `public/assets/game/equipment/`.
+- Checkpoint (browser): a member can equip 1 of each of the 5 slots at once; combat
+  defense reflects the SUM of all defensive slots; ≥4 options show per slot; icons
+  render (no SVG-fallback/404); War Room + Vault fit with no page scroll; legacy save
+  with no `slot` still equips (fallback). tests/tsc/build green.
+
+### PREP NOTES (surveyed 2026-07-10 — start here)
+- **Current state = 2 slots.** `PartyMember.equipment = {weapon?, armor?}`
+  (`schemas.ts:84`). `equipSlotOf` (`engine/equipment.ts:21`) = `icon==='swords' ||
+  statBonus.attack!==undefined ? 'weapon' : 'armor'` — a heuristic, NOT a data field.
+  Replace with a real `slot` field; keep the heuristic ONLY as the legacy fallback.
+- **Source of truth for "equipped" = `InventoryItem.equippedTo` (member id)** — combat
+  reads THAT. `PartyMember.equipment{}` stores only a display name. Multi-slot means a
+  member can have several inventory items with `equippedTo===member.id`, each a
+  different slot. Combat must scan inventory per member, not read a single field.
+- **Combat math today** (`CombatScene.tsx`): strike dmg = `level*10 + weapon.attack +
+  rand`; enemy counter = `enemy.attack − armor.defense + rand`, min 1. New: replace the
+  single `armor.defense` with `sum(defense of all equipped defensive-slot items)`.
+- **`planEquip` already unequips the same slot first** — with per-slot data this Just
+  Works once `equipSlotOf` returns the right slot; extend tests to prove per-slot swaps.
+- **Baked art present:** `iron-helm.png` (helmet), `leather-gloves.png` (gloves),
+  `leather-tunic.png` (body), plus weapons dir. **Shield art missing** — decide stand-in
+  vs new PNG at phase start. `isBakedItemArt` now whitelists `equipment|consumables|weapons`.
+- **Scope discipline:** boots/back/`gear_*` slots exist in the art pack but are OUT —
+  this phase is exactly weapon/body/helmet/shield/gloves (5 slots). Don't add more.
+- **Layout risk:** War Room member cards are `h-[200px]`; 5 slot rows must fit the
+  enlarged panel with no page scroll (same constraint Phase 4 hit at 2 slots).
+
+**HANDOFF PROMPT (Phase 5.5):**
+> Continue LedgerQuest demo polish. Read `PLANS/DemoPolishPlan.md` (Phase 5.5 + its
+> PREP NOTES) + `PLANS/OverhaulPlan.md` + project memory first. Do **Phase 5.5 — Gear
+> & equipment slots**. Expand the 2-slot gear system (`weapon`,`armor`) into 5 distinct
+> slots — **weapon, body armor, helmet, shield, gloves** — with ≥4 items each (~20).
+> (1) Schema: grow `PartyMember.equipment` to those 5 keys + add a data-driven `slot`
+> field to `InventoryItem`; keep a legacy fallback so old saves (no `slot`) still equip.
+> (2) Engine (`engine/equipment.ts`, TDD): widen `EquipSlot`, make `equipSlotOf` read
+> `item.slot` (heuristic = fallback only); extend tests for all 5 slots + per-slot swap.
+> (3) Combat (`CombatScene.tsx`): defense = SUM of `statBonus.defense` across ALL
+> equipped defensive slots (body+helmet+shield+gloves), resolved by scanning inventory
+> for `equippedTo===member.id`; keep `equippedTo` as source of truth. (4) UI: War Room
+> shows/equips all 5 slots; Grand Vault equips each to its correct slot; both fit with
+> NO page scroll. (5) Content: ≥4 templates per slot with `slot`/`statBonus`/`sprite`
+> in the seed + shop + App template map. (6) Art: `iron-helm`/`leather-gloves`/
+> `leather-tunic` are baked; NO shield PNG exists — pick a weapons-dir stand-in or add a
+> PNG under `public/assets/game/equipment/` (`isBakedItemArt` covers equipment|
+> consumables|weapons). Scope = exactly these 5 slots (boots/back OUT). Working notes: a
+> `cbm-code-discovery-gate` hook BLOCKS Read on source → read via grep/sed, edit via
+> Bash python exact-string replace; Write/Edit fine for files you create + non-source.
+> Dev server `preview_start "ledgerquest-dev"`; `preview_screenshot` times out on the
+> CRT animation → verify via `preview_eval` DOM assertions, and `localStorage.clear()` +
+> reload before checks. TDD the equip engine changes. Keep `npm test` + `npx tsc -b` +
+> `npm run build` green, commit locally (NO push), then stop and show me.
+
+---
+
 ## Phase 6 — Battle UI polish  ·  (item 5 detail)
 Goal: with the enlarged panel (Phase 2), lay combat out fully and neatly with **no
 scrollbar** — AP badge, turn indicator, enemy, 3 party cards, STRIKE buttons,
