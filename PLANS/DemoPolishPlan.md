@@ -352,8 +352,14 @@ enemy-turn defense = SUM `statBonus.defense` over ALL equipped Equipment on targ
 party-card defense badge shows summed number + piece count. War Room: 5 slotBoxes. Grand Vault:
 equip path already generic over `plan.slot` — no change. Content: seed = 20 gear (4/slot) +
 3 potions; shop = full catalogue + potion; `handleShopPurchase` + quest-reward builder now carry
-`slot`. Art: `equipment/tower-shield.png` = whitelisted copy of `ui/Icon_Shield.png` (4 shields
-reuse it); body/helmet/gloves reuse their one baked PNG across the 4 variants. VERIFIED (browser,
+`slot`. Art: initially reused one PNG per slot; FOLLOW-UP (2026-07-10) gave every item its OWN distinct
+PNG under `public/assets/game/equipment/` sourced from the 2D Art Maker atlas
+(`Assets/imported_assets/images/{helmet,top,eyewear,gearhand,gloves_r}`): Leather Cap = real brown
+leather aviator (helmet_11), Iron Helm = grey visored knight (helmet_13), Steel Barbute = silver
+dome (helmet_20), Scholar's Spectacles = round specs (eyewear_14); body = brown chestplate/tan
+gambeson/olive vest/grey cuirass (top_19/26/25/54); shields = buckler/kite/tower/ledger
+(gear_left_6/4/5/10); gloves = leather/padded/thief/ironclad (gloves_r_9/2/3/16). All 20 sprites
+load 200, none shared (verified browser). VERIFIED (browser,
 preview_eval): fresh seed = 4/slot, no missing slot, no sprite 404 (incl shield); equipped 1 of
 each slot to Althea → `equipment` has all 5 keys + 5 items `equippedTo=p1` (defense sum 20);
 per-slot swap (2nd helmet displaces 1st, count stays 5); War Room modal fits viewport (page's

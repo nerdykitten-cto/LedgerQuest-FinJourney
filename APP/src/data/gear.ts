@@ -8,9 +8,9 @@ import type { EquipSlot, InventoryItem } from '../types/schemas';
  * fallback only). Scope = 5 slots: weapon / armor (body) / helmet / shield /
  * gloves — boots & back are intentionally out.
  *
- * Art note: only a few baked PNGs exist per non-weapon slot, so several items in
- * the same slot reuse one sprite (they still differ by name / stats). The shield
- * sprite is a whitelisted copy of the old UI shield (`equipment/tower-shield.png`).
+ * Art note: every item has its own distinct PNG under
+ * `public/assets/game/equipment/` (helmets/tops/eyewear/shields/gloves sourced
+ * from the 2D Art Maker atlas). No two items share a sprite.
  */
 
 export interface GearTemplate {
@@ -51,15 +51,15 @@ export const GEAR_CATALOG: GearTemplate[] = [
     statBonus: { defense: 8 }, weight: 5.0, cost: 100,
     description: 'Supple padding against small overruns.' },
   { templateId: 'padded-gambeson', name: 'Padded Gambeson', slot: 'armor', icon: 'shield',
-    sprite: '/assets/game/equipment/leather-tunic.png', stats: '+5 Defense',
+    sprite: '/assets/game/equipment/padded-gambeson.png', stats: '+5 Defense',
     statBonus: { defense: 5 }, weight: 4.0, cost: 70,
     description: 'Quilted layers that soften every hit.' },
   { templateId: 'travelers-vest', name: "Traveler's Vest", slot: 'armor', icon: 'shield',
-    sprite: '/assets/game/equipment/wanderer-pack.png', stats: '+10 Defense',
+    sprite: '/assets/game/equipment/travelers-vest.png', stats: '+10 Defense',
     statBonus: { defense: 10 }, weight: 6.0, cost: 160,
     description: 'Reinforced canvas built for the long road.' },
   { templateId: 'iron-cuirass', name: 'Iron Cuirass', slot: 'armor', icon: 'shield',
-    sprite: '/assets/game/equipment/leather-tunic.png', stats: '+14 Defense',
+    sprite: '/assets/game/equipment/iron-cuirass.png', stats: '+14 Defense',
     statBonus: { defense: 14 }, weight: 9.0, cost: 300,
     description: 'A solid breastplate for a solid budget.' },
 
@@ -69,25 +69,25 @@ export const GEAR_CATALOG: GearTemplate[] = [
     statBonus: { defense: 6 }, weight: 3.0, cost: 120,
     description: 'Keeps a clear head when the numbers spike.' },
   { templateId: 'leather-cap', name: 'Leather Cap', slot: 'helmet', icon: 'shield',
-    sprite: '/assets/game/equipment/iron-helm.png', stats: '+3 Defense',
+    sprite: '/assets/game/equipment/leather-cap.png', stats: '+3 Defense',
     statBonus: { defense: 3 }, weight: 1.5, cost: 55,
     description: 'Light headgear for cautious scribes.' },
   { templateId: 'scholars-spectacles', name: "Scholar's Spectacles", slot: 'helmet', icon: 'shield',
-    sprite: '/assets/game/equipment/spectacles.png', stats: '+2 Defense',
+    sprite: '/assets/game/equipment/scholars-spectacles.png', stats: '+2 Defense',
     statBonus: { defense: 2 }, weight: 0.5, cost: 80,
     description: 'See the fine print before it bites.' },
   { templateId: 'steel-barbute', name: 'Steel Barbute', slot: 'helmet', icon: 'shield',
-    sprite: '/assets/game/equipment/iron-helm.png', stats: '+9 Defense',
+    sprite: '/assets/game/equipment/steel-barbute.png', stats: '+9 Defense',
     statBonus: { defense: 9 }, weight: 4.0, cost: 220,
     description: 'Full-face steel for the fiscally fearless.' },
 
   // ── Shields (defense) ─────────────────────────────────────────────
   { templateId: 'buckler', name: 'Buckler', slot: 'shield', icon: 'shield',
-    sprite: '/assets/game/equipment/tower-shield.png', stats: '+4 Defense',
+    sprite: '/assets/game/equipment/buckler.png', stats: '+4 Defense',
     statBonus: { defense: 4 }, weight: 2.0, cost: 60,
     description: 'A small guard for quick deflections.' },
   { templateId: 'kite-shield', name: 'Kite Shield', slot: 'shield', icon: 'shield',
-    sprite: '/assets/game/equipment/tower-shield.png', stats: '+8 Defense',
+    sprite: '/assets/game/equipment/kite-shield.png', stats: '+8 Defense',
     statBonus: { defense: 8 }, weight: 5.0, cost: 140,
     description: 'Balanced cover from crown to shin.' },
   { templateId: 'tower-shield', name: 'Tower Shield', slot: 'shield', icon: 'shield',
@@ -95,7 +95,7 @@ export const GEAR_CATALOG: GearTemplate[] = [
     statBonus: { defense: 12 }, weight: 8.0, cost: 280,
     description: 'A wall of wood and iron against ruin.' },
   { templateId: 'ledger-shield', name: 'Ledger Shield', slot: 'shield', icon: 'shield',
-    sprite: '/assets/game/equipment/tower-shield.png', stats: '+10 Defense',
+    sprite: '/assets/game/equipment/ledger-shield.png', stats: '+10 Defense',
     statBonus: { defense: 10 }, weight: 6.0, cost: 200,
     description: 'Protects against sudden market crashes.' },
 
@@ -105,15 +105,15 @@ export const GEAR_CATALOG: GearTemplate[] = [
     statBonus: { defense: 2 }, weight: 0.8, cost: 45,
     description: 'A steady grip on the coin purse.' },
   { templateId: 'padded-mitts', name: 'Padded Mitts', slot: 'gloves', icon: 'shield',
-    sprite: '/assets/game/equipment/leather-gloves.png', stats: '+3 Defense',
+    sprite: '/assets/game/equipment/padded-mitts.png', stats: '+3 Defense',
     statBonus: { defense: 3 }, weight: 1.0, cost: 65,
     description: 'Thick mitts that blunt careless spending.' },
   { templateId: 'thiefs-gloves', name: "Thief's Gloves", slot: 'gloves', icon: 'shield',
-    sprite: '/assets/game/equipment/leather-gloves.png', stats: '+4 Defense',
+    sprite: '/assets/game/equipment/thiefs-gloves.png', stats: '+4 Defense',
     statBonus: { defense: 4 }, weight: 0.6, cost: 110,
     description: 'Nimble fingers that never miss a discount.' },
   { templateId: 'ironclad-gauntlets', name: 'Ironclad Gauntlets', slot: 'gloves', icon: 'shield',
-    sprite: '/assets/game/equipment/leather-gloves.png', stats: '+5 Defense',
+    sprite: '/assets/game/equipment/ironclad-gauntlets.png', stats: '+5 Defense',
     statBonus: { defense: 5 }, weight: 2.5, cost: 170,
     description: 'Plated fists for an iron-clad ledger.' },
 ];
