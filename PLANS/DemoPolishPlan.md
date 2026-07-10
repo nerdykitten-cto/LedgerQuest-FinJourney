@@ -467,20 +467,37 @@ Grand Vault), item content, and art — too big to bolt onto a bug-fix.
 
 ---
 
-## Phase 6 — Battle UI polish  ·  (item 5 detail)
+## Phase 6 — Battle UI polish  ·  (item 5 detail)  ·  ✅ DONE (2026-07-10)
 Goal: with the enlarged panel (Phase 2), lay combat out fully and neatly with **no
 scrollbar** — AP badge, turn indicator, enemy, 3 party cards, STRIKE buttons,
 inventory row, and the battle log all visible at once.
-- [ ] Re-flow `CombatScene` for the larger screen; remove the `overflow-y-auto`
-  reliance (content should fit, not scroll). Keep the sticky battle log readable.
-- [ ] Verify at the demo's common widths; 3-member party is the layout target.
-- Files: `APP/src/components/AdventureWorld/CombatScene.tsx`.
-- Checkpoint (browser, fresh battle): full combat visible with no scroll at
-  1280/1536/1920; buttons reachable; log readable; tests/tsc/build green.
-- ALSO (folded in from Phase 5.5): live-verify the new gear math in a real battle —
-  the defense badge on each party card should show the SUMMED defense + piece count,
-  and enemy counter-damage should drop as more defensive slots are equipped (5.5 only
-  unit-tested this; combat needs a live battle to eyeball).
+- [x] Re-flowed `CombatScene`: **dropped the `overflow-y-auto custom-scrollbar` crutch**
+  → root is now `overflow-hidden min-h-0` (clips as a last resort, never scrolls). The
+  party row became the single flexible band (`flex-1 min-h-0 items-center`) that absorbs
+  slack and pins the log to the bottom, so the log lost its `mt-auto sticky bottom-0`
+  crutch. Removed `shrink-0` from the party row (kept it only on the genuinely-fixed
+  small siblings: heading/potion-shelf/enemy/log). Trimmed ~80px of intrinsic height
+  (heading text-xs+leading-none, potion py-1/mb-1, enemy sprite md:w-12 + name md:text-base,
+  card p-2/mb-1/mb-1.5, STRIKE py-1.5, root md:py-2) so content has real headroom.
+- [x] Verified at 1280/1536/1920 (+ a 380px stress box); 3-member party the layout target.
+- Files: `APP/src/components/AdventureWorld/CombatScene.tsx` (layout classes only — NO
+  combat-logic / damage change).
+- VERIFIED (browser, preview_eval DOM assertions; battle seeded via
+  `campaign.worldState='battle'` + Overdraft Ogre in localStorage): **min box needed =
+  372px** (was ~454px, razor-thin at the ~460px target → now 88px headroom). At every
+  size — 1280-wide box 380px (vh 640 stress), 1536×864 box 459px, 1920×1080 box 564px —
+  `scrollHeight−clientHeight = 0` (no scrollbar), party row `scrollWidth−clientWidth = 0`
+  (no x-overflow), and all 3 STRIKE buttons' `getBoundingClientRect().bottom` sit inside
+  both the root and the viewport (0 below either). Original audit bug #1 (STRIKE below
+  screen) cannot recur — the flexible party band keeps STRIKE on screen and overflow is
+  clipped, not scrolled.
+- [x] **Phase 5.5 gear math live-verified** (folded in): equipped a defensive loadout to
+  Althea (4 pieces → badge reads **"+20 Defense from 4 piece(s)"**, visible `shield 20`)
+  and to Elora (4 pieces → **"+40 Defense from 4 piece(s)"**). Drove real strikes: the
+  Overdraft Ogre (attack 8) hit Elora for **8–11 dmg at defense 0** and for **1 dmg
+  (floored) at defense 40** — enemy counter-damage falls as more defensive slots are
+  equipped, exactly as `damage = max(1, attack − Σ statBonus.defense + rand(0..4))`.
+- tsc 0 / **163** tests / build green (layout-only, no test change).
 
 ### PREP NOTES (surveyed 2026-07-10 — start here)
 - **`CombatScene.tsx` is 288 lines, single flex-col.** Root (line 158):
