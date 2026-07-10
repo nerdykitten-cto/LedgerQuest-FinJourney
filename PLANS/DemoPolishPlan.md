@@ -477,15 +477,72 @@ inventory row, and the battle log all visible at once.
 - Files: `APP/src/components/AdventureWorld/CombatScene.tsx`.
 - Checkpoint (browser, fresh battle): full combat visible with no scroll at
   1280/1536/1920; buttons reachable; log readable; tests/tsc/build green.
+- ALSO (folded in from Phase 5.5): live-verify the new gear math in a real battle —
+  the defense badge on each party card should show the SUMMED defense + piece count,
+  and enemy counter-damage should drop as more defensive slots are equipped (5.5 only
+  unit-tested this; combat needs a live battle to eyeball).
+
+### PREP NOTES (surveyed 2026-07-10 — start here)
+- **`CombatScene.tsx` is 288 lines, single flex-col.** Root (line 158):
+  `flex flex-col items-center p-3 pt-20 md:p-4 overflow-x-hidden overflow-y-auto
+  custom-scrollbar`. THE CRUTCH = that `overflow-y-auto` + every child marked
+  `shrink-0`. Goal: make the column fit so the scroll never engages (then drop it,
+  or keep only as a last-resort safety like Phase 2 did).
+- **Vertical stack, top→bottom:** (1) `Combat Interface` H2 (`hidden md:block`, l.177)
+  · (2) AP badge + Turn indicator bar (`Player/Enemy Phase`, l.164–174) · (3) Potion
+  "Inventory:" shelf (conditional, l.179–196) · (4) Enemy block — sprite 48–56px +
+  name + HP bar (l.198–216) · (5) Party row — 3 cards, `overflow-x-auto`,
+  `min-w-[104px]` each, equipped weapon/defense badges + STRIKE button per card
+  (l.218–278) · (6) Battle Log — `mt-auto sticky bottom-0 min-h-[44px] md:min-h-[48px]`
+  (l.280–286). Order in the JSX is AP-bar, potion shelf, enemy, party, log.
+- **`pt-20` is mobile header clearance** (overridden by `md:p-4` at desktop — Phase 2
+  note). Don't remove it without checking phones.
+- **STRIKE-below-screen was the original audit bug (#1).** The buttons live at the
+  BOTTOM of each party card, above the sticky log. If the column overflows they get
+  covered → unplayable. That is exactly what Phase 6 must kill.
+- **Layout gotchas (carry over):** flex ancestors need `min-w-0`/`min-h-0` or content
+  blows past the CRT bezel (Phase 1). Combat fits *exactly* at 1280×800 inner box
+  (~460px tall) — any added height reintroduces the inner scroll (Phase 2). The
+  3-member party is the layout target.
+- **Phase 5.5 already touched this file:** party cards now compute `totalDefense`
+  (sum across equipped Equipment) and render a `+N` defense badge + a weapon badge
+  (top-right of each card, l.~230–250). Minor extra height — keep it in the reflow.
+- **Driving a live battle (no grinding travel/AP):** the peace→battle machine lives
+  in `App.tsx` (`worldState` + `pickEnemy`). Fastest browser repro = seed a battle
+  directly: set `campaign.worldState='battle'` + a valid `activeEnemy` in localStorage
+  (mirror an `Enemy` from the bestiary) and reload, or drive travel with enough AP.
+  `preview_screenshot` times out on the CRT anim → assert via `preview_eval`
+  (measure `scrollHeight<=clientHeight` on the CombatScene root; check STRIKE buttons'
+  `getBoundingClientRect().bottom <= viewport`). `localStorage.clear()`+reload first.
+- **Scope:** this is layout/reflow only — no combat-logic change. Don't rebalance
+  damage or touch the engine.
 
 **HANDOFF PROMPT (Phase 6):**
-> Continue LedgerQuest demo polish. Read `PLANS/DemoPolishPlan.md` (+ OverhaulPlan
-> + project memory) and do **Phase 6 — Battle UI polish** (item 5). Requires Phases
-> 2–4. Re-flow CombatScene so AP, turn indicator, enemy, 3 party cards, STRIKE
-> buttons, inventory row and battle log all fit the enlarged panel with NO
-> scrollbar (drop the overflow-y-auto crutch). Verify a live battle at 1280/1536/
-> 1920 via preview_eval. Working notes: Read gated → grep/python edits. Keep tests/
-> tsc/build green, commit locally (no push), then stop and show me.
+> Continue LedgerQuest demo polish. Read `PLANS/DemoPolishPlan.md` (Phase 6 + its
+> PREP NOTES) + `PLANS/OverhaulPlan.md` + project memory first. Do **Phase 6 — Battle
+> UI polish** (item 5). Re-flow `AdventureWorld/CombatScene.tsx` (288 lines, single
+> flex-col) so ALL of it fits the enlarged CRT panel with NO scrollbar at once: the
+> AP badge + turn indicator, the potion "Inventory:" shelf, the enemy block, the 3
+> party cards (each with its equipped weapon/defense badges + STRIKE button), and the
+> sticky battle log. Kill the `overflow-y-auto` + `shrink-0` crutch on the root (drop
+> it, or keep only as a last-resort safety) — the STRIKE-buttons-below-the-screen bug
+> (original audit #1) must not come back. Constraints: 3-member party is the layout
+> target; flex ancestors need `min-w-0`/`min-h-0` (bezel overflow); combat fits
+> exactly at the 1280×800 inner box (~460px) so trim heights, don't add. This is
+> layout-only — do NOT change combat logic or rebalance damage. WHILE you have a live
+> battle open, also eyeball the Phase 5.5 gear math: each party card's defense badge
+> should show the SUMMED defense + piece count, and enemy counter-damage should fall
+> as more defensive slots are equipped (5.5 unit-tested this but never drove it live).
+> Verify at 1280/1536/1920 via `preview_eval` DOM assertions (measure the CombatScene
+> root `scrollHeight<=clientHeight` and STRIKE `getBoundingClientRect().bottom` inside
+> viewport). To get into a battle without grinding: seed `campaign.worldState='battle'`
+> + a valid `activeEnemy` in localStorage and reload (or travel with enough AP).
+> `preview_screenshot` times out on the CRT animation → use DOM assertions, and
+> `localStorage.clear()`+reload before checks. Working notes: a `cbm-code-discovery-gate`
+> hook BLOCKS Read on source → read via grep/sed, edit via Bash python exact-string
+> replace; Write/Edit fine for files you create + non-source. Keep `npm test` +
+> `npx tsc -b` + `npm run build` green (currently 163 tests), commit locally (NO push),
+> then stop and show me.
 
 ---
 
