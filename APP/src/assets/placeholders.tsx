@@ -87,7 +87,7 @@ export const itemArtKind = (item: ItemLike): ItemArtKind => {
 /** Real item art lives under these baked dirs (Assets/tools/compose_characters.py).
  *  Only sprites in them are used; legacy sprite paths fall back to the SVG. */
 export const isBakedItemArt = (s: string | undefined): boolean =>
-  !!s && /^\/assets\/game\/(equipment|consumables)\//.test(s.trim());
+  !!s && /^\/assets\/game\/(equipment|consumables|weapons)\//.test(s.trim());
 
 /** Master switch for baked equipment/consumable PNGs (else inline-SVG placeholder). */
 export const USE_REAL_ITEM_ART = true;

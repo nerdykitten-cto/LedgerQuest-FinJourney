@@ -324,7 +324,7 @@ export const initializeLocalData = () => {
         name: 'Budget Slicer',
         type: 'Equipment',
         icon: 'swords',
-        sprite: '/assets/game/equipment/iron-sword.png',
+        sprite: '/assets/game/weapons/gear_right_26.png',
         description: 'A keen blade used to trim unnecessary expenses.',
         stats: '+10 Attack',
         statBonus: { attack: 10 },

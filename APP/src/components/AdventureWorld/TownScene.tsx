@@ -60,7 +60,7 @@ export const TownScene: React.FC<TownSceneProps> = ({
       id: 'iron-sword', 
       name: 'Iron Sword', 
       cost: 150, 
-      sprite: '/assets/game/equipment/iron-sword.png', 
+      sprite: '/assets/game/weapons/gear_right_26.png', 
       type: 'Equipment' as const, 
       icon: 'swords',
       stats: '+15 Attack',

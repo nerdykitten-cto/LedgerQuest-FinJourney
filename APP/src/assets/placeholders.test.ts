@@ -96,12 +96,12 @@ describe('itemArtKind', () => {
 });
 
 describe('isBakedItemArt', () => {
-  it('matches baked equipment/consumable dirs only', () => {
+  it('matches baked equipment/consumable/weapons dirs', () => {
     expect(isBakedItemArt('/assets/game/equipment/iron-sword.png')).toBe(true);
     expect(isBakedItemArt('/assets/game/consumables/x.png')).toBe(true);
+    expect(isBakedItemArt('/assets/game/weapons/gear_right_26.png')).toBe(true);
   });
   it('rejects legacy / non-baked sprite paths (no 404 leak)', () => {
-    expect(isBakedItemArt('/assets/game/weapons/bat_1.png')).toBe(false);
     expect(isBakedItemArt('/assets/ui/Icon_Shield.png')).toBe(false);
     expect(isBakedItemArt(undefined)).toBe(false);
     expect(isBakedItemArt('')).toBe(false);

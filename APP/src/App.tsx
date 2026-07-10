@@ -61,7 +61,7 @@ const ITEM_TEMPLATES: Record<string, Partial<InventoryItem>> = {
     name: 'Budget Slicer',
     type: 'Equipment',
     icon: 'swords',
-    sprite: '/assets/game/weapons/bat_1.png',
+    sprite: '/assets/game/weapons/gear_right_26.png',
     description: 'A keen blade used to trim unnecessary expenses.',
     stats: '+10 Attack',
     statBonus: { attack: 10 },
@@ -262,7 +262,7 @@ function App() {
         }
         showNotify(
           a.levelsGained > 0
-            ? `Victory! +${a.exp} XP / +${a.gold} Gold - LEVEL UP! Now level ${a.stats.level}`
+            ? `Victory! +${a.exp} XP / +${a.gold} Gold - LEVEL UP to Lv ${a.stats.level}! Party +${a.levelsGained} lvl, +${10 * a.levelsGained} Max HP, fully healed`
             : `Victory! +${a.exp} XP / +${a.gold} Gold`
         );
       }
