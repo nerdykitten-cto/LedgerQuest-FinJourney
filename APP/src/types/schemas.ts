@@ -84,6 +84,9 @@ export interface PartyMember {
   equipment: {
     weapon?: string;
     armor?: string;
+    helmet?: string;
+    shield?: string;
+    gloves?: string;
   };
 }
 
@@ -181,11 +184,15 @@ export interface LogicEngineTrace {
   output: unknown;
 }
 
+/** Which equipment slot an item occupies (Phase 5.5 — data-driven slotting). */
+export type EquipSlot = 'weapon' | 'armor' | 'helmet' | 'shield' | 'gloves';
+
 export interface InventoryItem {
   id: string;
   templateId: string;
   name: string;
   type: 'Consumable' | 'Equipment' | 'Quest';
+  slot?: EquipSlot; // Only meaningful for type:'Equipment'; legacy items derive a fallback.
   icon: string; // Material symbols icon identifier
   sprite?: string; // Image path (e.g., /assets/ui/... or /assets/game/weapons/...)
   description: string;

@@ -341,7 +341,28 @@ and the category filters actually work.
 
 ---
 
-## Phase 5.5 — Gear & equipment slots  ·  (new, user-directed 2026-07-10)
+## Phase 5.5 — Gear & equipment slots  ·  (new, user-directed 2026-07-10)  ·  ✅ DONE (2026-07-10)
+DONE: 5 slots (weapon/armor/helmet/shield/gloves), data-driven `slot` field, 20 gear
+(4/slot). NEW single-source `src/data/gear.ts` (`GEAR_CATALOG` + `GEAR_BY_NAME`) feeds
+seed + shop + App template map. Schema: `PartyMember.equipment` grew to 5 keys + `EquipSlot`
+type + `InventoryItem.slot?`. Engine (`equipment.ts`): `EquipSlot` re-exported from schemas,
+`equipSlotOf = item.slot ?? legacy-heuristic` (old-save fallback); +6 tests (5-slot read,
+prefer-slot, fallback, per-slot swap ×5, one-of-each) → 163 total. Combat (`CombatScene.tsx`):
+enemy-turn defense = SUM `statBonus.defense` over ALL equipped Equipment on target (reduce);
+party-card defense badge shows summed number + piece count. War Room: 5 slotBoxes. Grand Vault:
+equip path already generic over `plan.slot` — no change. Content: seed = 20 gear (4/slot) +
+3 potions; shop = full catalogue + potion; `handleShopPurchase` + quest-reward builder now carry
+`slot`. Art: `equipment/tower-shield.png` = whitelisted copy of `ui/Icon_Shield.png` (4 shields
+reuse it); body/helmet/gloves reuse their one baked PNG across the 4 variants. VERIFIED (browser,
+preview_eval): fresh seed = 4/slot, no missing slot, no sprite 404 (incl shield); equipped 1 of
+each slot to Althea → `equipment` has all 5 keys + 5 items `equippedTo=p1` (defense sum 20);
+per-slot swap (2nd helmet displaces 1st, count stays 5); War Room modal fits viewport (page's
+228px scroll at 954px preview height pre-exists w/o modal = Phase 6 scene-fit, not this change);
+console clean. tsc 0 / 163 tests / build green. Files: NEW `src/data/gear.ts`, `types/schemas.ts`,
+`engine/equipment.ts`+`.test.ts`, `AdventureWorld/CombatScene.tsx`, `WarRoom.tsx`,
+`persistenceService.ts`, `App.tsx`, `AdventureWorld/TownScene.tsx`, NEW
+`public/assets/game/equipment/tower-shield.png`.
+
 Goal: expand the 2-slot gear system (`weapon`, `armor`) into distinct equipment
 slots — **weapon, body armor, helmet, shield, gloves** — with a small variety of
 items (**≥4 each**, ~20 total) that the player can mix-and-match per party member.

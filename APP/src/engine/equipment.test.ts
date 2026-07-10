@@ -103,3 +103,51 @@ describe('planHeal', () => {
     expect(planHeal(sword(), mkMember())).toBeNull();
   });
 });
+
+
+// ── Phase 5.5: 5-slot, data-driven slotting ──────────────────────────────────
+const gear = (slot: any, over: Partial<InventoryItem> = {}): InventoryItem =>
+  mkItem({ id: 'g_' + slot, name: slot + ' gear', slot, statBonus: { defense: 5 }, ...over });
+
+describe('equipSlotOf — data-driven slot', () => {
+  it('reads item.slot for all five slots', () => {
+    expect(equipSlotOf(gear('weapon'))).toBe('weapon');
+    expect(equipSlotOf(gear('armor'))).toBe('armor');
+    expect(equipSlotOf(gear('helmet'))).toBe('helmet');
+    expect(equipSlotOf(gear('shield'))).toBe('shield');
+    expect(equipSlotOf(gear('gloves'))).toBe('gloves');
+  });
+  it('prefers item.slot over the legacy heuristic', () => {
+    // a sword-iconed/attack item explicitly slotted as gloves stays gloves
+    expect(equipSlotOf(mkItem({ icon: 'swords', statBonus: { attack: 9 }, slot: 'gloves' }))).toBe('gloves');
+  });
+  it('falls back to the heuristic for legacy items with no slot', () => {
+    expect(equipSlotOf(sword())).toBe('weapon');           // no slot -> attack heuristic
+    expect(equipSlotOf(shield())).toBe('armor');           // no slot -> else = armor
+  });
+});
+
+describe('planEquip — per-slot swap across five slots', () => {
+  const slots = ['weapon', 'armor', 'helmet', 'shield', 'gloves'] as const;
+  it('swaps the prior item in the SAME slot on that member', () => {
+    for (const slot of slots) {
+      const prior = gear(slot, { id: slot + '-old', equippedTo: 'm1' });
+      const next = gear(slot, { id: slot + '-new' });
+      const d = planEquip(next, 'm1', [prior, next]);
+      expect(d.slot).toBe(slot);
+      expect(d.unequipItemId).toBe(slot + '-old');
+    }
+  });
+  it('does NOT swap when the prior item is a DIFFERENT slot', () => {
+    const helmetOn = gear('helmet', { id: 'h-old', equippedTo: 'm1' });
+    const glovesNew = gear('gloves', { id: 'g-new' });
+    const d = planEquip(glovesNew, 'm1', [helmetOn, glovesNew]);
+    expect(d.unequipItemId).toBeUndefined();
+  });
+  it('lets one member hold one item in every slot at once', () => {
+    const worn = slots.map(s => gear(s, { id: s + '-worn', equippedTo: 'm1' }));
+    // equipping a new gloves only displaces the worn gloves, nothing else
+    const d = planEquip(gear('gloves', { id: 'g2' }), 'm1', [...worn, gear('gloves', { id: 'g2' })]);
+    expect(d.unequipItemId).toBe('gloves-worn');
+  });
+});

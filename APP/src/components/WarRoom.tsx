@@ -22,7 +22,7 @@ const WarRoom: React.FC<Props> = ({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = party.find(m => m.id === selectedId) ?? null;
 
-  const equippedOf = (memberId: string, slot: 'weapon' | 'armor') =>
+  const equippedOf = (memberId: string, slot: 'weapon' | 'armor' | 'helmet' | 'shield' | 'gloves') =>
     inventory.find(i => i.equippedTo === memberId && i.type === 'Equipment' && equipSlotOf(i) === slot);
 
   const potions = inventory.filter(i => i.type === 'Consumable' && i.quantity > 0);
@@ -78,7 +78,7 @@ const WarRoom: React.FC<Props> = ({
     );
   };
 
-  const slotBox = (slot: 'weapon' | 'armor', label: string, icon: string) => {
+  const slotBox = (slot: 'weapon' | 'armor' | 'helmet' | 'shield' | 'gloves', label: string, icon: string) => {
     if (!selected) return null;
     const item = equippedOf(selected.id, slot);
     return (
@@ -185,7 +185,10 @@ const WarRoom: React.FC<Props> = ({
                   <div className="space-y-3">
                     <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant/70">Loadout</p>
                     {slotBox('weapon', 'Weapon', 'swords')}
-                    {slotBox('armor', 'Armor', 'security')}
+                    {slotBox('helmet', 'Helmet', 'sports_martial_arts')}
+                    {slotBox('armor', 'Body Armor', 'security')}
+                    {slotBox('shield', 'Shield', 'shield')}
+                    {slotBox('gloves', 'Gloves', 'do_not_touch')}
                   </div>
                   {/* Actions */}
                   <div className="space-y-3">

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { PlayerStats } from '../../types/schemas';
 import { ItemIcon } from '../../assets/placeholders';
+import { GEAR_CATALOG } from '../../data/gear';
 
 interface TownSceneProps {
   name: string;
@@ -56,34 +57,25 @@ export const TownScene: React.FC<TownSceneProps> = ({
   const NPCs = getTownNPCs();
 
   const SHOP_ITEMS = [
-    { 
-      id: 'iron-sword', 
-      name: 'Iron Sword', 
-      cost: 150, 
-      sprite: '/assets/game/weapons/gear_right_26.png', 
-      type: 'Equipment' as const, 
-      icon: 'swords',
-      stats: '+15 Attack',
-      statBonus: { attack: 15 },
-      weight: 3.0
-    },
-    { 
-      id: 'leather-tunic', 
-      name: 'Leather Tunic', 
-      cost: 100, 
-      sprite: '/assets/game/equipment/leather-tunic.png', 
-      type: 'Equipment' as const, 
-      icon: 'shield',
-      stats: '+10 Defense',
-      statBonus: { defense: 10 },
-      weight: 5.0
-    },
-    { 
-      id: 'health-potion', 
-      name: 'Health Potion', 
-      cost: 50, 
-      sprite: '/assets/ui/Icon_Energy_Green.png', 
-      type: 'Consumable' as const, 
+    // Phase 5.5: full gear catalogue (4 per slot) + a potion.
+    ...GEAR_CATALOG.map(g => ({
+      id: g.templateId,
+      name: g.name,
+      cost: g.cost,
+      sprite: g.sprite,
+      type: 'Equipment' as const,
+      slot: g.slot,
+      icon: g.icon,
+      stats: g.stats,
+      statBonus: g.statBonus,
+      weight: g.weight,
+    })),
+    {
+      id: 'health-potion',
+      name: 'Health Potion',
+      cost: 50,
+      sprite: '/assets/ui/Icon_Energy_Green.png',
+      type: 'Consumable' as const,
       icon: 'science',
       stats: '+40 HP',
       statBonus: { hpHeal: 40 },

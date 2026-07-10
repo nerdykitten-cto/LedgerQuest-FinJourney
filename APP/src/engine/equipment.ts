@@ -6,20 +6,22 @@
  * `InventoryItem.equippedTo`; combat reads that. `PartyMember.equipment` only
  * stores a display name.
  *
- * Scope: weapon + armor slots only (helmet/gloves/boots/back deferred).
+ * Scope: 5 slots — weapon / armor / helmet / shield / gloves (Phase 5.5).
  */
 
-import type { InventoryItem, PartyMember } from '../types/schemas';
+import type { EquipSlot, InventoryItem, PartyMember } from '../types/schemas';
 
-export type EquipSlot = 'weapon' | 'armor';
+export type { EquipSlot };
 
 /** Default HP restored by a potion with no explicit `hpHeal`. */
 export const DEFAULT_HP_HEAL = 40;
 
-/** Which slot an equippable item occupies. Swords / attack items = weapon,
- *  everything else = armor. */
+/** Which slot an equippable item occupies. Prefers the explicit data-driven
+ *  `item.slot`; falls back to the legacy heuristic (swords/attack = weapon, else
+ *  armor) only for old saves whose items predate the `slot` field. */
 export const equipSlotOf = (item: InventoryItem): EquipSlot =>
-  (item.icon === 'swords' || item.statBonus?.attack !== undefined) ? 'weapon' : 'armor';
+  item.slot ??
+  ((item.icon === 'swords' || item.statBonus?.attack !== undefined) ? 'weapon' : 'armor');
 
 export interface EquipDecision {
   slot: EquipSlot;

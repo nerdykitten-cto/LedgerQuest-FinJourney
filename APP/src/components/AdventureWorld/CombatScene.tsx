@@ -124,8 +124,11 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
         const target = chooseTarget(enemy.archetype ?? 'Aggressor', party, inventory);
         if (!target) return;
         
-        const armor = inventory.find(i => i.equippedTo === target.id && i.type === 'Equipment' && i.statBonus?.defense !== undefined);
-        const defenseBonus = armor?.statBonus?.defense || 0;
+        // Defense = sum of statBonus.defense across every equipped slot on the
+        // target (body + helmet + shield + gloves), resolved via equippedTo.
+        const defenseBonus = inventory
+          .filter(i => i.equippedTo === target.id && i.type === 'Equipment')
+          .reduce((sum, i) => sum + (i.statBonus?.defense || 0), 0);
 
         const damage = Math.max(1, enemy.attack - defenseBonus + Math.floor(Math.random() * 5));
         const newParty = party.map(m => 
@@ -214,8 +217,9 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
       {/* Party Area */}
       <div className={`flex [justify-content:safe_center] gap-2 md:gap-3 w-full mb-2 overflow-x-auto pb-2 custom-scrollbar shrink-0 ${shake === 'party' ? 'animate-shake' : ''}`}>
         {party.map((member) => {
-          const equippedWeapon = inventory.find(i => i.equippedTo === member.id && (i.icon === 'swords' || i.statBonus?.attack));
-          const equippedArmor = inventory.find(i => i.equippedTo === member.id && (i.icon === 'shield' || i.statBonus?.defense));
+          const equippedWeapon = inventory.find(i => i.equippedTo === member.id && i.statBonus?.attack);
+          const memberGear = inventory.filter(i => i.equippedTo === member.id && i.type === 'Equipment');
+          const totalDefense = memberGear.reduce((sum, i) => sum + (i.statBonus?.defense || 0), 0);
           const isTarget = damageNumber && damageNumber.type === 'player' && party.sort((a,b)=>a.hp-b.hp)[0]?.id === member.id;
           
           return (
@@ -237,9 +241,10 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
                     <span className="material-symbols-outlined text-[12px] font-black">swords</span>
                   </div>
                 )}
-                {equippedArmor && (
-                  <div className="bg-[#ffb4aa] text-[#060d20] w-5 h-5 flex items-center justify-center rounded shadow-md" title={equippedArmor.name}>
+                {totalDefense > 0 && (
+                  <div className="bg-[#ffb4aa] text-[#060d20] min-w-5 h-5 px-1 flex items-center justify-center gap-0.5 rounded shadow-md" title={`+${totalDefense} Defense from ${memberGear.filter(i => i.statBonus?.defense).length} piece(s)`}>
                     <span className="material-symbols-outlined text-[12px] font-black">shield</span>
+                    <span className="text-[9px] font-black leading-none">{totalDefense}</span>
                   </div>
                 )}
               </div>

@@ -13,6 +13,7 @@ import type {
 } from './types/schemas';
 import storyManifest from './data/storyManifest.json';
 import { PARTY_ART } from './assets/placeholders';
+import { GEAR_CATALOG } from './data/gear';
 
 import { ENGINE_STATE_KEYS } from './engine/director';
 import type { DirectorTrace } from './engine/traceHub';
@@ -317,20 +318,24 @@ export const initializeLocalData = () => {
   }
 
   if ((getLocal(INVENTORY_COL) as InventoryItem[]).length === 0) {
+    // Phase 5.5: seed one of every gear piece (4 per slot × 5 slots) so the
+    // player can immediately equip all five slots and see the full catalogue.
+    const gearItems: InventoryItem[] = GEAR_CATALOG.map(g => ({
+      id: 'init-' + g.templateId,
+      templateId: g.templateId,
+      name: g.name,
+      type: 'Equipment',
+      slot: g.slot,
+      icon: g.icon,
+      sprite: g.sprite,
+      description: g.description,
+      stats: g.stats,
+      statBonus: g.statBonus,
+      weight: g.weight,
+      quantity: 1,
+    }));
     const initialItems: InventoryItem[] = [
-      {
-        id: 'init-w1',
-        templateId: 'iron-sword',
-        name: 'Budget Slicer',
-        type: 'Equipment',
-        icon: 'swords',
-        sprite: '/assets/game/weapons/gear_right_26.png',
-        description: 'A keen blade used to trim unnecessary expenses.',
-        stats: '+10 Attack',
-        statBonus: { attack: 10 },
-        weight: 3.0,
-        quantity: 1
-      },
+      ...gearItems,
       {
         id: 'init-p1',
         templateId: 'health-potion',

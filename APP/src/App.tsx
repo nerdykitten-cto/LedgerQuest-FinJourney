@@ -18,6 +18,7 @@ import { recruitCost } from './engine/recruitment';
 import { adjustHabitReward } from './engine/difficultyEngine';
 import { taskReward, applyExp } from './engine/rewardEngine';
 import { planEquip, planUnequip, planHeal } from './engine/equipment';
+import { GEAR_BY_NAME } from './data/gear';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import QuestList from './components/QuestList';
@@ -45,28 +46,7 @@ const ITEM_TEMPLATES: Record<string, Partial<InventoryItem>> = {
     statBonus: { hpHeal: 20 },
     weight: 0.5
   },
-  'Ledger Shield': {
-    templateId: 'ledger-shield',
-    name: 'Ledger Shield',
-    type: 'Equipment',
-    icon: 'shield',
-    sprite: '/assets/ui/Icon_Shield.png',
-    description: 'Protects against sudden market crashes.',
-    stats: '+10 Defense',
-    statBonus: { defense: 10 },
-    weight: 5.0
-  },
-  'Budget Slicer': {
-    templateId: 'iron-sword',
-    name: 'Budget Slicer',
-    type: 'Equipment',
-    icon: 'swords',
-    sprite: '/assets/game/weapons/gear_right_26.png',
-    description: 'A keen blade used to trim unnecessary expenses.',
-    stats: '+10 Attack',
-    statBonus: { attack: 10 },
-    weight: 3.0
-  }
+  ...GEAR_BY_NAME,
 };
 
 function App() {
@@ -193,6 +173,7 @@ function App() {
                     templateId: template.templateId || 'generic',
                     name: template.name || itemKey,
                     type: template.type || 'Quest',
+                    slot: template.slot,
                     icon: template.icon || 'info',
                     sprite: template.sprite,
                     description: template.description || '',
@@ -289,6 +270,7 @@ function App() {
           templateId: item.id,
           name: item.name,
           type: item.type,
+          slot: item.slot,
           icon: item.icon,
           sprite: item.sprite,
           description: item.name + ' acquired from the Armory.',
