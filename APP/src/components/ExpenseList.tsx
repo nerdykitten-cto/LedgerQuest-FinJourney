@@ -43,9 +43,9 @@ const ExpenseList: React.FC<Props> = ({ expenses }) => {
                 
                 <div className="flex flex-col items-end">
                   <span className="font-headline text-xl font-black text-secondary">
-                    -{exp.amount.toFixed(2)}g
+                    -{exp.amount.toFixed(2)}$
                   </span>
-                  <span className="font-label text-[8px] uppercase tracking-widest text-on-surface-variant">Lost Gold</span>
+                  <span className="font-label text-[8px] uppercase tracking-widest text-on-surface-variant">Lost Cash</span>
                 </div>
               </div>
 
