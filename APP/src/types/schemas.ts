@@ -110,6 +110,7 @@ export interface CampaignState {
   activeQuestId?: string;
   worldState: 'peace' | 'battle' | 'puzzle' | 'town';
   activeEnemy?: Enemy;
+  battleOrigin?: 'town' | 'map' | 'invasion'; // where a battle was entered from -> where victory/defeat returns
 }
 
 export interface Quest {

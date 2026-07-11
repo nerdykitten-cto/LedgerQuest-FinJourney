@@ -295,8 +295,8 @@ function App() {
         );
       }
     }
-    await dbService.updateCampaign({ worldState: 'peace' });
-  }, [quests, stats, party, checkQuestObjective, showNotify]);
+    await dbService.updateCampaign({ worldState: campaign.battleOrigin === 'town' ? 'town' : 'peace', battleOrigin: undefined });
+  }, [quests, stats, party, campaign.battleOrigin, checkQuestObjective, showNotify]);
 
   const handleBattleDefeat = useCallback(async (result: BattleResult) => {
     director.onEvent({ type: 'battle-finished', won: false, ...result, stats, party });
@@ -306,9 +306,9 @@ function App() {
       await dbService.updatePartyMemberDB(m.id, { hp: m.hp });
     }
     const survivor = changed[0];
-    await dbService.updateCampaign({ worldState: 'peace' });
+    await dbService.updateCampaign({ worldState: campaign.battleOrigin === 'town' ? 'town' : 'peace', battleOrigin: undefined });
     showNotify(survivor ? `Defeated... ${survivor.name} was revived to fight another day.` : 'Defeated... Escaped to safety.');
-  }, [stats, party, showNotify]);
+  }, [stats, party, campaign.battleOrigin, showNotify]);
 
   const handleShopPurchase = useCallback(async (item: any, cost: number) => {
     if (stats.gold >= cost) {
@@ -353,7 +353,7 @@ function App() {
     const actions = director.onEvent({ type: 'battle-requested', progress: campaign.progressPercentage });
     for (const a of actions) {
       if (a.kind === 'spawn-enemy') {
-        await dbService.updateCampaign({ worldState: 'battle', activeEnemy: a.enemy });
+        await dbService.updateCampaign({ worldState: 'battle', activeEnemy: a.enemy, battleOrigin: 'town' });
       }
     }
   }, [campaign.progressPercentage]);
