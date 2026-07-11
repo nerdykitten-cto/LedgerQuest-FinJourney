@@ -12,7 +12,7 @@ import {
 
 describe('scratch seed constants', () => {
   it('zeroes the economy (0 AP / 0 gold / 0 xp, blank budget)', () => {
-    expect(SCRATCH_STATS).toEqual({ level: 1, exp: 0, ap: 0, gold: 0, monthlyBudget: 0 });
+    expect(SCRATCH_STATS).toEqual({ level: 1, exp: 0, ap: 0, gold: 0, monthlyBudget: 0, currency: 'USD' });
   });
 
   it('scratch profile starts onboarding incomplete', () => {

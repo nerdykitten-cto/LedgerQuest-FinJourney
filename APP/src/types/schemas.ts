@@ -69,6 +69,7 @@ export interface PlayerStats {
   ap: number; // Action Points (Earned via Finance Tasks/Habits)
   gold: number;
   monthlyBudget?: number;
+  currency?: string; // finance-side display currency code (item 2); default USD
 }
 
 export interface PartyMember {

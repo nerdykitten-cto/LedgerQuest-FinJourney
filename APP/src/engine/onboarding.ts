@@ -19,6 +19,7 @@ export const SCRATCH_STATS: PlayerStats = {
   ap: 0,
   gold: 0,
   monthlyBudget: 0,
+  currency: 'USD',
 };
 
 export interface PlayerProfile {
