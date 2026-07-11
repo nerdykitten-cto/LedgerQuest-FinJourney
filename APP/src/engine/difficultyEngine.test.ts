@@ -82,6 +82,7 @@ describe('scaleEnemy', () => {
     const { enemy } = scaleEnemy(baseEnemy, strong);
     expect(enemy.hp).toBeGreaterThan(baseEnemy.hp);
     expect(enemy.attack).toBeGreaterThan(baseEnemy.attack);
+    expect(enemy.defense).toBeGreaterThan(baseEnemy.defense);
     expect(enemy.maxHp).toBe(enemy.hp);
   });
 

@@ -63,8 +63,9 @@ export function scaleEnemy(
   const { multiplier, rationale } = difficultyMultiplier(s);
   const hp = Math.max(10, Math.round(base.hp * multiplier));
   const attack = Math.max(1, Math.round(base.attack * multiplier));
+  const defense = Math.max(0, Math.round(base.defense * multiplier));
   return {
-    enemy: { ...base, hp, maxHp: hp, attack },
+    enemy: { ...base, hp, maxHp: hp, attack, defense },
     rationale: `${base.name} scaled x${multiplier.toFixed(2)} (HP ${base.hp}->${hp}, ATK ${base.attack}->${attack}). ${rationale}`,
   };
 }
