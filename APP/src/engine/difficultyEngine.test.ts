@@ -55,9 +55,17 @@ describe('difficultyMultiplier', () => {
     );
   });
 
-  it('stays within [0.5, 1.6]', () => {
+  it('stays within [0.75, 1.6]', () => {
     expect(difficultyMultiplier(strong).multiplier).toBeLessThanOrEqual(1.6);
-    expect(difficultyMultiplier(weak).multiplier).toBeGreaterThanOrEqual(0.5);
+    expect(difficultyMultiplier(weak).multiplier).toBeGreaterThanOrEqual(0.75);
+  });
+
+  it('clamps a deeply-struggling player up to the 0.75 floor', () => {
+    // Raw pre-clamp value for this input is 0.5625 (skill 0.325 -> 1.0625,
+    // -0.10 below-band, -0.40 pity for 5 losses), so the floor genuinely bites.
+    expect(
+      difficultyMultiplier({ ...defaultSignals(), combatWinRate: 0, lossStreak: 5 }).multiplier
+    ).toBe(0.75);
   });
 
   it('mentions the target band when win rate is above 65%', () => {

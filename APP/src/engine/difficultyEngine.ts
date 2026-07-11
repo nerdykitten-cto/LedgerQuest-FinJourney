@@ -35,7 +35,7 @@ export interface DifficultyDecision {
 
 export function difficultyMultiplier(s: PlayerSignals): DifficultyDecision {
   const score = skillScore(s);
-  let multiplier = 0.7 + score * 0.6; // 0.7 .. 1.3 from skill alone
+  let multiplier = 0.9 + score * 0.5; // 0.9 .. 1.4 from skill alone (floor lifted)
   const reasons: string[] = [`Skill score ${score.toFixed(2)} sets base ${multiplier.toFixed(2)}.`];
 
   if (s.combatWinRate > WIN_RATE_TARGET_HIGH) {
@@ -52,7 +52,7 @@ export function difficultyMultiplier(s: PlayerSignals): DifficultyDecision {
     reasons.push(`Pity bonus for ${s.lossStreak} straight losses: -${pity.toFixed(2)}.`);
   }
 
-  multiplier = clamp(multiplier, 0.5, 1.6);
+  multiplier = clamp(multiplier, 0.75, 1.6);
   return { multiplier, rationale: reasons.join(' ') };
 }
 
