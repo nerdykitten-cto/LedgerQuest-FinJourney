@@ -498,6 +498,12 @@ inventory row, and the battle log all visible at once.
   (floored) at defense 40** — enemy counter-damage falls as more defensive slots are
   equipped, exactly as `damage = max(1, attack − Σ statBonus.defense + rand(0..4))`.
 - tsc 0 / **163** tests / build green (layout-only, no test change).
+- RE-CHECKED 2026-07-11 after the combat-stats/revive feature touched `CombatScene.tsx`
+  (strike/counter wiring + the defense badge now ALWAYS renders, since base defense is
+  always > 0): no-scroll fit still holds — at the tight 1280×640 box (~380px, tighter
+  than the 460px target) `scrollHeight−clientHeight = 0`, no party x-overflow, all 3
+  STRIKE inside root+viewport, 3 base-defense badges render (absolute-positioned → no
+  added flow height). Phase 6 intact.
 
 ### PREP NOTES (surveyed 2026-07-10 — start here)
 - **`CombatScene.tsx` is 288 lines, single flex-col.** Root (line 158):
@@ -585,17 +591,86 @@ re-forces the tutorial.
   reset warns then returns to scratch + tutorial. TDD reset/seed. tests/tsc/build
   green.
 
+### PREP NOTES (surveyed 2026-07-11 — start here, saves re-discovery)
+- **Context since Phase 6:** a user-directed combat-stats + revive + post-battle
+  recovery feature shipped and merged to `main` (`a4809f3`, local) — see project
+  memory. It added base attack/defense, a Revive Tonic, and enemy buffs. Doesn't
+  change Phase 7 mechanics, but the SCRATCH seed still seeds the 3-member party +
+  full gear + potions + Revive Tonic (that's intended — combat must work once play
+  unlocks; scratch zeroes the ECONOMY, not the party).
+- **First-run trigger today = per-collection "empty" checks, NOT a profile flag.**
+  `initializeLocalData()` (`persistenceService.ts:287`) is called once from an App
+  mount effect (`App.tsx:101`) and seeds each collection **only if that collection
+  is empty**: tasks(2), habits(1 "Daily Expense Logging"), quests(1 = storyManifest
+  ch0 mainQuest0, `status:'available'`, `apQuota:5`), party(3), inventory(20 gear +
+  Health Potion + Revive Tonic). **Stats + campaign are NOT seeded here** — they
+  default lazily: `subscribeStats` returns `{level:1,exp:0,ap:10,gold:0,
+  monthlyBudget:3000}` when the key is absent (`persistenceService.ts:94`); campaign
+  defaults to `worldState:'peace'`. So "first run" is implicit and the current
+  defaults are a MID-GAME start (10 AP, $3000 budget, an available quest), NOT scratch.
+- **What "scratch" must change (locked decision):** on true first run / hard reset,
+  the profile must be **0 AP / 0 gold / 0 xp, blank budget (no $3000 default), no
+  feats/rituals**, and play (map travel / AP spend) **locked** until the player (a)
+  sets a budget limit, then (b) logs a first expense → earns first AP → gate opens.
+  This needs a real persisted "scratch" stats seed (ap:0, gold:0, exp:0, budget:0 or
+  null) instead of relying on the 10-AP/$3000 lazy default, AND a **single explicit
+  first-run/onboarding flag** (e.g. a `player/profile` key with `onboardingComplete`)
+  so first-run is detected deterministically rather than by "is some collection
+  empty" (which breaks once any collection is seeded).
+- **Budget-first gate is NOT built yet.** Budget editing exists (`App.tsx:526`
+  `newBudget` state → `updateStats({monthlyBudget})` at `:530`) in the Ledger view,
+  but nothing LOCKS play on it. Phase 7 adds the gate: while budget is unset, block
+  map/AP flows and surface a "set your budget" prompt; after budget set + first
+  expense logged (AP earned), open the gate. Decide where the lock lives (the game
+  view / world map entry) and the unlock signal (monthlyBudget > 0 && ap > 0, or an
+  explicit flag).
+- **Hard reset today reseeds a MID-GAME world, not scratch.** "Reset Adventure"
+  button (`App.tsx:777`) → `handleResetGame` (`App.tsx:520`) → `resetGameDB()`
+  (`persistenceService.ts:267`) which `removeItem`s all 12 collections + all
+  `ENGINE_STATE_KEYS`, then calls `initializeLocalData()` (reseeds party/gear/quest).
+  Phase 7 must make reset go to **scratch** (also clear the new onboarding flag +
+  seed 0-economy stats) and **re-force the tutorial**, superseding this. Add a clear
+  warning dialog ("all progress erased, start over") before wiping. Reuse/extend
+  `resetGameDB` — keep the collection+engine-key wipe, swap the reseed for scratch.
+- **No onboarding component exists** — Phase 7 creates one (or a gated overlay).
+  Phase 8 (tutorial) hooks into it; keep the onboarding flag/step model reusable so
+  Phase 8's guided quest can read "which onboarding step am I on".
+- **TDD target:** the reset/scratch-seed decision + the gate/unlock predicate are
+  pure-logic-able → put them in a small engine module (or `persistenceService`
+  helper) with tests, like the equipment/reward engines. IP detection is N/A on the
+  static host — key everything off localStorage (documented decision).
+- **Working notes:** `cbm-code-discovery-gate` hook BLOCKS Read on source → read via
+  grep/sed, edit via Bash python exact-string replace; Write/Edit fine for files you
+  create + non-source. Dev server `preview_start "ledgerquest-dev"`;
+  `preview_screenshot` times out on the CRT animation → verify via `preview_eval`
+  DOM assertions + `localStorage.clear()`+reload before checks.
+
 **HANDOFF PROMPT (Phase 7):**
-> Continue LedgerQuest demo polish. Read `PLANS/DemoPolishPlan.md` (+ OverhaulPlan
-> + project memory) and do **Phase 7 — First-run onboarding + hard reset** (item
-> 7). No sign-in: first visit (empty localStorage) auto-seeds a SCRATCH profile (0
-> AP/gold/xp, no feats/rituals, blank budget) and enters a budget-first gate that
-> keeps play locked until a budget is set + first expense logged (earns first AP).
-> Add a hard "New Game" reset with a warning dialog that wipes ALL state (incl.
-> engine_* keys) back to scratch and re-forces the tutorial, superseding the old
-> "Reset Adventure". IP detection is N/A (static host) — use localStorage. Working
-> notes: Read gated → grep/python edits; TDD the reset/seed logic. Keep tests/tsc/
-> build green, commit locally (no push), then stop and show me.
+> Continue LedgerQuest demo polish. Read `PLANS/DemoPolishPlan.md` (Phase 7 + its
+> PREP NOTES) + `PLANS/OverhaulPlan.md` + project memory first. Do **Phase 7 —
+> First-run onboarding + hard reset** (item 7). No sign-in: first visit (empty
+> localStorage) auto-seeds a **SCRATCH profile — 0 AP / 0 gold / 0 xp, no feats/
+> rituals, BLANK budget** (do NOT use the current lazy defaults of 10 AP / $3000
+> budget / an available quest; those are a mid-game start) and enters a **budget-
+> first gate** that keeps play (map travel / AP spend) LOCKED until the player sets a
+> budget limit, then logs a first expense → earns first AP → gate opens. The scratch
+> seed STILL seeds the 3-member party + gear + potions + Revive Tonic (combat must
+> work once unlocked — scratch zeroes the economy, not the party). Add a hard "New
+> Game" / "Start From Scratch" reset with a warning dialog ("all progress erased,
+> start over") that wipes ALL state (all collections + `ENGINE_STATE_KEYS` + the new
+> onboarding flag) back to scratch and re-forces the tutorial, superseding the old
+> "Reset Adventure" (`App.tsx:777` → `handleResetGame` → `resetGameDB`, which today
+> reseeds a mid-game world). Key first-run off a **single explicit onboarding flag**
+> (e.g. `player/profile.onboardingComplete`), NOT the current "is a collection empty"
+> heuristic. Keep the onboarding step model reusable for Phase 8's guided tutorial.
+> IP detection N/A (static host) — use localStorage. TDD the scratch-seed/reset +
+> gate-unlock predicate (pure engine helper). Working notes: a `cbm-code-discovery-
+> gate` hook BLOCKS Read on source → read via grep/sed, edit via Bash python exact-
+> string replace; Write/Edit fine for files you create + non-source. Dev server
+> `preview_start "ledgerquest-dev"`; `preview_screenshot` times out on the CRT
+> animation → verify via `preview_eval` DOM assertions, `localStorage.clear()`+reload
+> before checks. Keep `npm test` + `npx tsc -b` + `npm run build` green (currently
+> 181 tests), commit locally (NO push), then stop and show me.
 
 ---
 
