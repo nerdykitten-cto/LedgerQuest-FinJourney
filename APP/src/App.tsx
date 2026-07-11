@@ -31,6 +31,7 @@ import { currentOnboardingStep, isPlayUnlocked, shouldLatchUnlock, type PlayerPr
 const GameView = lazy(() => import('./components/GameView'));
 import TopAppBar from './components/TopAppBar';
 import SettingsModal from './components/SettingsModal';
+import DemoFooter from './components/DemoFooter';
 import WarRoom from './components/WarRoom';
 import GrandVault from './components/GrandVault';
 import * as dbService from './persistenceService';
@@ -891,6 +892,7 @@ function App() {
         )}
       </main>
 
+      <div className="mb-24 md:mb-0"><DemoFooter /></div>
       <footer className="fixed bottom-0 left-0 w-full z-50 p-4 md:p-6 md:hidden"><div className="bg-surface-container doodle-border shadow-2xl flex justify-around p-4 backdrop-blur-md"><button onClick={() => setCurrentTab('ledger')} className={`material-symbols-outlined ${currentTab === 'ledger' ? 'text-primary' : 'text-on-surface-variant'}`}>dashboard</button><button onClick={() => setCurrentTab('trials')} className={`material-symbols-outlined ${currentTab === 'trials' ? 'text-primary' : 'text-on-surface-variant'}`}>history_edu</button><button onClick={() => setCurrentTab('archive')} className={`material-symbols-outlined ${currentTab === 'archive' ? 'text-primary' : 'text-on-surface-variant'}`}>menu_book</button><button onClick={() => setCurrentTab('quests')} className={`material-symbols-outlined ${currentTab === 'quests' ? 'text-primary' : 'text-on-surface-variant'}`}>explore</button></div></footer>
     </div>
   );
