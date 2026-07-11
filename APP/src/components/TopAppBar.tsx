@@ -4,9 +4,10 @@ interface Props {
   currentTab: string;
   onTabChange: (tab: string) => void;
   ap: number;
+  onOpenSettings: () => void;
 }
 
-const TopAppBar: React.FC<Props> = ({ currentTab, onTabChange, ap }) => {
+const TopAppBar: React.FC<Props> = ({ currentTab, onTabChange, ap, onOpenSettings }) => {
   const tabs = [
     { id: 'ledger', label: 'Ledger', icon: '/assets/ui/Icon_Bag.png' },
     { id: 'trials', label: 'Trials', icon: '/assets/ui/Icon_Quest.png' },
@@ -53,6 +54,15 @@ const TopAppBar: React.FC<Props> = ({ currentTab, onTabChange, ap }) => {
             <span className="font-label text-[10px] text-on-surface-variant opacity-60 uppercase tracking-tighter">AP</span>
           </div>
           
+          <button
+            onClick={onOpenSettings}
+            aria-label="Settings"
+            title="Settings"
+            className="w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center border-2 border-outline/30 hover:border-primary/50 transition-all text-on-surface-variant hover:text-primary"
+          >
+            <span className="material-symbols-outlined text-xl md:text-2xl">settings</span>
+          </button>
+
           <a
             href="https://forms.gle/1DH1yBBggYtuH12D9"
             target="_blank"

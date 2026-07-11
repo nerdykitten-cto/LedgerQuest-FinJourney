@@ -30,6 +30,7 @@ import { currentOnboardingStep, isPlayUnlocked, shouldLatchUnlock, type PlayerPr
 // it only loads when the player opens the Strategic Map tab.
 const GameView = lazy(() => import('./components/GameView'));
 import TopAppBar from './components/TopAppBar';
+import SettingsModal from './components/SettingsModal';
 import WarRoom from './components/WarRoom';
 import GrandVault from './components/GrandVault';
 import * as dbService from './persistenceService';
@@ -103,6 +104,7 @@ function App() {
   const [isTransmuteOpen, setIsTransmuteOpen] = useState(false);
   const [isWarRoomOpen, setIsWarRoomOpen] = useState(false);
   const [isVaultOpen, setIsVaultOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   const [isTaskCreatorOpen, setIsTaskCreatorOpen] = useState(false);
   const [isHabitCreatorOpen, setIsHabitCreatorOpen] = useState(false);
@@ -582,6 +584,7 @@ function App() {
         </div>
       )}
       
+      {isSettingsOpen && <SettingsModal onClose={() => setIsSettingsOpen(false)} onResetGame={() => { setIsSettingsOpen(false); handleResetGame(); }} />}
       {gatedQuest && <QuestGater quest={gatedQuest} tasks={tasks} habits={habits} ap={stats.ap} onAccept={() => confirmStartQuest(gatedQuest)} onClose={() => setGatedQuest(null)} />}
 
       {isBudgetEditorOpen && (
@@ -652,7 +655,7 @@ function App() {
       {isWarRoomOpen && <WarRoom party={party} inventory={inventory} recruitCost={recruitCost(party)} onClose={() => setIsWarRoomOpen(false)} onAddMember={handleRecruit} onRemoveMember={handleDismiss} onHeal={handleWarHeal} onRevive={handleWarRevive} onEquip={handleWarEquip} onUnequip={handleWarUnequip} />}
       {isVaultOpen && <GrandVault inventory={inventory} party={party} onClose={() => setIsVaultOpen(false)} />}
 
-      <TopAppBar currentTab={currentTab} onTabChange={setCurrentTab} ap={stats.ap} />
+      <TopAppBar onOpenSettings={() => setIsSettingsOpen(true)} currentTab={currentTab} onTabChange={setCurrentTab} ap={stats.ap} />
 
       <main className="max-w-[1200px] mx-auto px-4 md:px-10 mt-6 md:mt-8 pb-32 md:pb-10">
         {currentTab === 'ledger' && (
@@ -818,15 +821,6 @@ function App() {
                           </div>
                         );
                      })}</div>
-                     <div className="border-t-2 border-dashed border-error/30 pt-8 mt-4">
-                        <div className="flex flex-wrap justify-between items-center gap-4">
-                           <div>
-                              <h4 className="font-headline text-lg font-black text-error uppercase">Danger Zone</h4>
-                              <p className="font-body text-xs text-on-surface-variant italic">Erase ALL progress and start a brand-new game from scratch — the budget gate and tutorial are reset.</p>
-                           </div>
-                           <button onClick={handleResetGame} className="bg-error text-on-error px-8 py-3 doodle-border font-label text-[10px] uppercase font-black hover:scale-105 transition-transform">New Game — Start From Scratch</button>
-                        </div>
-                     </div>
                   </div>
                 )}
                 {archiveTab === 'engine' && (
