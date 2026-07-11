@@ -694,6 +694,37 @@ re-forces the tutorial.
 
 ---
 
+## Phase 7.5 — Demo polish quick wins  ·  (user-directed 2026-07-11)  ·  ✅ DONE (2026-07-11)
+Batch A of the 6-item demo-polish request. Spec `PLANS/specs/2026-07-11-demo-polish-batch-design.md`,
+plan `PLANS/plans/2026-07-11-demo-polish-batch-a.md`. Items 1, 2, 5, 6 (executed inline, TDD +
+per-task commits). Remaining: item 4 chronicle boss flow (Batch B), item 3 tutorial (Batch C /
+Phase 8) — each gets its own plan at its checkpoint.
+- [x] **Settings modal + gear icon (item 1):** gear button in `TopAppBar` right cluster (beside AP
+  + feedback, `w-9 h-9 md:w-10`). NEW `components/SettingsModal.tsx` holds the Danger Zone "New
+  Game — Start From Scratch" reset, **moved out of** Archive → Vaults. Mobile header fits at 375px
+  (0 overflow).
+- [x] **Currency relabel (item 2):** NEW `data/currencies.ts` (`CURRENCIES` USD/EUR/GBP/INR/JPY/
+  CAD/AUD, `symbolOf`, pure `formatMoney` — TDD 6 tests). `PlayerStats.currency` (default USD;
+  scratch seeds USD). `<select>` in the Calibrate Budget modal persists `{monthlyBudget, currency}`.
+  All FINANCE money renders → `formatMoney(v, stats.currency)` (ledger cards, budget streams,
+  savings, deposit toast, `ExpenseList` via new `currency` prop w/ 2-decimals). Game **Gold**
+  untouched. Symbol-only, no FX (locked fork).
+- [x] **Outskirts battle → town (item 5):** NEW `CampaignState.battleOrigin` (`'town'|'map'|
+  'invasion'`). Outskirts battle tags `'town'`; `handleBattleVictory`/`handleBattleDefeat` route to
+  `'town'` when origin was town (else `'peace'`), clearing `battleOrigin`. (Batch B extends
+  `'invasion'`.)
+- [x] **Demo/PixelOre footer (item 6):** NEW `components/DemoFooter.tsx` — muted gray strip "DEMO —
+  not a real financial tool (yet) · A PixelOre product" on every page (in flow, `mb-24 md:mb-0` so
+  the mobile floating nav clears it; hidden-nav on desktop).
+- VERIFIED (browser, preview_eval): currency EUR relabels ledger €3,000 / expense €42.50 / remaining
+  €2,957.5, Gold untouched; town-origin battle win → `worldState:'town'`; gear→Settings→New-Game
+  present, Archive Danger Zone gone, 375px header 0 overflow; footer on all 4 tabs, mobile-nav
+  clearance, desktop nav hidden; Phase 7 scratch gate still intact (onboarding false, ap 0, currency
+  USD). tsc 0 / **209** tests / build green. Commits `…currency catalogue` → `…demo + PixelOre footer`
+  (7 local commits incl. spec+plan). NO push.
+
+---
+
 ## Phase 8 — Tutorial guided first quest  ·  (item 8)
 Goal: turn "The Ledger of the Lost Town" + Starting Village into a guided tutorial
 that a first-run / freshly-reset player is walked through.
