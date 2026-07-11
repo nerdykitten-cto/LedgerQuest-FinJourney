@@ -105,6 +105,8 @@ describe('applyLevelUps', () => {
     expect(updated[0].level).toBe(3);
     expect(updated[0].maxHp).toBe(120);
     expect(updated[0].hp).toBe(120);
+    expect(updated[0].attack).toBe(16); // 12 + 2*2
+    expect(updated[0].defense).toBe(7); // 5 + 1*2
   });
 
   it('returns party unchanged for zero levels', () => {
