@@ -13,6 +13,7 @@ export const CURRENCIES: Currency[] = [
   { code: 'GBP', symbol: '£', label: 'British Pound' },
   { code: 'INR', symbol: '₹', label: 'Indian Rupee' },
   { code: 'JPY', symbol: '¥', label: 'Japanese Yen' },
+  { code: 'PKR', symbol: '₨', label: 'Pakistani Rupee' },
   { code: 'CAD', symbol: '$', label: 'Canadian Dollar' },
   { code: 'AUD', symbol: '$', label: 'Australian Dollar' },
 ];

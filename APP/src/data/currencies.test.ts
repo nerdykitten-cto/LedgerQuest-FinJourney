@@ -16,6 +16,7 @@ describe('symbolOf', () => {
     expect(symbolOf('GBP')).toBe('£');
     expect(symbolOf('INR')).toBe('₹');
     expect(symbolOf('JPY')).toBe('¥');
+    expect(symbolOf('PKR')).toBe('₨');
   });
   it('falls back to $ for unknown/missing codes (legacy saves)', () => {
     expect(symbolOf(undefined)).toBe('$');
