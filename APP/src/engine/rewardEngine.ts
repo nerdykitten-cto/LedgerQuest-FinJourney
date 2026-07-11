@@ -73,3 +73,29 @@ export function applyLevelUps(party: PartyMember[], levelsGained: number): Party
     return { ...m, level: m.level + levelsGained, maxHp, hp: maxHp, attack, defense };
   });
 }
+
+const WIN_RECOVERY_PCT = 0.3;
+const DEFEAT_REVIVE_PCT = 0.3;
+
+/** After a WON fight (no level-up path): survivors (hp>0) heal 30% of maxHp,
+ *  capped; fallen members (hp<=0) stay down. Pure. */
+export function applyWinRecovery(party: PartyMember[]): PartyMember[] {
+  return party.map(m => {
+    if (m.hp <= 0) return m;
+    const hp = Math.min(m.maxHp, m.hp + Math.ceil(m.maxHp * WIN_RECOVERY_PCT));
+    return { ...m, hp };
+  });
+}
+
+/** After a LOST fight: revive exactly one member (highest maxHp, ties by array
+ *  order) to 30% of maxHp so play can continue. Others unchanged. Pure. */
+export function applyDefeatRecovery(party: PartyMember[]): PartyMember[] {
+  if (party.length === 0) return party;
+  let bestIdx = 0;
+  for (let i = 1; i < party.length; i++) {
+    if (party[i].maxHp > party[bestIdx].maxHp) bestIdx = i;
+  }
+  return party.map((m, i) =>
+    i === bestIdx ? { ...m, hp: Math.ceil(m.maxHp * DEFEAT_REVIVE_PCT) } : m
+  );
+}
