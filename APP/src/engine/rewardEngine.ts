@@ -60,8 +60,8 @@ export const taskReward = (task: FinanceTask): number =>
   Math.round(task.baseAPReward * (task.isNecessity ? 1.5 : 1));
 
 const MAX_HP_PER_LEVEL = 10;
-const ATTACK_PER_LEVEL = 2;
-const DEFENSE_PER_LEVEL = 1;
+export const ATTACK_PER_LEVEL = 2;
+export const DEFENSE_PER_LEVEL = 1;
 
 /** Party stat gains when the player levels up: +level, +10 maxHp per level, full heal. */
 export function applyLevelUps(party: PartyMember[], levelsGained: number): PartyMember[] {

@@ -250,7 +250,7 @@ function App() {
         await dbService.updateStats(cur => ({ level: a.stats.level, exp: a.stats.exp, gold: cur.gold + a.gold }));
         const healed = a.levelsGained > 0 ? a.party : applyWinRecovery(a.party);
         for (const m of healed) {
-          await dbService.updatePartyMemberDB(m.id, { level: m.level, maxHp: m.maxHp, hp: m.hp });
+          await dbService.updatePartyMemberDB(m.id, { level: m.level, maxHp: m.maxHp, hp: m.hp, attack: m.attack, defense: m.defense });
         }
         showNotify(
           a.levelsGained > 0

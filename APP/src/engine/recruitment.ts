@@ -5,6 +5,7 @@
  */
 
 import type { CampaignState, PartyMember } from '../types/schemas';
+import { ATTACK_PER_LEVEL, DEFENSE_PER_LEVEL } from './rewardEngine';
 
 export type RecruitSlot = 'front' | 'support';
 
@@ -91,8 +92,8 @@ export function evaluateRecruit(req: RecruitRequest): RecruitDecision {
     maxHp,
     mp: candidate.baseMp,
     maxMp: candidate.baseMp,
-    attack: candidate.baseAttack + 2 * (level - 1),
-    defense: candidate.baseDefense + 1 * (level - 1),
+    attack: candidate.baseAttack + ATTACK_PER_LEVEL * (level - 1),
+    defense: candidate.baseDefense + DEFENSE_PER_LEVEL * (level - 1),
     equipment: {},
   };
 
