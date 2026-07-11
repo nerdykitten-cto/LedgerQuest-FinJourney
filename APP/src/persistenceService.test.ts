@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { subscribeCampaign, updateCampaign, updateStats, addHabitDB, removePartyMemberDB, addSavingsGoalDB, resetGameDB, subscribeEngineTraces } from './persistenceService';
+import { subscribeCampaign, updateCampaign, updateStats, addHabitDB, removePartyMemberDB, addSavingsGoalDB, resetGameDB, subscribeEngineTraces, initializeLocalData, subscribeProfile, subscribeStats, subscribeQuests, subscribeParty, subscribeInventory, subscribeHabits } from './persistenceService';
 import type { CampaignState, PlayerStats } from './types/schemas';
 
 // persistenceService touches localStorage/window lazily inside each function,
@@ -102,7 +102,7 @@ describe('addSavingsGoalDB', () => {
 });
 
 describe('resetGameDB', () => {
-  it('clears engine state keys and reseeds the world', async () => {
+  it('clears engine state keys and wipes stale collections (scratch reset)', async () => {
     store.set('engine_signals', '{"foo":1}');
     store.set('engine_traces', '[]');
     store.set('engine_lastSeen', '123');
@@ -114,8 +114,10 @@ describe('resetGameDB', () => {
     expect(store.has('engine_traces')).toBe(false);
     expect(store.has('engine_lastSeen')).toBe(false);
     expect(store.has('engine_battleMemory')).toBe(false);
-    const quests = JSON.parse(store.get('quests')!);
-    expect(quests[0].id).not.toBe('stale');
+    // Phase 7: reset goes to scratch — no mid-game quest is reseeded and the stale
+    // quest is gone (collection removed, so subscribeQuests reads []).
+    const quests = readOnce(subscribeQuests);
+    expect(quests.length).toBe(0);
   });
 });
 
@@ -125,5 +127,69 @@ describe('subscribeEngineTraces', () => {
     let seen: unknown[] = [];
     subscribeEngineTraces(t => { seen = t; })();
     expect(seen).toHaveLength(1);
+  });
+});
+
+
+// --- Phase 7: first-run scratch seed + hard reset ---
+const readOnce = <T,>(sub: (cb: (v: T) => void) => () => void): T => {
+  let v: T | undefined;
+  sub(x => { v = x; })();
+  return v as T;
+};
+
+describe('Phase 7 scratch first-run seed', () => {
+  it('seeds a SCRATCH profile on an empty store (0 AP / 0 gold / blank budget)', () => {
+    initializeLocalData();
+    const stats = readOnce(subscribeStats);
+    expect(stats.ap).toBe(0);
+    expect(stats.gold).toBe(0);
+    expect(stats.exp).toBe(0);
+    expect(stats.monthlyBudget).toBe(0);
+  });
+
+  it('arms the budget-first gate (onboardingComplete:false)', () => {
+    initializeLocalData();
+    expect(readOnce(subscribeProfile).onboardingComplete).toBe(false);
+  });
+
+  it('still seeds the 3-member party + gear + potions (combat works once unlocked)', () => {
+    initializeLocalData();
+    expect(readOnce(subscribeParty).length).toBe(3);
+    const inv = readOnce(subscribeInventory);
+    expect(inv.some(i => i.templateId === 'health-potion')).toBe(true);
+    expect(inv.some(i => i.templateId === 'revive-tonic')).toBe(true);
+    expect(inv.some(i => i.type === 'Equipment')).toBe(true);
+  });
+
+  it('does NOT seed feats/rituals/starter-quest (no mid-game economy)', () => {
+    initializeLocalData();
+    expect(readOnce(subscribeQuests).length).toBe(0);
+    expect(readOnce(subscribeHabits).length).toBe(0);
+  });
+
+  it('does not re-gate a legacy save (stats present, no profile flag)', () => {
+    store.set('player/stats', JSON.stringify({ level: 3, exp: 50, ap: 25, gold: 400, monthlyBudget: 3000 }));
+    store.set('party', JSON.stringify([{ id: 'p1' }]));
+    initializeLocalData();
+    expect(readOnce(subscribeProfile).onboardingComplete).toBe(true);
+    expect(readOnce(subscribeStats).ap).toBe(25); // untouched
+  });
+});
+
+describe('Phase 7 hard reset -> scratch', () => {
+  it('wipes progress and returns to scratch + re-arms onboarding', async () => {
+    // simulate a mid-game save
+    store.set('player/stats', JSON.stringify({ level: 5, exp: 200, ap: 30, gold: 900, monthlyBudget: 3000 }));
+    store.set('player/profile', JSON.stringify({ onboardingComplete: true }));
+    store.set('quests', JSON.stringify([{ id: 'q1', status: 'available' }]));
+    await resetGameDB();
+    expect(readOnce(subscribeProfile).onboardingComplete).toBe(false);
+    const stats = readOnce(subscribeStats);
+    expect(stats.ap).toBe(0);
+    expect(stats.gold).toBe(0);
+    expect(stats.monthlyBudget).toBe(0);
+    expect(readOnce(subscribeQuests).length).toBe(0);
+    expect(readOnce(subscribeParty).length).toBe(3); // party reseeded
   });
 });

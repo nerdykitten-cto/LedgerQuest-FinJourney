@@ -14,6 +14,8 @@ import type {
 import storyManifest from './data/storyManifest.json';
 import { PARTY_ART } from './assets/placeholders';
 import { GEAR_CATALOG } from './data/gear';
+import { SCRATCH_STATS, SCRATCH_PROFILE } from './engine/onboarding';
+import type { PlayerProfile } from './engine/onboarding';
 
 import { ENGINE_STATE_KEYS } from './engine/director';
 import type { DirectorTrace } from './engine/traceHub';
@@ -36,6 +38,7 @@ const PARTY_COL = 'party';
 const BUDGET_COL = 'budget';
 const SAVINGS_COL = 'savings';
 const INVENTORY_COL = 'inventory';
+const PROFILE_DOC = 'player/profile'; // Phase 7 first-run/onboarding flag
 
 // --- HELPER: LOCAL STORAGE ---
 const getLocal = (key: string): unknown => JSON.parse(localStorage.getItem(key) || '[]');
@@ -146,6 +149,26 @@ export const updateStats = async (updater: (current: PlayerStats) => Partial<Pla
   const raw = localStorage.getItem(STATS_DOC);
   const current = raw ? (JSON.parse(raw) as PlayerStats) : DEFAULT_STATS;
   localStorage.setItem(STATS_DOC, JSON.stringify({ ...current, ...updater(current) }));
+  window.dispatchEvent(new Event('storage'));
+};
+
+// --- PLAYER PROFILE (Phase 7 onboarding flag) ---
+// Absent key => a legacy save from before Phase 7: treat as already onboarded so
+// we never re-gate an existing player. Scratch/first-run writes onboardingComplete:false.
+export const subscribeProfile = (callback: (profile: PlayerProfile) => void) => {
+  const handler = () => {
+    const raw = localStorage.getItem(PROFILE_DOC);
+    callback(raw ? (JSON.parse(raw) as PlayerProfile) : { onboardingComplete: true });
+  };
+  window.addEventListener('storage', handler);
+  handler();
+  return () => window.removeEventListener('storage', handler);
+};
+
+export const updateProfile = async (updates: Partial<PlayerProfile>) => {
+  const raw = localStorage.getItem(PROFILE_DOC);
+  const current = raw ? (JSON.parse(raw) as PlayerProfile) : { onboardingComplete: false };
+  localStorage.setItem(PROFILE_DOC, JSON.stringify({ ...current, ...updates }));
   window.dispatchEvent(new Event('storage'));
 };
 
@@ -277,6 +300,7 @@ export const resetGameDB = async () => {
   localStorage.removeItem(BUDGET_COL);
   localStorage.removeItem(SAVINGS_COL);
   localStorage.removeItem(INVENTORY_COL);
+  localStorage.removeItem(PROFILE_DOC);
   ENGINE_STATE_KEYS.forEach(k => localStorage.removeItem(k));
 
   initializeLocalData();
@@ -284,30 +308,8 @@ export const resetGameDB = async () => {
 };
 
 // MOCK DATA INITIALIZATION
-export const initializeLocalData = () => {
-  if ((getLocal(TASKS_COL) as FinanceTask[]).length === 0) {
-    const initialTasks: FinanceTask[] = [
-      { id: 't1', title: 'Grocery Shopping List', description: 'Plan essential groceries for the week.', isNecessity: true, baseAPReward: 10, isCompleted: false },
-      { id: 't2', title: 'Review Subscriptions', description: 'Check for any unwanted digital renewals.', isNecessity: false, baseAPReward: 5, isCompleted: false },
-    ];
-    setLocal(TASKS_COL, initialTasks);
-  }
 
-  if ((getLocal(HABITS_COL) as Habit[]).length === 0) {
-    const initialHabits: Habit[] = [
-      { id: 'h1', name: 'Daily Expense Logging', streak: 0, lastCompleted: 0, skipCount: 0, difficulty: 1 },
-    ];
-    setLocal(HABITS_COL, initialHabits);
-  }
-
-  if ((getLocal(QUESTS_COL) as Quest[]).length === 0) {
-    const q0 = storyManifest.chapters[0].mainQuests[0];
-    const initialQuests: Quest[] = [
-      { ...q0, type: 'main', status: 'available', requirements: { apQuota: 5, taskCount: 0, habitCount: 0 } } as Quest
-    ];
-    setLocal(QUESTS_COL, initialQuests);
-  }
-
+const seedParty = () => {
   if ((getLocal(PARTY_COL) as PartyMember[]).length === 0) {
     const initialParty: PartyMember[] = [
       { id: 'p1', name: 'Althea', avatar: PARTY_ART.p1, role: 'Leader', hp: 100, maxHp: 100, mp: 20, maxMp: 20, level: 1, attack: 12, defense: 8, equipment: {} },
@@ -316,7 +318,9 @@ export const initializeLocalData = () => {
     ];
     setLocal(PARTY_COL, initialParty);
   }
+};
 
+const seedInventory = () => {
   if ((getLocal(INVENTORY_COL) as InventoryItem[]).length === 0) {
     // Phase 5.5: seed one of every gear piece (4 per slot × 5 slots) so the
     // player can immediately equip all five slots and see the full catalogue.
@@ -363,6 +367,34 @@ export const initializeLocalData = () => {
     ];
     setLocal(INVENTORY_COL, initialItems);
   }
+};
+
+// Mid-game economy: finance tasks ("feats"), rituals (habits), the starter quest,
+// budget streams and savings. NOT seeded on a scratch/first-run start — that keeps
+// the "no feats/rituals, blank budget, no available quest" fresh state (Phase 7).
+const seedStarterEconomy = () => {
+  if ((getLocal(TASKS_COL) as FinanceTask[]).length === 0) {
+    const initialTasks: FinanceTask[] = [
+      { id: 't1', title: 'Grocery Shopping List', description: 'Plan essential groceries for the week.', isNecessity: true, baseAPReward: 10, isCompleted: false },
+      { id: 't2', title: 'Review Subscriptions', description: 'Check for any unwanted digital renewals.', isNecessity: false, baseAPReward: 5, isCompleted: false },
+    ];
+    setLocal(TASKS_COL, initialTasks);
+  }
+
+  if ((getLocal(HABITS_COL) as Habit[]).length === 0) {
+    const initialHabits: Habit[] = [
+      { id: 'h1', name: 'Daily Expense Logging', streak: 0, lastCompleted: 0, skipCount: 0, difficulty: 1 },
+    ];
+    setLocal(HABITS_COL, initialHabits);
+  }
+
+  if ((getLocal(QUESTS_COL) as Quest[]).length === 0) {
+    const q0 = storyManifest.chapters[0].mainQuests[0];
+    const initialQuests: Quest[] = [
+      { ...q0, type: 'main', status: 'available', requirements: { apQuota: 5, taskCount: 0, habitCount: 0 } } as Quest
+    ];
+    setLocal(QUESTS_COL, initialQuests);
+  }
 
   if ((getLocal(BUDGET_COL) as BudgetStream[]).length === 0) {
     const initialBudgets: BudgetStream[] = [
@@ -380,4 +412,48 @@ export const initializeLocalData = () => {
     ];
     setLocal(SAVINGS_COL, initialSavings);
   }
+};
+
+/**
+ * SCRATCH / first-run seed (Phase 7): zeroed economy (0 AP/gold/xp, blank budget),
+ * budget-first gate armed (onboardingComplete:false), but the party + full gear +
+ * potions + Revive Tonic ARE seeded so combat works once play unlocks. No feats,
+ * rituals, starter quest or budget streams — those belong to a mid-game start.
+ */
+export const seedScratch = () => {
+  localStorage.setItem(STATS_DOC, JSON.stringify(SCRATCH_STATS));
+  localStorage.setItem(PROFILE_DOC, JSON.stringify(SCRATCH_PROFILE));
+  seedParty();
+  seedInventory();
+};
+
+export const initializeLocalData = () => {
+  // First run = no explicit onboarding flag AND no stats/party yet. Keyed off a
+  // single flag (+ core-empty guard for legacy safety), NOT a per-collection heuristic.
+  const rawProfile = localStorage.getItem(PROFILE_DOC);
+  const firstRun =
+    rawProfile === null &&
+    localStorage.getItem(STATS_DOC) === null &&
+    (getLocal(PARTY_COL) as PartyMember[]).length === 0;
+  if (firstRun) {
+    seedScratch();
+    return;
+  }
+  // Onboarding still in progress (scratch profile already written, e.g. React
+  // StrictMode's second mount or a mid-onboarding reload): idempotent — ensure the
+  // party/gear exist but DO NOT inject the mid-game economy that would defeat the gate.
+  const profile = rawProfile ? (JSON.parse(rawProfile) as PlayerProfile) : null;
+  if (profile && profile.onboardingComplete === false) {
+    seedParty();
+    seedInventory();
+    return;
+  }
+  // Returning / pre-Phase-7 legacy save: never re-gate. Stamp the profile flag as
+  // already-onboarded if it is missing, then top up any collection that is empty.
+  if (rawProfile === null) {
+    localStorage.setItem(PROFILE_DOC, JSON.stringify({ onboardingComplete: true }));
+  }
+  seedStarterEconomy();
+  seedParty();
+  seedInventory();
 };

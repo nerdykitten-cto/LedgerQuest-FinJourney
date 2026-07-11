@@ -23,6 +23,8 @@ import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import QuestList from './components/QuestList';
 import QuestGater from './components/QuestGater';
+import OnboardingGate from './components/OnboardingGate';
+import { currentOnboardingStep, isPlayUnlocked, shouldLatchUnlock, type PlayerProfile } from './engine/onboarding';
 // GameView (CRT TV + AdventureWorld scenes) is code-split into its own chunk;
 // it only loads when the player opens the Strategic Map tab.
 const GameView = lazy(() => import('./components/GameView'));
@@ -62,11 +64,26 @@ const ITEM_TEMPLATES: Record<string, Partial<InventoryItem>> = {
 function App() {
   const [currentTab, setCurrentTab] = useState('ledger');
   const [archiveTab, setArchiveTab] = useState<'ledger' | 'budget' | 'savings' | 'engine'>('ledger');
-  const [stats, setStats] = useState<PlayerStats>({ level: 1, exp: 0, ap: 10, gold: 0, monthlyBudget: 3000 });
+  // Seed scratch (first run) / top-up BEFORE first paint so the very first render
+  // already reflects the real profile+stats — otherwise the world-loop effect could
+  // fire a quest offer against the optimistic defaults before the gate loads.
+  const bootstrapped = useRef(false);
+  if (!bootstrapped.current) {
+    bootstrapped.current = true;
+    dbService.initializeLocalData();
+  }
+  const [stats, setStats] = useState<PlayerStats>(() => {
+    const raw = localStorage.getItem('player/stats');
+    return raw ? JSON.parse(raw) : { level: 1, exp: 0, ap: 10, gold: 0, monthlyBudget: 3000 };
+  });
   const [campaign, setCampaign] = useState<CampaignState>({ 
     currentLocation: 'Starting Village', 
     progressPercentage: 0, 
     worldState: 'peace' 
+  });
+  const [profile, setProfile] = useState<PlayerProfile>(() => {
+    const raw = localStorage.getItem('player/profile');
+    return raw ? JSON.parse(raw) : { onboardingComplete: true };
   });
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -98,7 +115,6 @@ function App() {
 
   // Persistence Sync
   useEffect(() => {
-    dbService.initializeLocalData();
     const unsubExpenses = dbService.subscribeExpenses(setExpenses);
     const unsubQuests = dbService.subscribeQuests(setQuests);
     const unsubStats = dbService.subscribeStats(setStats);
@@ -110,11 +126,12 @@ function App() {
     const unsubBudgets = dbService.subscribeBudgetStreams(setBudgets);
     const unsubSavings = dbService.subscribeSavingsGoals(setSavings);
     const unsubInventory = dbService.subscribeInventory(setInventory);
+    const unsubProfile = dbService.subscribeProfile(setProfile);
 
     return () => {
       unsubExpenses(); unsubQuests(); unsubStats(); unsubCampaign(); 
       unsubTasks(); unsubHabits(); unsubTraces(); unsubParty(); 
-      unsubBudgets(); unsubSavings(); unsubInventory();
+      unsubBudgets(); unsubSavings(); unsubInventory(); unsubProfile();
     };
   }, []);
 
@@ -132,6 +149,16 @@ function App() {
       }
     }
   }, [habits, budgets, showNotify]);
+
+  // Phase 7: budget-first gate. Latch play open once a budget is set AND the first
+  // AP is earned (from the first logged expense). One-way — spending AP back to 0
+  // afterwards never re-locks the map.
+  useEffect(() => {
+    if (shouldLatchUnlock(stats, profile)) {
+      dbService.updateProfile({ onboardingComplete: true });
+      showNotify('Adventure unlocked! The world map awaits.');
+    }
+  }, [stats, profile, showNotify]);
 
   const checkQuestObjective = useCallback(async (type: string, target: string) => {
      const activeQuest = quests.find(q => q.status === 'active');
@@ -203,6 +230,9 @@ function App() {
 
   // Game Director - world evaluation loop
   useEffect(() => {
+    // Phase 7: hold all quest offers until the budget-first gate is unlocked, so a
+    // scratch player's ledger stays truly empty (no available quest) during onboarding.
+    if (!isPlayUnlocked(stats, profile)) return;
     const actions = director.onEvent({ type: 'world-changed', campaign, quests, expenses });
     for (const a of actions) {
       if (a.kind === 'offer-quest' && !quests.find(q => q.id === a.quest.id)) {
@@ -210,11 +240,15 @@ function App() {
         showNotify('New Quest Unlocked: ' + a.quest.title);
       }
     }
-  }, [expenses.length, campaign.currentLocation, campaign.worldState, quests.length]);
+  }, [expenses.length, campaign.currentLocation, campaign.worldState, quests.length, stats.ap, stats.monthlyBudget, profile.onboardingComplete]);
 
   // --- RPG ACTIONS ---
 
   const handleTravel = useCallback(async (destination: string, cost: number) => {
+    if (!isPlayUnlocked(stats, profile)) {
+      showNotify('Set your budget and log an expense to begin your journey.');
+      return;
+    }
     if (stats.ap >= cost) {
       await dbService.updateStats(cur => ({ ap: Math.max(0, cur.ap - cost) }));
       director.onEvent({ type: 'ap-spent', amount: cost });
@@ -227,16 +261,17 @@ function App() {
     } else {
       showNotify('Not enough AP!');
     }
-  }, [stats.ap, campaign.progressPercentage, checkQuestObjective, showNotify]);
+  }, [stats, profile, campaign.progressPercentage, checkQuestObjective, showNotify]);
 
   const handleTalk = useCallback(async (npcName: string, _message: string) => {
     checkQuestObjective('talk', npcName);
   }, [checkQuestObjective]);
 
   const handleActionCost = useCallback(async (cost: number) => {
+    if (!isPlayUnlocked(stats, profile)) return;
     await dbService.updateStats(cur => ({ ap: Math.max(0, cur.ap - cost) }));
     director.onEvent({ type: 'ap-spent', amount: cost });
-  }, []);
+  }, [stats, profile]);
 
   const handleBattleVictory = useCallback(async (result: BattleResult) => {
     const activeQuest = quests.find(q => q.status === 'active');
@@ -516,9 +551,10 @@ function App() {
   };
 
   const handleResetGame = async () => {
-    if (window.confirm('Reset the entire adventure? Expenses, quests, party, gold and engine memory will all be wiped.')) {
+    if (window.confirm('Start a New Game from scratch?\n\nALL progress will be permanently erased — expenses, quests, party growth, gold, budget and engine memory. You will start over at the very beginning, with the budget gate and tutorial reset.\n\nThis cannot be undone.')) {
       await dbService.resetGameDB();
-      showNotify('The world is reborn.');
+      setCurrentTab('ledger');
+      showNotify('A new adventure begins. Set your budget to start.');
     }
   };
 
@@ -772,9 +808,9 @@ function App() {
                         <div className="flex flex-wrap justify-between items-center gap-4">
                            <div>
                               <h4 className="font-headline text-lg font-black text-error uppercase">Danger Zone</h4>
-                              <p className="font-body text-xs text-on-surface-variant italic">Wipe every record and restart the adventure from day one.</p>
+                              <p className="font-body text-xs text-on-surface-variant italic">Erase ALL progress and start a brand-new game from scratch — the budget gate and tutorial are reset.</p>
                            </div>
-                           <button onClick={handleResetGame} className="bg-error text-on-error px-8 py-3 doodle-border font-label text-[10px] uppercase font-black hover:scale-105 transition-transform">Reset Adventure</button>
+                           <button onClick={handleResetGame} className="bg-error text-on-error px-8 py-3 doodle-border font-label text-[10px] uppercase font-black hover:scale-105 transition-transform">New Game — Start From Scratch</button>
                         </div>
                      </div>
                   </div>
@@ -817,6 +853,7 @@ function App() {
              </div>
              <div className="flex-grow min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-8 lg:overflow-hidden">
                 <div className="lg:col-span-9 bg-[#0a0f1a] relative overflow-hidden shadow-2xl rounded-2xl h-[70vh] min-h-[420px] lg:h-auto lg:min-h-0">
+                   {isPlayUnlocked(stats, profile) ? (
                    <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-on-surface-variant font-label text-[10px] uppercase tracking-widest">Summoning world…</div>}>
                    <GameView 
                   stats={stats} 
@@ -832,7 +869,14 @@ function App() {
                   onShopPurchase={handleShopPurchase}
                   onEnterTown={handleEnterTown}
                   onExitTown={handleExitTown}
-                /></Suspense></div>
+                /></Suspense>
+                   ) : (
+                   <OnboardingGate
+                     step={currentOnboardingStep(stats, profile)}
+                     onSetBudget={() => { setCurrentTab('ledger'); setNewBudget(totalIncome); setIsBudgetEditorOpen(true); }}
+                     onGoLog={() => setCurrentTab('ledger')}
+                   />
+                   )}</div>
                 <div className="lg:col-span-3 lg:overflow-y-auto pr-4 custom-scrollbar"><QuestList quests={quests} onStartQuest={handleStartQuest} onClaimReward={handleClaimReward} /></div>
              </div>
           </div>

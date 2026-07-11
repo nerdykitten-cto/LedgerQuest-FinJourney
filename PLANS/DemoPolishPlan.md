@@ -569,27 +569,47 @@ inventory row, and the battle log all visible at once.
 
 ---
 
-## Phase 7 — First-run onboarding + hard reset  ·  (item 7)
+## Phase 7 — First-run onboarding + hard reset  ·  (item 7)  ·  ✅ DONE (2026-07-11)
 Goal: no sign-in; first visit auto-creates a fresh local profile and enters the
 budget-first onboarding; a hard "New Game" reset reproduces that scratch state and
 re-forces the tutorial.
-- [ ] First-run detection: empty/absent core localStorage → seed a scratch profile
-  (0 AP / 0 gold / 0 xp / no feats / no rituals / blank budget) and route into the
-  onboarding gate. (IP detection N/A on static host — documented; localStorage is
-  the signal.)
-- [ ] Budget-first gate: play (map/AP spend) stays locked until the user sets a
-  budget limit; guide them to set it, then log a spend → earn first AP.
-- [ ] Hard reset button ("New Game" / "Start From Scratch") with a clear warning
-  dialog ("all progress will be erased, you'll start over") → on confirm, wipe ALL
-  state incl. `engine_*` keys, reseed scratch, force tutorial. Per decision this
-  supersedes the old "Reset Adventure" behavior (which reseeded a mid-game world).
-- Files: `App.tsx` (first-run bootstrap + gate), `persistenceService.ts`
-  (`resetGameDB` → scratch variant; `ENGINE_STATE_KEYS`), the Vaults "Reset
-  Adventure" control, new onboarding component.
-- Checkpoint (browser): `localStorage.clear()` + reload → scratch profile, budget
-  gate shown, play locked; set budget + log expense → AP appears, gate opens; hard
-  reset warns then returns to scratch + tutorial. TDD reset/seed. tests/tsc/build
-  green.
+- [x] First-run detection keyed off a **single explicit flag** `player/profile`
+  (`{onboardingComplete}`), NOT per-collection-empty. `initializeLocalData()` →
+  `firstRun` when no profile + no stats + empty party → `seedScratch()`: scratch stats
+  (0 AP/gold/xp, blank budget), profile `onboardingComplete:false`, party+gear+potions+
+  Revive Tonic ONLY (no feats/rituals/starter-quest/budget-streams). Legacy saves (stats
+  present, no flag) → stamped `onboardingComplete:true` so they never re-gate. IP N/A →
+  localStorage is the signal (documented). NEW pure `engine/onboarding.ts` (`SCRATCH_STATS`,
+  step model, `currentOnboardingStep`/`isPlayUnlocked`/`shouldLatchUnlock`, TDD 16 tests).
+- [x] Budget-first gate: `<OnboardingGate>` replaces the world map while locked; travel +
+  action-cost handlers early-return when locked; director quest-offers held until unlocked.
+  Set budget → step 2 (log expense) → first AP earned latches `onboardingComplete:true`
+  (one-way — spending AP back to 0 never re-locks). Bootstrap runs `initializeLocalData()`
+  synchronously in render (useRef guard) + stats/profile useState read localStorage lazily,
+  so the world-loop never fires a quest offer against optimistic defaults before the gate loads.
+- [x] Hard reset "New Game — Start From Scratch" (Danger Zone) with a warning `confirm`
+  ("ALL progress permanently erased… cannot be undone") → `resetGameDB()` now also removes
+  `player/profile`, so `initializeLocalData()` re-detects first-run → `seedScratch` +
+  re-armed gate; supersedes the old mid-game reseed. `ENGINE_STATE_KEYS` wipe kept.
+- Files: NEW `engine/onboarding.ts` (+ `.test.ts`), NEW `components/OnboardingGate.tsx`,
+  `persistenceService.ts` (`PROFILE_DOC` + `subscribeProfile`/`updateProfile`, `seedScratch`/
+  refactored `initializeLocalData`, `resetGameDB` removes profile) + `.test.ts`, `App.tsx`
+  (sync bootstrap + lazy stats/profile state, latch effect, travel/action gates, world-loop
+  gate, gate render, reset copy/label).
+- VERIFIED (browser, preview_eval on a fresh dev server — CRT screenshot times out):
+  `localStorage.clear()`+reload → scratch (profile false, ap 0, gold 0, budget 0, quests 0,
+  habits 0, tasks 0, budget-streams 0, party 3, 20 gear + health-potion + revive-tonic);
+  Strategic Map shows the gate + "Set Budget", `adventure-world` NOT rendered (play locked);
+  set budget → gate step 2 "Log an Expense" (still locked); earn first AP → onboarding latches
+  true + gate gone + map renders; spend AP→0 stays unlocked (one-way latch); Danger Zone shows
+  "New Game — Start From Scratch" → reset → back to full scratch + re-armed gate. Console clean.
+  tsc 0 / **203** tests / build green. (The dev-only React "deps array changed size" warnings
+  seen mid-session were HMR hot-swap artifacts across the deps-array edits — gone on a fresh
+  server load; the final deps array is a stable 7-primitive literal.)
+- NOT built here (deferred to Phase 8): the guided tutorial quest itself — scratch seeds NO
+  quest, so after unlocking the QuestList is empty until the director forges a side quest or
+  Phase 8 seeds "The Ledger of the Lost Town" as the guided first quest. The `OnboardingStep`
+  vocabulary + gate are reusable for that.
 
 ### PREP NOTES (surveyed 2026-07-11 — start here, saves re-discovery)
 - **Context since Phase 6:** a user-directed combat-stats + revive + post-battle
