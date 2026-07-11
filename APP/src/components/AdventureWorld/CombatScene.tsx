@@ -3,6 +3,7 @@ import type { PartyMember, Enemy, InventoryItem } from '../../types/schemas';
 import { updateInventoryItemDB, updatePartyMemberDB, removeInventoryItemDB } from '../../persistenceService';
 import { Sprite, ItemIcon, enemyArt } from '../../assets/placeholders';
 import { chooseTarget } from '../../engine/enemyAI';
+import { strikeDamage, counterDamage } from '../../engine/combat';
 import type { BattleResult } from '../../engine/director';
 
 interface CombatSceneProps {
@@ -69,9 +70,14 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
     const weapon = inventory.find(i => i.equippedTo === member.id && i.type === 'Equipment' && i.statBonus?.attack !== undefined);
     const weaponBonus = weapon?.statBonus?.attack || 0;
 
-    const damage = Math.max(1, member.level * 10 + weaponBonus + Math.floor(Math.random() * 10));
     const isCrit = Math.random() > 0.9;
-    const finalDmg = isCrit ? Math.floor(damage * 1.5) : damage;
+    const finalDmg = strikeDamage({
+      attack: member.attack,
+      weaponAttack: weaponBonus,
+      enemyDefense: enemy.defense,
+      roll: Math.floor(Math.random() * 10),
+      crit: isCrit,
+    });
 
     const newEnemyHp = Math.max(0, enemy.hp - finalDmg);
     
@@ -126,11 +132,15 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
         
         // Defense = sum of statBonus.defense across every equipped slot on the
         // target (body + helmet + shield + gloves), resolved via equippedTo.
-        const defenseBonus = inventory
+        const gearDefense = inventory
           .filter(i => i.equippedTo === target.id && i.type === 'Equipment')
           .reduce((sum, i) => sum + (i.statBonus?.defense || 0), 0);
 
-        const damage = Math.max(1, enemy.attack - defenseBonus + Math.floor(Math.random() * 5));
+        const damage = counterDamage({
+          enemyAttack: enemy.attack,
+          defense: target.defense + gearDefense,
+          roll: Math.floor(Math.random() * 5),
+        });
         const newParty = party.map(m => 
           m.id === target.id ? { ...m, hp: Math.max(0, m.hp - damage) } : m
         );
@@ -219,7 +229,8 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
         {party.map((member) => {
           const equippedWeapon = inventory.find(i => i.equippedTo === member.id && i.statBonus?.attack);
           const memberGear = inventory.filter(i => i.equippedTo === member.id && i.type === 'Equipment');
-          const totalDefense = memberGear.reduce((sum, i) => sum + (i.statBonus?.defense || 0), 0);
+          const gearDefense = memberGear.reduce((sum, i) => sum + (i.statBonus?.defense || 0), 0);
+          const totalDefense = member.defense + gearDefense;
           const isTarget = damageNumber && damageNumber.type === 'player' && party.sort((a,b)=>a.hp-b.hp)[0]?.id === member.id;
           
           return (
@@ -242,7 +253,7 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
                   </div>
                 )}
                 {totalDefense > 0 && (
-                  <div className="bg-[#ffb4aa] text-[#060d20] min-w-5 h-5 px-1 flex items-center justify-center gap-0.5 rounded shadow-md" title={`+${totalDefense} Defense from ${memberGear.filter(i => i.statBonus?.defense).length} piece(s)`}>
+                  <div className="bg-[#ffb4aa] text-[#060d20] min-w-5 h-5 px-1 flex items-center justify-center gap-0.5 rounded shadow-md" title={`${totalDefense} Defense (base ${member.defense} + gear ${gearDefense} from ${memberGear.filter(i => i.statBonus?.defense).length} piece(s))`}>
                     <span className="material-symbols-outlined text-[12px] font-black">shield</span>
                     <span className="text-[9px] font-black leading-none">{totalDefense}</span>
                   </div>
