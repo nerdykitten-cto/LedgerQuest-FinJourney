@@ -16,7 +16,7 @@ import { Director, type BattleResult } from './engine/director';
 import type { DirectorTrace } from './engine/traceHub';
 import { recruitCost } from './engine/recruitment';
 import { adjustHabitReward } from './engine/difficultyEngine';
-import { taskReward, applyExp } from './engine/rewardEngine';
+import { taskReward, applyExp, applyWinRecovery, applyDefeatRecovery } from './engine/rewardEngine';
 import { planRevive, planEquip, planUnequip, planHeal } from './engine/equipment';
 import { GEAR_BY_NAME } from './data/gear';
 import ExpenseForm from './components/ExpenseForm';
@@ -248,7 +248,8 @@ function App() {
     for (const a of actions) {
       if (a.kind === 'battle-reward') {
         await dbService.updateStats(cur => ({ level: a.stats.level, exp: a.stats.exp, gold: cur.gold + a.gold }));
-        for (const m of a.party) {
+        const healed = a.levelsGained > 0 ? a.party : applyWinRecovery(a.party);
+        for (const m of healed) {
           await dbService.updatePartyMemberDB(m.id, { level: m.level, maxHp: m.maxHp, hp: m.hp });
         }
         showNotify(
@@ -263,8 +264,14 @@ function App() {
 
   const handleBattleDefeat = useCallback(async (result: BattleResult) => {
     director.onEvent({ type: 'battle-finished', won: false, ...result, stats, party });
+    const revived = applyDefeatRecovery(party);
+    const changed = revived.filter((m, i) => m.hp !== party[i].hp);
+    for (const m of changed) {
+      await dbService.updatePartyMemberDB(m.id, { hp: m.hp });
+    }
+    const survivor = changed[0];
     await dbService.updateCampaign({ worldState: 'peace' });
-    showNotify('Defeated... Escaped to safety.');
+    showNotify(survivor ? `Defeated... ${survivor.name} was revived to fight another day.` : 'Defeated... Escaped to safety.');
   }, [stats, party, showNotify]);
 
   const handleShopPurchase = useCallback(async (item: any, cost: number) => {
