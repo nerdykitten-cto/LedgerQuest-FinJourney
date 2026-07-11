@@ -18,7 +18,7 @@ const potion = (over: Partial<InventoryItem> = {}): InventoryItem =>
 
 const mkMember = (over: Partial<PartyMember> = {}): PartyMember => ({
   id: 'm1', name: 'Althea', avatar: '', role: 'Leader',
-  level: 1, hp: 100, maxHp: 100, mp: 20, maxMp: 20, equipment: {}, ...over,
+  level: 1, hp: 100, maxHp: 100, mp: 20, maxMp: 20, attack: 12, defense: 5, equipment: {}, ...over,
 });
 
 describe('equipSlotOf', () => {

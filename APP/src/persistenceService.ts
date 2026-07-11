@@ -310,9 +310,9 @@ export const initializeLocalData = () => {
 
   if ((getLocal(PARTY_COL) as PartyMember[]).length === 0) {
     const initialParty: PartyMember[] = [
-      { id: 'p1', name: 'Althea', avatar: PARTY_ART.p1, role: 'Leader', hp: 100, maxHp: 100, mp: 20, maxMp: 20, level: 1, equipment: {} },
-      { id: 'p2', name: 'Kael', avatar: PARTY_ART.p2, role: 'Vanguard', hp: 120, maxHp: 120, mp: 10, maxMp: 10, level: 1, equipment: {} },
-      { id: 'p3', name: 'Elora', avatar: PARTY_ART.p3, role: 'Arcanist', hp: 80, maxHp: 80, mp: 50, maxMp: 50, level: 1, equipment: {} }
+      { id: 'p1', name: 'Althea', avatar: PARTY_ART.p1, role: 'Leader', hp: 100, maxHp: 100, mp: 20, maxMp: 20, level: 1, attack: 12, defense: 8, equipment: {} },
+      { id: 'p2', name: 'Kael', avatar: PARTY_ART.p2, role: 'Vanguard', hp: 120, maxHp: 120, mp: 10, maxMp: 10, level: 1, attack: 15, defense: 5, equipment: {} },
+      { id: 'p3', name: 'Elora', avatar: PARTY_ART.p3, role: 'Arcanist', hp: 80, maxHp: 80, mp: 50, maxMp: 50, level: 1, attack: 10, defense: 3, equipment: {} }
     ];
     setLocal(PARTY_COL, initialParty);
   }

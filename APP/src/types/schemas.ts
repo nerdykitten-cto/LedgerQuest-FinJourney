@@ -81,6 +81,8 @@ export interface PartyMember {
   maxHp: number;
   mp: number;
   maxMp: number;
+  attack: number;
+  defense: number;
   equipment: {
     weapon?: string;
     armor?: string;
@@ -201,6 +203,7 @@ export interface InventoryItem {
     attack?: number;
     defense?: number;
     hpHeal?: number;
+    revive?: number;
   };
   weight: number;
   quantity: number;

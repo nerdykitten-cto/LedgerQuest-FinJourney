@@ -20,17 +20,19 @@ interface Candidate {
   avatar: string;
   baseHp: number;
   baseMp: number;
+  baseAttack: number;
+  baseDefense: number;
 }
 
 const FRONT_POOL: Candidate[] = [
-  { name: 'Bram', role: 'Vanguard', avatar: '/assets/game/characters/bram.png', baseHp: 120, baseMp: 10 },
-  { name: 'Sigrid', role: 'Vanguard', avatar: '/assets/game/characters/sigrid.png', baseHp: 130, baseMp: 8 },
+  { name: 'Bram', role: 'Vanguard', avatar: '/assets/game/characters/bram.png', baseHp: 120, baseMp: 10, baseAttack: 15, baseDefense: 5 },
+  { name: 'Sigrid', role: 'Vanguard', avatar: '/assets/game/characters/sigrid.png', baseHp: 130, baseMp: 8, baseAttack: 15, baseDefense: 5 },
 ];
 
 const SUPPORT_POOL: Candidate[] = [
-  { name: 'Mirelle', role: 'Arcanist', avatar: '/assets/game/characters/mirelle.png', baseHp: 80, baseMp: 50 },
-  { name: 'Fenwick', role: 'Sharpshooter', avatar: '/assets/game/characters/fenwick.png', baseHp: 90, baseMp: 15 },
-  { name: 'Isolde', role: 'Lightweaver', avatar: '/assets/game/characters/isolde.png', baseHp: 70, baseMp: 40 },
+  { name: 'Mirelle', role: 'Arcanist', avatar: '/assets/game/characters/mirelle.png', baseHp: 80, baseMp: 50, baseAttack: 10, baseDefense: 3 },
+  { name: 'Fenwick', role: 'Sharpshooter', avatar: '/assets/game/characters/fenwick.png', baseHp: 90, baseMp: 15, baseAttack: 14, baseDefense: 3 },
+  { name: 'Isolde', role: 'Lightweaver', avatar: '/assets/game/characters/isolde.png', baseHp: 70, baseMp: 40, baseAttack: 9, baseDefense: 3 },
 ];
 
 export const isFrontRole = (role: string): boolean => FRONT_ROLES.includes(role);
@@ -89,6 +91,8 @@ export function evaluateRecruit(req: RecruitRequest): RecruitDecision {
     maxHp,
     mp: candidate.baseMp,
     maxMp: candidate.baseMp,
+    attack: candidate.baseAttack + 2 * (level - 1),
+    defense: candidate.baseDefense + 1 * (level - 1),
     equipment: {},
   };
 
