@@ -17,7 +17,7 @@ import type { DirectorTrace } from './engine/traceHub';
 import { recruitCost } from './engine/recruitment';
 import { adjustHabitReward } from './engine/difficultyEngine';
 import { taskReward, applyExp } from './engine/rewardEngine';
-import { planEquip, planUnequip, planHeal } from './engine/equipment';
+import { planRevive, planEquip, planUnequip, planHeal } from './engine/equipment';
 import { GEAR_BY_NAME } from './data/gear';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
@@ -456,6 +456,18 @@ function App() {
     showNotify(`${member.name} recovers ${plan.newHp - member.hp} HP`);
   };
 
+  const handleWarRevive = (memberId: string, itemId: string) => {
+    const member = party.find(m => m.id === memberId);
+    const item = inventory.find(i => i.id === itemId);
+    if (!member || !item) return;
+    const plan = planRevive(item, member);
+    if (!plan) return;
+    dbService.updatePartyMemberDB(plan.memberId, { hp: plan.newHp });
+    if (plan.removeItem) dbService.removeInventoryItemDB(plan.itemId);
+    else dbService.updateInventoryItemDB(plan.itemId, { quantity: plan.newQuantity });
+    showNotify(`${member.name} is revived (${plan.newHp} HP)`);
+  };
+
   const handleWarEquip = (itemId: string, memberId: string) => {
     const item = inventory.find(i => i.id === itemId);
     const member = party.find(m => m.id === memberId);
@@ -580,7 +592,7 @@ function App() {
         </div>
       )}
 
-      {isWarRoomOpen && <WarRoom party={party} inventory={inventory} recruitCost={recruitCost(party)} onClose={() => setIsWarRoomOpen(false)} onAddMember={handleRecruit} onRemoveMember={handleDismiss} onHeal={handleWarHeal} onEquip={handleWarEquip} onUnequip={handleWarUnequip} />}
+      {isWarRoomOpen && <WarRoom party={party} inventory={inventory} recruitCost={recruitCost(party)} onClose={() => setIsWarRoomOpen(false)} onAddMember={handleRecruit} onRemoveMember={handleDismiss} onHeal={handleWarHeal} onRevive={handleWarRevive} onEquip={handleWarEquip} onUnequip={handleWarUnequip} />}
       {isVaultOpen && <GrandVault inventory={inventory} party={party} onClose={() => setIsVaultOpen(false)} />}
 
       <TopAppBar currentTab={currentTab} onTabChange={setCurrentTab} ap={stats.ap} />

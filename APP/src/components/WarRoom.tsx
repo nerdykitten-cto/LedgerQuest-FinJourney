@@ -11,13 +11,14 @@ interface Props {
   onAddMember: (slot: 'front' | 'support') => void;
   onRemoveMember: (id: string) => void;
   onHeal: (memberId: string, itemId: string) => void;
+  onRevive: (memberId: string, itemId: string) => void;
   onEquip: (itemId: string, memberId: string) => void;
   onUnequip: (itemId: string) => void;
 }
 
 const WarRoom: React.FC<Props> = ({
   party, inventory, recruitCost, onClose,
-  onAddMember, onRemoveMember, onHeal, onEquip, onUnequip,
+  onAddMember, onRemoveMember, onHeal, onRevive, onEquip, onUnequip,
 }) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = party.find(m => m.id === selectedId) ?? null;
@@ -201,11 +202,19 @@ const WarRoom: React.FC<Props> = ({
                             <p className="font-label text-xs font-black text-on-surface truncate">{item.name}</p>
                             <p className="font-label text-[9px] text-on-surface-variant/70">x{item.quantity} • {item.stats ?? 'Restore HP'}</p>
                           </div>
+                          {item.statBonus?.revive != null ? (
+                          <button
+                            onClick={() => onRevive(selected.id, item.id)}
+                            disabled={selected.hp > 0}
+                            className="bg-error text-on-error px-4 py-1 rounded-full text-[10px] font-black uppercase hover:scale-110 transition-transform disabled:opacity-30 disabled:hover:scale-100"
+                          >Revive</button>
+                          ) : (
                           <button
                             onClick={() => onHeal(selected.id, item.id)}
-                            disabled={selected.hp >= selected.maxHp}
+                            disabled={selected.hp <= 0 || selected.hp >= selected.maxHp}
                             className="bg-tertiary text-on-tertiary px-4 py-1 rounded-full text-[10px] font-black uppercase hover:scale-110 transition-transform disabled:opacity-30 disabled:hover:scale-100"
                           >Use</button>
+                          )}
                         </div>
                       ))}
                       {equipables.map(item => (
