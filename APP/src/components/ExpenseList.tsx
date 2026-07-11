@@ -1,11 +1,13 @@
 import React from 'react';
 import type { Expense } from '../types/schemas';
+import { formatMoney } from '../data/currencies';
 
 interface Props {
   expenses: Expense[];
+  currency?: string;
 }
 
-const ExpenseList: React.FC<Props> = ({ expenses }) => {
+const ExpenseList: React.FC<Props> = ({ expenses, currency }) => {
   return (
     <div className="flex flex-col gap-4">
       <h3 className="font-headline text-lg font-bold flex items-center justify-between px-2">
@@ -43,7 +45,7 @@ const ExpenseList: React.FC<Props> = ({ expenses }) => {
                 
                 <div className="flex flex-col items-end">
                   <span className="font-headline text-xl font-black text-secondary">
-                    -{exp.amount.toFixed(2)}$
+                    -{formatMoney(exp.amount, currency, { fractionDigits: 2 })}
                   </span>
                   <span className="font-label text-[8px] uppercase tracking-widest text-on-surface-variant">Lost Cash</span>
                 </div>

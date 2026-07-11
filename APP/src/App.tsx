@@ -19,6 +19,7 @@ import { adjustHabitReward } from './engine/difficultyEngine';
 import { taskReward, applyExp, applyWinRecovery, applyDefeatRecovery } from './engine/rewardEngine';
 import { planRevive, planEquip, planUnequip, planHeal } from './engine/equipment';
 import { GEAR_BY_NAME } from './data/gear';
+import { CURRENCIES, formatMoney } from './data/currencies';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import QuestList from './components/QuestList';
@@ -547,7 +548,7 @@ function App() {
     if (!Number.isFinite(amount) || amount <= 0) return;
     await dbService.updateSavingsGoalDB(goal.id, { currentAmount: goal.currentAmount + amount });
     setDepositDrafts(d => ({ ...d, [goal.id]: '' }));
-    showNotify(`+$${amount} sealed into ${goal.name}`);
+    showNotify(`+${formatMoney(amount, stats.currency)} sealed into ${goal.name}`);
   };
 
   const handleResetGame = async () => {
@@ -560,10 +561,11 @@ function App() {
 
   const [isBudgetEditorOpen, setIsBudgetEditorOpen] = useState(false);
   const [newBudget, setNewBudget] = useState(stats.monthlyBudget || 3000);
+  const [newCurrency, setNewCurrency] = useState(stats.currency || 'USD');
 
   const handleUpdateBudget = async (e: React.FormEvent) => {
     e.preventDefault();
-    await dbService.updateStats(() => ({ monthlyBudget: newBudget }));
+    await dbService.updateStats(() => ({ monthlyBudget: newBudget, currency: newCurrency }));
     setIsBudgetEditorOpen(false);
     showNotify('Monthly Budget calibrated.');
   };
@@ -598,6 +600,18 @@ function App() {
                     required 
                   />
                 </div>
+                <div className="flex flex-col gap-2">
+                  <span className="font-label text-[10px] uppercase text-on-surface-variant">Currency</span>
+                  <select
+                    className="w-full bg-surface doodle-border py-3 px-4 text-primary font-bold text-lg outline-none"
+                    value={newCurrency}
+                    onChange={e => setNewCurrency(e.target.value)}
+                  >
+                    {CURRENCIES.map(c => (
+                      <option key={c.code} value={c.code}>{c.code} ({c.symbol}) — {c.label}</option>
+                    ))}
+                  </select>
+                </div>
                 <button type="submit" className="w-full doodle-btn bg-primary text-on-primary py-3 font-headline font-black uppercase tracking-widest">Update Limit</button>
                 <button type="button" onClick={() => setIsBudgetEditorOpen(false)} className="w-full text-[10px] font-label uppercase text-on-surface-variant hover:text-primary transition-colors">Dismiss</button>
               </form>
@@ -624,7 +638,7 @@ function App() {
                <div className="space-y-6">
                   {budgets.map(b => (
                     <div key={b.id} className="space-y-2">
-                       <div className="flex justify-between font-label text-[10px] uppercase tracking-widest text-on-surface-variant"><span>{b.category}</span><span className="font-black text-on-surface">${b.allocatedAmount}</span></div>
+                       <div className="flex justify-between font-label text-[10px] uppercase tracking-widest text-on-surface-variant"><span>{b.category}</span><span className="font-black text-on-surface">{formatMoney(b.allocatedAmount, stats.currency)}</span></div>
                        <input type="range" className="w-full accent-primary bg-surface-container-highest h-2 rounded-full appearance-none cursor-pointer" min="0" max="2000" step="50" value={b.allocatedAmount} onChange={(e) => dbService.updateBudgetStreamDB(b.id, { allocatedAmount: parseInt(e.target.value) })} />
                     </div>
                   ))}
@@ -648,20 +662,20 @@ function App() {
               <div className="flex gap-4"><button onClick={() => setIsScribeOpen(true)} className="bg-primary text-on-primary px-6 py-3 font-headline font-bold doodle-border hover:scale-105 transition-all shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2"><img src="/assets/ui/Icon_Gold.png" className="w-6 h-6" /> Scribe Expense</button></div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 md:mb-12">
-              <div onClick={() => { setNewBudget(totalIncome); setIsBudgetEditorOpen(true); }} className="bg-surface-container p-4 md:p-6 doodle-border shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between group cursor-pointer hover:bg-primary/5 transition-all">
+              <div onClick={() => { setNewBudget(totalIncome); setNewCurrency(stats.currency || 'USD'); setIsBudgetEditorOpen(true); }} className="bg-surface-container p-4 md:p-6 doodle-border shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between group cursor-pointer hover:bg-primary/5 transition-all">
                 <span className="font-label text-[10px] uppercase text-on-surface-variant flex justify-between">Monthly Budget <span className="material-symbols-outlined text-xs">edit</span></span>
-                <div className="font-headline text-3xl font-black text-primary">${totalIncome.toLocaleString()}</div>
+                <div className="font-headline text-3xl font-black text-primary">{formatMoney(totalIncome, stats.currency)}</div>
               </div>
               <div className="bg-surface-container p-4 md:p-6 doodle-border shadow-[6px_6px_0px_0px_rgba(244,208,63,0.2)] flex flex-col justify-between group">
                 <span className="font-label text-[10px] uppercase text-on-surface-variant">Total Expenses</span>
-                <div className="font-headline text-3xl font-black text-secondary">${totalExpenses.toLocaleString()}</div>
+                <div className="font-headline text-3xl font-black text-secondary">{formatMoney(totalExpenses, stats.currency)}</div>
               </div>
               <div className={`bg-surface-container p-4 md:p-6 doodle-border shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between group ${remainingBudget < 0 ? 'border-error animate-pulse' : ''}`}>
                 <span className="font-label text-[10px] uppercase text-on-surface-variant">Remaining Safe</span>
-                <div className={`font-headline text-3xl font-black ${remainingBudget < 0 ? 'text-error' : 'text-tertiary'}`}>${remainingBudget.toLocaleString()}</div>
+                <div className={`font-headline text-3xl font-black ${remainingBudget < 0 ? 'text-error' : 'text-tertiary'}`}>{formatMoney(remainingBudget, stats.currency)}</div>
               </div>
             </div>
-            <div className="bg-surface-container-low p-5 md:p-8 doodle-border shadow-xl"><ExpenseList expenses={expenses} /></div>
+            <div className="bg-surface-container-low p-5 md:p-8 doodle-border shadow-xl"><ExpenseList expenses={expenses} currency={stats.currency} /></div>
           </div>
         )}
 
@@ -743,7 +757,7 @@ function App() {
                    <p className="font-body text-sm text-on-surface-variant italic mt-2">Historical financial records and goal calibration.</p>
                 </div>
                 <div className="flex flex-col md:flex-row items-stretch md:items-end gap-3 md:gap-4 w-full md:w-auto">
-                  <button onClick={() => { setNewBudget(totalIncome); setIsBudgetEditorOpen(true); }} className="bg-surface-container px-4 py-2 doodle-border font-label text-[10px] uppercase font-black hover:text-primary transition-all flex items-center justify-center gap-2 shadow-md md:mb-1">
+                  <button onClick={() => { setNewBudget(totalIncome); setNewCurrency(stats.currency || 'USD'); setIsBudgetEditorOpen(true); }} className="bg-surface-container px-4 py-2 doodle-border font-label text-[10px] uppercase font-black hover:text-primary transition-all flex items-center justify-center gap-2 shadow-md md:mb-1">
                     <span className="material-symbols-outlined text-sm">tune</span> Calibrate Budget
                   </button>
                   <div className="flex w-full md:w-auto bg-surface-container-high rounded-full p-1 doodle-border shadow-inner">
@@ -755,7 +769,7 @@ function App() {
                 </div>
              </div>
              <div className="bg-surface-container-low p-5 md:p-8 doodle-border shadow-2xl min-h-[600px]">
-                {archiveTab === 'ledger' && <ExpenseList expenses={expenses} />}
+                {archiveTab === 'ledger' && <ExpenseList expenses={expenses} currency={stats.currency} />}
                 {archiveTab === 'budget' && (
                   <div className="space-y-12">
                      <h3 className="font-headline text-2xl font-bold text-on-surface doodle-underline inline-block">Active Budget Streams</h3>
@@ -764,7 +778,7 @@ function App() {
                         const perc = Math.min(100, (catTotal / b.allocatedAmount) * 100);
                         return (
                           <div key={b.id} className="bg-surface-container p-4 md:p-6 doodle-border group hover:bg-surface-container-high transition-colors">
-                             <div className="flex justify-between items-end mb-4"><div><span className="font-label text-[10px] uppercase text-on-surface-variant">Stream: {b.category}</span><h4 className="font-headline text-2xl font-black text-on-surface">${catTotal.toLocaleString()} <span className="text-sm font-normal text-on-surface-variant">of ${b.allocatedAmount}</span></h4></div><div className="text-right text-primary font-black">{Math.round(perc)}%</div></div>
+                             <div className="flex justify-between items-end mb-4"><div><span className="font-label text-[10px] uppercase text-on-surface-variant">Stream: {b.category}</span><h4 className="font-headline text-2xl font-black text-on-surface">{formatMoney(catTotal, stats.currency)} <span className="text-sm font-normal text-on-surface-variant">of {formatMoney(b.allocatedAmount, stats.currency)}</span></h4></div><div className="text-right text-primary font-black">{Math.round(perc)}%</div></div>
                              <div className="h-4 w-full bg-surface/50 doodle-border p-0.5"><div className={`h-full transition-all duration-1000 ${perc > 90 ? 'bg-secondary' : 'bg-primary'}`} style={{ width: `${perc}%` }}></div></div>
                           </div>
                         );
@@ -790,7 +804,7 @@ function App() {
                              <div className="flex justify-between items-end mb-4">
                                 <div>
                                    <span className="font-label text-[10px] uppercase text-on-surface-variant">Vault: {g.name}{done ? ' — SEALED' : ''}</span>
-                                   <h4 className="font-headline text-2xl font-black text-on-surface">${g.currentAmount.toLocaleString()} <span className="text-sm font-normal text-on-surface-variant">of ${g.targetAmount.toLocaleString()}</span></h4>
+                                   <h4 className="font-headline text-2xl font-black text-on-surface">{formatMoney(g.currentAmount, stats.currency)} <span className="text-sm font-normal text-on-surface-variant">of {formatMoney(g.targetAmount, stats.currency)}</span></h4>
                                 </div>
                                 <div className={`text-right font-black ${done ? 'text-tertiary' : 'text-primary'}`}>{Math.round(perc)}%</div>
                              </div>
@@ -873,7 +887,7 @@ function App() {
                    ) : (
                    <OnboardingGate
                      step={currentOnboardingStep(stats, profile)}
-                     onSetBudget={() => { setCurrentTab('ledger'); setNewBudget(totalIncome); setIsBudgetEditorOpen(true); }}
+                     onSetBudget={() => { setCurrentTab('ledger'); setNewBudget(totalIncome); setNewCurrency(stats.currency || 'USD'); setIsBudgetEditorOpen(true); }}
                      onGoLog={() => setCurrentTab('ledger')}
                    />
                    )}</div>
