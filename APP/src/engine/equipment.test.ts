@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { equipSlotOf, planEquip, planUnequip, planHeal } from './equipment';
+import { equipSlotOf, planEquip, planUnequip, planHeal, planRevive } from './equipment';
 import type { InventoryItem, PartyMember } from '../types/schemas';
 
 const mkItem = (over: Partial<InventoryItem> = {}): InventoryItem => ({
@@ -96,8 +96,8 @@ describe('planHeal', () => {
     expect(d!.newQuantity).toBe(0);
   });
   it('falls back to 40 HP when hpHeal is unset', () => {
-    const d = planHeal(potion({ statBonus: {} }), mkMember({ hp: 0, maxHp: 100 }));
-    expect(d!.newHp).toBe(40);
+    const d = planHeal(potion({ statBonus: {} }), mkMember({ hp: 10, maxHp: 100 }));
+    expect(d!.newHp).toBe(50);
   });
   it('returns null for a non-consumable item', () => {
     expect(planHeal(sword(), mkMember())).toBeNull();
@@ -149,5 +149,39 @@ describe('planEquip — per-slot swap across five slots', () => {
     // equipping a new gloves only displaces the worn gloves, nothing else
     const d = planEquip(gear('gloves', { id: 'g2' }), 'm1', [...worn, gear('gloves', { id: 'g2' })]);
     expect(d.unequipItemId).toBe('gloves-worn');
+  });
+});
+
+const reviveTonic = (over: Partial<InventoryItem> = {}): InventoryItem =>
+  mkItem({ id: 'rt1', templateId: 'revive-tonic', name: 'Revive Tonic', type: 'Consumable',
+    icon: 'cardiology', statBonus: { revive: 0.5 }, quantity: 2, ...over });
+
+describe('planRevive', () => {
+  it('revives a fallen member to ceil(maxHp*revive), qty-1', () => {
+    const m = mkMember({ hp: 0, maxHp: 81 });
+    const plan = planRevive(reviveTonic(), m)!;
+    expect(plan.newHp).toBe(41);        // ceil(81*0.5)
+    expect(plan.newQuantity).toBe(1);
+    expect(plan.removeItem).toBe(false);
+  });
+  it('removes the item at the last charge', () => {
+    const m = mkMember({ hp: 0, maxHp: 80 });
+    const plan = planRevive(reviveTonic({ quantity: 1 }), m)!;
+    expect(plan.removeItem).toBe(true);
+  });
+  it('returns null for a living member', () => {
+    expect(planRevive(reviveTonic(), mkMember({ hp: 40, maxHp: 80 }))).toBeNull();
+  });
+  it('returns null for a non-revive consumable', () => {
+    expect(planRevive(potion(), mkMember({ hp: 0, maxHp: 80 }))).toBeNull();
+  });
+});
+
+describe('planHeal guards', () => {
+  it('refuses to heal a fallen (0 HP) member', () => {
+    expect(planHeal(potion(), mkMember({ hp: 0, maxHp: 80 }))).toBeNull();
+  });
+  it('refuses a revive item (revive is not a potion)', () => {
+    expect(planHeal(reviveTonic(), mkMember({ hp: 40, maxHp: 80 }))).toBeNull();
   });
 });

@@ -75,8 +75,32 @@ export interface HealDecision {
  *  remove at 0. Null when the item is not a consumable. */
 export function planHeal(item: InventoryItem, member: PartyMember): HealDecision | null {
   if (item.type !== 'Consumable') return null;
+  if (member.hp <= 0) return null;                 // corpses need a revive, not a potion
+  if (item.statBonus?.revive != null) return null; // revive items are handled by planRevive
   const hpHeal = item.statBonus?.hpHeal ?? DEFAULT_HP_HEAL;
   const newHp = Math.min(member.maxHp, member.hp + hpHeal);
+  const newQuantity = item.quantity - 1;
+  return {
+    memberId: member.id,
+    itemId: item.id,
+    newHp,
+    removeItem: newQuantity <= 0,
+    newQuantity: Math.max(0, newQuantity),
+  };
+}
+
+/** Default fraction of maxHp restored by a revive item with no explicit `revive`. */
+export const DEFAULT_REVIVE_PCT = 0.5;
+
+/** Plan reviving a FALLEN member (hp <= 0) with a revive consumable: HP set to
+ *  ceil(maxHp * pct), quantity down, remove at 0. Null unless the item is a
+ *  revive consumable and the member is actually down. */
+export function planRevive(item: InventoryItem, member: PartyMember): HealDecision | null {
+  if (item.type !== 'Consumable') return null;
+  if (item.statBonus?.revive == null) return null;
+  if (member.hp > 0) return null;
+  const pct = item.statBonus.revive ?? DEFAULT_REVIVE_PCT;
+  const newHp = Math.min(member.maxHp, Math.ceil(member.maxHp * pct));
   const newQuantity = item.quantity - 1;
   return {
     memberId: member.id,
