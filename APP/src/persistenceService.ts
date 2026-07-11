@@ -347,6 +347,18 @@ export const initializeLocalData = () => {
         statBonus: { hpHeal: 40 },
         weight: 0.5,
         quantity: 3
+      },
+      {
+        id: 'init-revive-tonic',
+        templateId: 'revive-tonic',
+        name: 'Revive Tonic',
+        type: 'Consumable',
+        icon: 'cardiology',
+        description: 'Revives a fallen ally to 50% health.',
+        stats: 'Revive 50% HP',
+        statBonus: { revive: 0.5 },
+        weight: 0.5,
+        quantity: 1
       }
     ];
     setLocal(INVENTORY_COL, initialItems);

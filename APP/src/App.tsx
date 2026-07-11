@@ -46,6 +46,16 @@ const ITEM_TEMPLATES: Record<string, Partial<InventoryItem>> = {
     statBonus: { hpHeal: 20 },
     weight: 0.5
   },
+  'Revive Tonic': {
+    templateId: 'revive-tonic',
+    name: 'Revive Tonic',
+    type: 'Consumable',
+    icon: 'cardiology',
+    description: 'Revives a fallen ally to 50% health.',
+    stats: 'Revive 50% HP',
+    statBonus: { revive: 0.5 },
+    weight: 0.5
+  },
   ...GEAR_BY_NAME,
 };
 

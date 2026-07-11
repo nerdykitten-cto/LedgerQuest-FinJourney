@@ -80,6 +80,16 @@ export const TownScene: React.FC<TownSceneProps> = ({
       stats: '+40 HP',
       statBonus: { hpHeal: 40 },
       weight: 0.5
+    },
+    {
+      id: 'revive-tonic',
+      name: 'Revive Tonic',
+      cost: 120,
+      type: 'Consumable' as const,
+      icon: 'cardiology',
+      stats: 'Revive 50% HP',
+      statBonus: { revive: 0.5 },
+      weight: 0.5
     }
   ];
 
