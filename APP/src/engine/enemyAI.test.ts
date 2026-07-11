@@ -13,7 +13,7 @@ import type { PartyMember, InventoryItem } from '../types/schemas';
 
 const mkMember = (over: Partial<PartyMember> = {}): PartyMember => ({
   id: 'p1', name: 'Althea', avatar: '', role: 'Leader',
-  level: 1, hp: 100, maxHp: 100, mp: 20, maxMp: 20, equipment: {}, ...over,
+  level: 1, hp: 100, maxHp: 100, mp: 20, maxMp: 20, attack: 12, defense: 5, equipment: {}, ...over,
 });
 
 const party: PartyMember[] = [

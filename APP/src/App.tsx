@@ -16,8 +16,8 @@ import { Director, type BattleResult } from './engine/director';
 import type { DirectorTrace } from './engine/traceHub';
 import { recruitCost } from './engine/recruitment';
 import { adjustHabitReward } from './engine/difficultyEngine';
-import { taskReward, applyExp } from './engine/rewardEngine';
-import { planEquip, planUnequip, planHeal } from './engine/equipment';
+import { taskReward, applyExp, applyWinRecovery, applyDefeatRecovery } from './engine/rewardEngine';
+import { planRevive, planEquip, planUnequip, planHeal } from './engine/equipment';
 import { GEAR_BY_NAME } from './data/gear';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
@@ -44,6 +44,16 @@ const ITEM_TEMPLATES: Record<string, Partial<InventoryItem>> = {
     description: 'A golden liquid that tastes like sun-warmed honey and financial stability.',
     stats: '+20 HP',
     statBonus: { hpHeal: 20 },
+    weight: 0.5
+  },
+  'Revive Tonic': {
+    templateId: 'revive-tonic',
+    name: 'Revive Tonic',
+    type: 'Consumable',
+    icon: 'cardiology',
+    description: 'Revives a fallen ally to 50% health.',
+    stats: 'Revive 50% HP',
+    statBonus: { revive: 0.5 },
     weight: 0.5
   },
   ...GEAR_BY_NAME,
@@ -238,8 +248,9 @@ function App() {
     for (const a of actions) {
       if (a.kind === 'battle-reward') {
         await dbService.updateStats(cur => ({ level: a.stats.level, exp: a.stats.exp, gold: cur.gold + a.gold }));
-        for (const m of a.party) {
-          await dbService.updatePartyMemberDB(m.id, { level: m.level, maxHp: m.maxHp, hp: m.hp });
+        const healed = a.levelsGained > 0 ? a.party : applyWinRecovery(a.party);
+        for (const m of healed) {
+          await dbService.updatePartyMemberDB(m.id, { level: m.level, maxHp: m.maxHp, hp: m.hp, attack: m.attack, defense: m.defense });
         }
         showNotify(
           a.levelsGained > 0
@@ -253,8 +264,14 @@ function App() {
 
   const handleBattleDefeat = useCallback(async (result: BattleResult) => {
     director.onEvent({ type: 'battle-finished', won: false, ...result, stats, party });
+    const revived = applyDefeatRecovery(party);
+    const changed = revived.filter((m, i) => m.hp !== party[i].hp);
+    for (const m of changed) {
+      await dbService.updatePartyMemberDB(m.id, { hp: m.hp });
+    }
+    const survivor = changed[0];
     await dbService.updateCampaign({ worldState: 'peace' });
-    showNotify('Defeated... Escaped to safety.');
+    showNotify(survivor ? `Defeated... ${survivor.name} was revived to fight another day.` : 'Defeated... Escaped to safety.');
   }, [stats, party, showNotify]);
 
   const handleShopPurchase = useCallback(async (item: any, cost: number) => {
@@ -446,6 +463,18 @@ function App() {
     showNotify(`${member.name} recovers ${plan.newHp - member.hp} HP`);
   };
 
+  const handleWarRevive = (memberId: string, itemId: string) => {
+    const member = party.find(m => m.id === memberId);
+    const item = inventory.find(i => i.id === itemId);
+    if (!member || !item) return;
+    const plan = planRevive(item, member);
+    if (!plan) return;
+    dbService.updatePartyMemberDB(plan.memberId, { hp: plan.newHp });
+    if (plan.removeItem) dbService.removeInventoryItemDB(plan.itemId);
+    else dbService.updateInventoryItemDB(plan.itemId, { quantity: plan.newQuantity });
+    showNotify(`${member.name} is revived (${plan.newHp} HP)`);
+  };
+
   const handleWarEquip = (itemId: string, memberId: string) => {
     const item = inventory.find(i => i.id === itemId);
     const member = party.find(m => m.id === memberId);
@@ -570,7 +599,7 @@ function App() {
         </div>
       )}
 
-      {isWarRoomOpen && <WarRoom party={party} inventory={inventory} recruitCost={recruitCost(party)} onClose={() => setIsWarRoomOpen(false)} onAddMember={handleRecruit} onRemoveMember={handleDismiss} onHeal={handleWarHeal} onEquip={handleWarEquip} onUnequip={handleWarUnequip} />}
+      {isWarRoomOpen && <WarRoom party={party} inventory={inventory} recruitCost={recruitCost(party)} onClose={() => setIsWarRoomOpen(false)} onAddMember={handleRecruit} onRemoveMember={handleDismiss} onHeal={handleWarHeal} onRevive={handleWarRevive} onEquip={handleWarEquip} onUnequip={handleWarUnequip} />}
       {isVaultOpen && <GrandVault inventory={inventory} party={party} onClose={() => setIsVaultOpen(false)} />}
 
       <TopAppBar currentTab={currentTab} onTabChange={setCurrentTab} ap={stats.ap} />

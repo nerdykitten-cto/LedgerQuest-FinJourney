@@ -8,12 +8,12 @@ export interface BestiaryEnemy extends Enemy {
 }
 
 export const BESTIARY: BestiaryEnemy[] = [
-  { id: 'debt-gnome', name: 'Debt Gnome', hp: 50, maxHp: 50, attack: 5, defense: 2, archetype: 'Aggressor', tier: 1 },
-  { id: 'interest-imp', name: 'Interest Imp', hp: 40, maxHp: 40, attack: 6, defense: 1, archetype: 'Opportunist', tier: 1 },
-  { id: 'ledger-wraith', name: 'Ledger Wraith', hp: 70, maxHp: 70, attack: 7, defense: 3, archetype: 'Tactician', tier: 2 },
-  { id: 'overdraft-ogre', name: 'Overdraft Ogre', hp: 85, maxHp: 85, attack: 8, defense: 4, archetype: 'Aggressor', tier: 2 },
-  { id: 'inflation-djinn', name: 'Inflation Djinn', hp: 110, maxHp: 110, attack: 10, defense: 5, archetype: 'Opportunist', tier: 3 },
-  { id: 'compound-golem', name: 'Compound Golem', hp: 140, maxHp: 140, attack: 12, defense: 6, archetype: 'Tactician', tier: 3 },
+  { id: 'debt-gnome', name: 'Debt Gnome', hp: 50, maxHp: 50, attack: 8, defense: 2, archetype: 'Aggressor', tier: 1 },
+  { id: 'interest-imp', name: 'Interest Imp', hp: 40, maxHp: 40, attack: 9, defense: 1, archetype: 'Opportunist', tier: 1 },
+  { id: 'ledger-wraith', name: 'Ledger Wraith', hp: 70, maxHp: 70, attack: 11, defense: 3, archetype: 'Tactician', tier: 2 },
+  { id: 'overdraft-ogre', name: 'Overdraft Ogre', hp: 85, maxHp: 85, attack: 12, defense: 4, archetype: 'Aggressor', tier: 2 },
+  { id: 'inflation-djinn', name: 'Inflation Djinn', hp: 110, maxHp: 110, attack: 15, defense: 5, archetype: 'Opportunist', tier: 3 },
+  { id: 'compound-golem', name: 'Compound Golem', hp: 140, maxHp: 140, attack: 18, defense: 6, archetype: 'Tactician', tier: 3 },
 ];
 
 const tierForProgress = (progress: number): number => {
