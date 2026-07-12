@@ -212,7 +212,10 @@ function App() {
       claimed: mainQ?.status === 'completed',
     });
     if (next !== (profile.tutorialStep ?? 0)) {
-      dbService.updateProfile({ tutorialStep: next, ...(next >= TUTORIAL_STEPS.length - 1 ? { tutorialDone: true } : {}) });
+      // Persist the furthest step. Reaching the final 'done' step shows a closing card the
+      // player dismisses (which sets tutorialDone) — do NOT auto-complete, or the guide would
+      // unmount before the wrap-up message is seen.
+      dbService.updateProfile({ tutorialStep: next });
     }
   }, [profile, stats.monthlyBudget, currentTab, campaign.worldState, quests]);
 
