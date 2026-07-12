@@ -17,6 +17,8 @@ interface GameViewProps {
   onShopPurchase: (item: any, cost: number) => void;
   onEnterTown: (name: string) => void;
   onExitTown: () => void;
+  onInvasionFight: () => void;
+  onInvasionEscape: () => void;
 }
 
 export default function GameView({ 
@@ -32,7 +34,9 @@ export default function GameView({
   onActionCost,
   onShopPurchase,
   onEnterTown,
-  onExitTown
+  onExitTown,
+  onInvasionFight,
+  onInvasionEscape
 }: GameViewProps) {
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center bg-[#0a0f1a] group overflow-hidden px-1 pt-1 pb-1 md:px-2 md:pt-2 md:pb-9 2xl:pb-12">
@@ -86,6 +90,8 @@ export default function GameView({
                       onShopPurchase={onShopPurchase}
                       onEnterTown={onEnterTown}
                       onExitTown={onExitTown}
+                      onInvasionFight={onInvasionFight}
+                      onInvasionEscape={onInvasionEscape}
                     />
                  </div>
 

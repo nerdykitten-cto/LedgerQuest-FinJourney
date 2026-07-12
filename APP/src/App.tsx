@@ -20,6 +20,7 @@ import { taskReward, applyExp, applyWinRecovery, applyDefeatRecovery } from './e
 import { planRevive, planEquip, planUnequip, planHeal } from './engine/equipment';
 import { GEAR_BY_NAME } from './data/gear';
 import { CURRENCIES, formatMoney } from './data/currencies';
+import { nonBossObjectivesComplete, bossObjective, resolveBoss } from './engine/chronicle';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import QuestList from './components/QuestList';
@@ -163,6 +164,33 @@ function App() {
       showNotify('Adventure unlocked! The world map awaits.');
     }
   }, [stats, profile, showNotify]);
+
+  // Item 4: chronicle boss invasion. When the active main quest's non-boss objectives are all
+  // done (talk/travel), the boss invades the current town. Presence of campaign.invasion locks
+  // the town until the boss is beaten.
+  useEffect(() => {
+    if (campaign.invasion) return; // already invading
+    const mainQ = quests.find(q => q.status === 'active' && q.type === 'main');
+    if (mainQ && nonBossObjectivesComplete(mainQ)) {
+      const boss = bossObjective(mainQ);
+      if (boss) {
+        dbService.updateCampaign({ invasion: { town: campaign.currentLocation, questId: mainQ.id, bossName: boss.target } });
+        showNotify(`A ${boss.target} has invaded ${campaign.currentLocation}!`);
+      }
+    }
+  }, [quests, campaign.invasion, campaign.currentLocation, showNotify]);
+
+  const handleInvasionFight = useCallback(async () => {
+    if (!campaign.invasion) return;
+    const boss = resolveBoss(campaign.invasion.bossName, campaign.progressPercentage);
+    await dbService.updateCampaign({ worldState: 'battle', activeEnemy: boss, battleOrigin: 'invasion' });
+  }, [campaign.invasion, campaign.progressPercentage]);
+
+  const handleInvasionEscape = useCallback(async () => {
+    // Flee to the World Map. The invasion stays set, so re-entering the town re-shows the dialog.
+    await dbService.updateCampaign({ worldState: 'peace' });
+    showNotify('You flee to the world map. The town remains under siege...');
+  }, [showNotify]);
 
   const checkQuestObjective = useCallback(async (type: string, target: string) => {
      const activeQuest = quests.find(q => q.status === 'active');
@@ -878,6 +906,8 @@ function App() {
                   onShopPurchase={handleShopPurchase}
                   onEnterTown={handleEnterTown}
                   onExitTown={handleExitTown}
+                  onInvasionFight={handleInvasionFight}
+                  onInvasionEscape={handleInvasionEscape}
                 /></Suspense>
                    ) : (
                    <OnboardingGate

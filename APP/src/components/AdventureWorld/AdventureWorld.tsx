@@ -4,6 +4,7 @@ import { WorldMapScene } from './WorldMapScene';
 import { CombatScene } from './CombatScene';
 import { TownScene } from './TownScene';
 import { DialogueBox } from './Shared/DialogueBox';
+import { InvasionDialog } from './InvasionDialog';
 
 import type { BattleResult } from '../../engine/director';
 
@@ -21,6 +22,8 @@ interface AdventureWorldProps {
   onShopPurchase: (item: any, cost: number) => void;
   onEnterTown: (name: string) => void;
   onExitTown: () => void;
+  onInvasionFight: () => void;
+  onInvasionEscape: () => void;
 }
 
 type SceneType = 'map' | 'combat' | 'town';
@@ -38,7 +41,9 @@ export const AdventureWorld: React.FC<AdventureWorldProps> = ({
   onActionCost,
   onShopPurchase,
   onEnterTown,
-  onExitTown
+  onExitTown,
+  onInvasionFight,
+  onInvasionEscape
 }) => {
   const [currentScene, setCurrentScene] = useState<SceneType>('map');
   const [dialogue, setDialogue] = useState<{ message: string; isVisible: boolean }>({
@@ -115,6 +120,15 @@ export const AdventureWorld: React.FC<AdventureWorldProps> = ({
           onBattleAction={onBattleAction}
           onExit={onExitTown}
           showDialogue={showDialogue}
+        />
+      )}
+
+      {campaign.invasion && campaign.worldState === 'town' && campaign.currentLocation === campaign.invasion.town && (
+        <InvasionDialog
+          bossName={campaign.invasion.bossName}
+          town={campaign.invasion.town}
+          onFight={onInvasionFight}
+          onEscape={onInvasionEscape}
         />
       )}
 
