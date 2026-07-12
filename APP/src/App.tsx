@@ -306,9 +306,11 @@ function App() {
   }, [stats, profile]);
 
   const handleBattleVictory = useCallback(async (result: BattleResult) => {
-    const activeQuest = quests.find(q => q.status === 'active');
-    if (activeQuest) {
-      const targetObj = activeQuest.objectives?.find(o => o.type === 'kill' && !o.isCompleted);
+    // Boss (main-quest) kills only count via the invasion flow (below). Normal outskirts kills
+    // still advance SIDE quests (director-forged "Menace" quests).
+    if (campaign.battleOrigin !== 'invasion') {
+      const activeSide = quests.find(q => q.status === 'active' && q.type === 'side');
+      const targetObj = activeSide?.objectives?.find(o => o.type === 'kill' && !o.isCompleted);
       if (targetObj) checkQuestObjective('kill', targetObj.target);
     }
     const actions = director.onEvent({ type: 'battle-finished', won: true, ...result, stats, party });
@@ -326,8 +328,17 @@ function App() {
         );
       }
     }
+    if (campaign.battleOrigin === 'invasion') {
+      const mainQ = quests.find(q => q.status === 'active' && q.type === 'main');
+      const boss = mainQ ? bossObjective(mainQ) : null;
+      if (boss) await checkQuestObjective('kill', boss.target);
+      const freedTown = campaign.invasion?.town ?? campaign.currentLocation;
+      await dbService.updateCampaign({ worldState: 'town', battleOrigin: undefined, invasion: undefined });
+      showNotify(`${freedTown} is free! Claim your reward in the Strategic Map.`);
+      return;
+    }
     await dbService.updateCampaign({ worldState: campaign.battleOrigin === 'town' ? 'town' : 'peace', battleOrigin: undefined });
-  }, [quests, stats, party, campaign.battleOrigin, checkQuestObjective, showNotify]);
+  }, [quests, stats, party, campaign.battleOrigin, campaign.invasion, campaign.currentLocation, checkQuestObjective, showNotify]);
 
   const handleBattleDefeat = useCallback(async (result: BattleResult) => {
     director.onEvent({ type: 'battle-finished', won: false, ...result, stats, party });
@@ -337,7 +348,8 @@ function App() {
       await dbService.updatePartyMemberDB(m.id, { hp: m.hp });
     }
     const survivor = changed[0];
-    await dbService.updateCampaign({ worldState: campaign.battleOrigin === 'town' ? 'town' : 'peace', battleOrigin: undefined });
+    const returnState = (campaign.battleOrigin === 'town' || campaign.battleOrigin === 'invasion') ? 'town' : 'peace';
+    await dbService.updateCampaign({ worldState: returnState, battleOrigin: undefined });
     showNotify(survivor ? `Defeated... ${survivor.name} was revived to fight another day.` : 'Defeated... Escaped to safety.');
   }, [stats, party, campaign.battleOrigin, showNotify]);
 
