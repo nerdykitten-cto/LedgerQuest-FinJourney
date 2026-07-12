@@ -842,7 +842,83 @@ on top of it.
   dialogue system (branches? multi-line? quest hooks). Details TBD.
 - [ ] **Story / narrative:** DECIDE whether the early demo carries a light
   narrative arc through the 4 locations, or stays systems-only. Details TBD.
-- Checkpoint + HANDOFF PROMPT: to be written once the OPEN items above are decided.
+
+### PREP NOTES (surveyed 2026-07-11 — start here, saves re-discovery)
+- **Context since this phase was drafted (2026-07-09):** the 6-item demo-polish request landed
+  (Phases 7, 7.5, 8 + Batch B). Directly relevant to Phase 9:
+  - The **"battle-encounter rework" follow-on is PARTLY DONE** — Batch B built the chronicle boss
+    **invasion** flow (`engine/chronicle.ts`, `campaign.invasion`, `InvasionDialog`). The
+    zoom-into-village work MUST respect it: entering an invaded town shows the invasion dialog
+    (lockout) instead of the interior. Don't regress that (see Batch B section above).
+  - `CampaignState` now has `battleOrigin` + `invasion`; battles return to **town** not the map
+    (item 5). `worldState` machine unchanged: `peace`(map) / `town` / `battle`.
+- **Current world model** (`engine/world.ts`): `WorldLocation = { name, x, y, description }` — NO
+  `type` field yet. 4 `LOCATIONS`: Starting Village (22.5,80), Copper Town (72.5,70), Silver City
+  (90,36.6), Iron Citadel (50,20). `x/y` are **percentage coords** on `world_map.png`. `travelCost`
+  (`engine/director.ts`) derives AP from these coords — **moving a node changes travel costs**;
+  re-pin the `director.test.ts` expected values if you reposition (like Phase 4 did).
+- **Map render** (`WorldMapScene.tsx`): every node draws the SAME generic gold-ring pin
+  (`div … rounded-full border-2 border-[#f4d03f]`, lines ~184-207) + a name tag; current node gets
+  a filled ring + a bobbing SVG party arrow. There's already **drag-to-pan on phones** (pannable
+  square layer, `MOBILE_ZOOM`, 8px tap-vs-drag threshold — DON'T break it) and an SVG path polyline
+  connecting nodes. Typed pointers = add `type` to `LOCATIONS` + swap the pin `div` for a per-type
+  icon (emoji or inline SVG — NO new map art per the LOCK). Keep the tap-vs-drag + current-node
+  handling (`handleLocationClick`: tapping the CURRENT node → `onEnterTown`; another node →
+  `onTravel(name, travelCost)`).
+- **Enter flow today = instant, no zoom:** `handleLocationClick` → `onEnterTown(name)` (App
+  `handleEnterTown` → `updateCampaign({ worldState:'town', currentLocation:name })`) → `AdventureWorld`
+  swaps `currentScene` to `town` (TownScene mounts with a `fade-in zoom-in-125` CSS anim already).
+  Zoom-into-village = play a deliberate node→interior transition here (CSS scale/fade on the map
+  layer + a brief overlay, then set worldState town). Keep it skippable/fast; must still route to
+  the invasion dialog for a locked town.
+- **Town interior ALREADY uses absolute hotspots** (`TownScene.tsx`, `activeArea:'center'|'outskirts'`):
+  center shows NPC emoji at absolute positions (`getTownNPCs` → Chronicler Daniel etc.), a 🏪 Shop
+  gate (`left-[72%] top-[55%]`), and a "To The Outskirts" arrow (`top-[10%]`) that flips to the
+  outskirts battle view; a "[ Back to Map ]" button calls `onExit` → `handleExitTown`. So Phase 9's
+  "sub-location hotspots" is an EVOLUTION of what exists (formalize a Shop / Quest-giver / Arena /
+  Inn-heal / Exit hotspot set + nicer placement), not a rewrite. NPCs come from `TOWN_NPCS`
+  (`world.ts`); the outskirts battle path is unchanged from Batch A/B.
+- **OPEN forks — resolve at phase start via brainstorming** (creative + undecided): (a) interior =
+  illustrated-per-village vs one stylized/generated hotspot layout reused for all towns; (b) the
+  sub-location set (Shop / Quest-giver / Arena / Inn-heal / Exit — standard vs per-village) and which
+  are real vs cosmetic (Arena/Inn don't exist yet — Inn-heal would be a NEW mechanic → scope it or
+  cut it); (c) keep the 4 locations (recommended: yes). Also decide the follow-on cluster items
+  (NPC dialogue depth, story arc) or DEFER them out of this phase.
+- **Working notes:** `cbm-code-discovery-gate` BLOCKS Read on source → grep/sed to read, python
+  string-replace to edit; Write/Edit for files you create + non-source. Dev server
+  `preview_start "ledgerquest-dev"`; `preview_screenshot` times out on the CRT anim → verify via
+  `preview_eval` DOM assertions (`body.innerText` is CSS-uppercased → use `/i` or element innerText),
+  `localStorage.clear()`+reload first. TDD any new pure logic (world/travel/hotspot decisions). Keep
+  `npm test` + `npx tsc -b` + `npm run build` green (currently **229 tests**). Commit locally, NO push.
+
+**HANDOFF PROMPT (Phase 9):**
+> Continue LedgerQuest demo polish. Read `PLANS/DemoPolishPlan.md` (Phase 9 + its PREP NOTES) +
+> `PLANS/OverhaulPlan.md` + project memory (`ledgerquest-demo-polish-plan`, `ledgerquest-overhaul-plan`,
+> `ledgerquest-audit-2026-07`) first. Do **Phase 9 — Map & World interactions**. This is creative work
+> with undecided forks, so START by brainstorming (superpowers:brainstorming) to lock the OPEN items,
+> then write a spec + plan (per the repo flow: spec in `PLANS/specs/`, plan in `PLANS/plans/`) and
+> execute INLINE (superpowers:executing-plans — project memory says do NOT use subagent-driven here),
+> TDD + green gates + per-task local commits, then stop and show me. **LOCKED:** keep the existing
+> `world_map.png` — NO new map art; only small changes on top of it. Scope: (1) **Typed location
+> pointers** — add a `type` (village/town/city/citadel) to the 4 `LOCATIONS` in `engine/world.ts`,
+> reposition their `x,y` onto matching-terrain spots, and render a per-type pointer icon in
+> `WorldMapScene.tsx` instead of the generic gold ring (keep the mobile drag-to-pan, the party arrow,
+> the name tags, and the tap-current-node-to-enter / tap-other-node-to-travel behavior; if you move a
+> node, re-pin `engine/director.test.ts` travel-cost expectations). (2) **Zoom-into-village** — a
+> fade+scale transition from the tapped node into the town interior (today `handleEnterTown` swaps the
+> scene instantly), kept fast/skippable. (3) **Village interior hotspots** — evolve `TownScene.tsx`'s
+> already-absolute-positioned center (NPC emoji + 🏪 shop + outskirts arrow) into a clear sub-location
+> hotspot set (Shop / Quest-giver / Arena / Inn-heal / Exit — decide the set + which are real vs
+> cosmetic during brainstorming; note Arena/Inn are NEW and may be out of scope). CRITICAL: do NOT
+> regress the Batch B invasion flow — entering an INVADED town must still show the `InvasionDialog`
+> (lockout) instead of the interior, and battles still return to town (`battleOrigin`). Decide during
+> brainstorming whether the follow-on cluster (real NPC dialogue system, light story arc) is in this
+> phase or deferred. Working notes: `cbm-code-discovery-gate` BLOCKS Read on source → read via
+> grep/sed, edit source via Bash python exact-string replace; Write/Edit fine for files you create +
+> non-source. Dev server `preview_start "ledgerquest-dev"`; `preview_screenshot` times out on the CRT
+> animation → verify via `preview_eval` DOM assertions (`body.innerText` is CSS-uppercased — use `/i`),
+> `localStorage.clear()`+reload before checks. Keep `npm test` + `npx tsc -b` + `npm run build` green
+> (currently **229 tests**), commit locally (NO push), then stop and show me.
 
 ---
 
