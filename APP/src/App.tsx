@@ -21,6 +21,8 @@ import { planRevive, planEquip, planUnequip, planHeal } from './engine/equipment
 import { GEAR_BY_NAME } from './data/gear';
 import { CURRENCIES, formatMoney } from './data/currencies';
 import { nonBossObjectivesComplete, bossObjective, resolveBoss } from './engine/chronicle';
+import { TUTORIAL_STEPS, advanceTutorialStep, tutorialActive } from './engine/tutorial';
+import TutorialGuide from './components/TutorialGuide';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import QuestList from './components/QuestList';
@@ -191,6 +193,28 @@ function App() {
     await dbService.updateCampaign({ worldState: 'peace' });
     showNotify('You flee to the world map. The town remains under siege...');
   }, [showNotify]);
+
+  // Phase 8: contextual tutorial. Derive the milestone context from live state and advance the
+  // persisted (monotonic) step. AP is emphasised in the step copy (earned on the finance side,
+  // spent on the game side).
+  useEffect(() => {
+    if (!tutorialActive(profile)) return;
+    const mainQ = quests.find(q => q.type === 'main' && (q.status === 'active' || q.status === 'ready' || q.status === 'completed'));
+    const talk = mainQ?.objectives?.find(o => o.type === 'talk');
+    const kill = mainQ?.objectives?.find(o => o.type === 'kill');
+    const next = advanceTutorialStep(profile.tutorialStep, {
+      hasBudget: (stats.monthlyBudget ?? 0) > 0,
+      earnedAp: profile.onboardingComplete,
+      onMap: currentTab === 'quests',
+      inTown: campaign.worldState === 'town',
+      talkedToNpc: !!talk?.isCompleted,
+      beatBoss: !!kill?.isCompleted,
+      claimed: mainQ?.status === 'completed',
+    });
+    if (next !== (profile.tutorialStep ?? 0)) {
+      dbService.updateProfile({ tutorialStep: next, ...(next >= TUTORIAL_STEPS.length - 1 ? { tutorialDone: true } : {}) });
+    }
+  }, [profile, stats.monthlyBudget, currentTab, campaign.worldState, quests]);
 
   const checkQuestObjective = useCallback(async (type: string, target: string) => {
      const activeQuest = quests.find(q => q.status === 'active');
@@ -631,6 +655,27 @@ function App() {
         </div>
       )}
       
+      {tutorialActive(profile) && (() => {
+        const step = TUTORIAL_STEPS[Math.min(profile.tutorialStep ?? 0, TUTORIAL_STEPS.length - 1)];
+        const jump: Record<string, { tab: string; label: string }> = {
+          'set-budget': { tab: 'ledger', label: 'Go to Ledger' },
+          'log-expense': { tab: 'ledger', label: 'Go to Ledger' },
+          'open-map': { tab: 'quests', label: 'Open Strategic Map' },
+          'enter-town': { tab: 'quests', label: 'Open Map' },
+          'talk': { tab: 'quests', label: 'Open Map' },
+          'fight': { tab: 'quests', label: 'Open Map' },
+          'claim': { tab: 'quests', label: 'Open Map' },
+        };
+        const j = jump[step];
+        return (
+          <TutorialGuide
+            step={step}
+            onSkip={() => dbService.updateProfile({ tutorialDone: true })}
+            onAction={j ? () => setCurrentTab(j.tab) : undefined}
+            actionLabel={j?.label}
+          />
+        );
+      })()}
       {isSettingsOpen && <SettingsModal onClose={() => setIsSettingsOpen(false)} onResetGame={() => { setIsSettingsOpen(false); handleResetGame(); }} />}
       {gatedQuest && <QuestGater quest={gatedQuest} tasks={tasks} habits={habits} ap={stats.ap} onAccept={() => confirmStartQuest(gatedQuest)} onClose={() => setGatedQuest(null)} />}
 
