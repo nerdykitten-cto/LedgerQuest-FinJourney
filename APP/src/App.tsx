@@ -267,9 +267,15 @@ function App() {
     if (!isPlayUnlocked(stats, profile)) return;
     const actions = director.onEvent({ type: 'world-changed', campaign, quests, expenses });
     for (const a of actions) {
-      if (a.kind === 'offer-quest' && !quests.find(q => q.id === a.quest.id)) {
-        dbService.addQuestDB(a.quest);
-        showNotify('New Quest Unlocked: ' + a.quest.title);
+      if (a.kind === 'offer-quest') {
+        // Guard against the LIVE collection, not the stale React `quests` (which is []
+        // on a fresh mount) — otherwise addQuestDB would clobber an existing active quest
+        // back to a freshly-offered 'available' one, resetting chronicle progress on reload.
+        const live = JSON.parse(localStorage.getItem('quests') || '[]') as Quest[];
+        if (!live.some(q => q.id === a.quest.id)) {
+          dbService.addQuestDB(a.quest);
+          showNotify('New Quest Unlocked: ' + a.quest.title);
+        }
       }
     }
   }, [expenses.length, campaign.currentLocation, campaign.worldState, quests.length, stats.ap, stats.monthlyBudget, profile.onboardingComplete]);
