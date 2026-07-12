@@ -111,6 +111,7 @@ export interface CampaignState {
   worldState: 'peace' | 'battle' | 'puzzle' | 'town';
   activeEnemy?: Enemy;
   battleOrigin?: 'town' | 'map' | 'invasion'; // where a battle was entered from -> where victory/defeat returns
+  invasion?: { town: string; questId: string; bossName: string }; // chronicle boss invading a town; presence = town locked
 }
 
 export interface Quest {
