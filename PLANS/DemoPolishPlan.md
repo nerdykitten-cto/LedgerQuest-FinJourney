@@ -725,9 +725,39 @@ Phase 8) — each gets its own plan at its checkpoint.
 
 ---
 
-## Phase 8 — Tutorial guided first quest  ·  (item 8)
-Goal: turn "The Ledger of the Lost Town" + Starting Village into a guided tutorial
-that a first-run / freshly-reset player is walked through.
+## Phase 8 — Tutorial guided first quest  ·  (item 8 / Batch C)  ·  ✅ DONE (2026-07-11)
+Delivered as a **contextual, non-blocking guide** (user fork 2026-07-11), not a hard-gated script.
+Spec `PLANS/specs/2026-07-11-demo-polish-batch-design.md`, plan
+`PLANS/plans/2026-07-11-demo-polish-batch-c-tutorial.md`. Executed inline (TDD + per-task commits).
+- [x] Pure NEW `engine/tutorial.ts` (TDD, 12 tests): 8-step model
+  (set-budget→log-expense→open-map→enter-town→talk→fight→claim→done) as a **milestone ladder**
+  `currentTutorialStepIndex(ctx)` + **monotonic** `advanceTutorialStep(prev,ctx)` (never regresses
+  when a momentary condition like the active tab drops) + `tutorialActive(profile)` + `TUTORIAL_COPY`.
+  **AP emphasis** baked into the copy: log-expense = "earn AP on the finance side"; open-map =
+  "spend AP on the game side" (both flagged `ap:true` → highlighted rail).
+- [x] `PlayerProfile` grew `tutorialStep?`/`tutorialDone?`; `SCRATCH_PROFILE` seeds step 0 / not
+  done; legacy/absent-profile defaults set `tutorialDone:true` so existing players are NOT nagged.
+- [x] NEW `components/TutorialGuide.tsx` — small fixed corner card (non-blocking, `pointer-events`
+  only on the card), shows step N/7 + title + hint + a per-step "jump" button (Ledger/Map) + Skip;
+  the final `done` step shows a wrap-up card dismissed with "Got it!".
+- [x] `App.tsx`: derives the context from live state (budget, `onboardingComplete`=AP earned,
+  currentTab, worldState, main-quest talk/kill/completed) and advances the persisted step in an
+  effect; renders the guide while `tutorialActive`. Does NOT auto-complete at step 7 (so the wrap-up
+  card is seen; the player dismisses it → `tutorialDone`).
+- [x] **Bonus fix (during Batch B, benefits this):** quest offers now guard against live localStorage
+  (not stale React state) so chronicle progress survives reloads — the tutorial's talk→fight→claim
+  steps read real quest state.
+- VERIFIED (browser, preview_eval; CRT screenshot times out): fresh scratch → guide "Step 1/7 Set
+  your budget"; set budget → "Earn your first AP" (⚡ AP emphasis); earn AP → "Spend AP to explore";
+  open map → step 3; enter town → step 4; leave tab → **stays 4** (monotonic); talk→5, boss→6,
+  claim→7 done card → "Got it!" → `tutorialDone` + guide gone; Skip works; legacy save NOT nagged;
+  mobile (375) card sits above the nav, 0 overflow; console clean. tsc 0 / **229** tests / build green.
+  8 local commits (plan + 5 feature + fixes). NO push.
+
+**6-item demo-polish request COMPLETE** (Batches A+B+C): Settings+gear, currency (incl. PKR),
+outskirts→town, PixelOre footer, chronicle boss invasion flow, contextual AP tutorial.
+
+### Original Phase 8 sketch (superseded by the contextual guide above)
 - [ ] Step gating: (1) set budget → (2) log first expense (earn AP) → (3) open
   Strategic Map + talk to Chronicler Daniel → (4) travel to outskirts + win first
   battle → (5) claim reward. Each step surfaces a clear prompt/next-action.
