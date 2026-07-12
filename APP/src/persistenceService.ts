@@ -158,7 +158,7 @@ export const updateStats = async (updater: (current: PlayerStats) => Partial<Pla
 export const subscribeProfile = (callback: (profile: PlayerProfile) => void) => {
   const handler = () => {
     const raw = localStorage.getItem(PROFILE_DOC);
-    callback(raw ? (JSON.parse(raw) as PlayerProfile) : { onboardingComplete: true });
+    callback(raw ? (JSON.parse(raw) as PlayerProfile) : { onboardingComplete: true, tutorialDone: true });
   };
   window.addEventListener('storage', handler);
   handler();
@@ -167,7 +167,7 @@ export const subscribeProfile = (callback: (profile: PlayerProfile) => void) => 
 
 export const updateProfile = async (updates: Partial<PlayerProfile>) => {
   const raw = localStorage.getItem(PROFILE_DOC);
-  const current = raw ? (JSON.parse(raw) as PlayerProfile) : { onboardingComplete: false };
+  const current = raw ? (JSON.parse(raw) as PlayerProfile) : { onboardingComplete: false, tutorialStep: 0, tutorialDone: false };
   localStorage.setItem(PROFILE_DOC, JSON.stringify({ ...current, ...updates }));
   window.dispatchEvent(new Event('storage'));
 };
@@ -451,7 +451,7 @@ export const initializeLocalData = () => {
   // Returning / pre-Phase-7 legacy save: never re-gate. Stamp the profile flag as
   // already-onboarded if it is missing, then top up any collection that is empty.
   if (rawProfile === null) {
-    localStorage.setItem(PROFILE_DOC, JSON.stringify({ onboardingComplete: true }));
+    localStorage.setItem(PROFILE_DOC, JSON.stringify({ onboardingComplete: true, tutorialDone: true }));
   }
   seedStarterEconomy();
   seedParty();

@@ -24,9 +24,11 @@ export const SCRATCH_STATS: PlayerStats = {
 
 export interface PlayerProfile {
   onboardingComplete: boolean;
+  tutorialStep?: number; // furthest tutorial step reached (monotonic); Phase 8
+  tutorialDone?: boolean; // tutorial skipped or completed
 }
 
-export const SCRATCH_PROFILE: PlayerProfile = { onboardingComplete: false };
+export const SCRATCH_PROFILE: PlayerProfile = { onboardingComplete: false, tutorialStep: 0, tutorialDone: false };
 
 /** Budget-first onboarding steps, in order. */
 export type OnboardingStep = 'set-budget' | 'log-expense' | 'complete';

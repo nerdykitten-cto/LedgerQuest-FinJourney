@@ -16,7 +16,7 @@ describe('scratch seed constants', () => {
   });
 
   it('scratch profile starts onboarding incomplete', () => {
-    expect(SCRATCH_PROFILE).toEqual({ onboardingComplete: false });
+    expect(SCRATCH_PROFILE).toEqual({ onboardingComplete: false, tutorialStep: 0, tutorialDone: false });
   });
 
   it('lists the budget-first steps in order, ending at complete', () => {
