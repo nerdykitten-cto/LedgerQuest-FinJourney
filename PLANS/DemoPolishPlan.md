@@ -751,6 +751,40 @@ that a first-run / freshly-reset player is walked through.
 
 ---
 
+## Batch B — Chronicle boss invasion flow  ·  (user item 4, = Phase 9 encounter slice)  ·  ✅ DONE (2026-07-11)
+Spec `PLANS/specs/2026-07-11-demo-polish-batch-design.md`, plan
+`PLANS/plans/2026-07-11-demo-polish-batch-b-boss-flow.md`. The "battle-encounter rework"
+bullet from Phase 9 (below), pulled forward. Executed inline (TDD + per-task commits).
+- [x] **Pure engine** NEW `engine/chronicle.ts` (TDD, 8 tests): `bossObjective`,
+  `nonBossObjectivesComplete` (invasion trigger = all non-kill objectives done + kill pending),
+  `resolveBoss(name, progress)` → beefed bestiary/synth Enemy (×1.6 HP / ×1.25 ATK / +2 DEF,
+  +progress scaling; Debt Gnomes/Inflation Djinn/Compound Golem from bestiary, Gorgos synthesized).
+- [x] **State** `CampaignState.invasion?: {town, questId, bossName}` — its presence IS the town
+  lock (dropped the spec's separate `townLocked` flag). NEW `components/AdventureWorld/InvasionDialog.tsx`
+  full-cover TV overlay, rendered by `AdventureWorld` when `invasion && worldState==='town' &&
+  currentLocation===invasion.town`; props threaded through `GameView`.
+- [x] **Wiring** (`App.tsx`): trigger effect (active main quest hits `nonBossObjectivesComplete` →
+  set `invasion` + notify); `handleInvasionFight` → boss battle (`battleOrigin:'invasion'`);
+  `handleInvasionEscape` → World Map (`peace`), invasion stays set so re-entering re-shows the dialog
+  (lockout). `handleBattleVictory` invasion branch → tick boss kill, clear invasion, return to normal
+  town, quest→ready (claim reward); guarded the blanket kill-tick so MAIN/boss kills only count via
+  invasion while SIDE-quest kills still tick on normal outskirts wins. Defeat routing returns to town
+  (retry). 
+- [x] **Bug fixed during verify:** the world-changed director offer used stale React `quests` ([] on
+  mount) so `addQuestDB` clobbered an active quest back to a fresh 'available' one on every reload
+  (reset chronicle progress + blocked the trigger). Now guards against the LIVE localStorage collection.
+- VERIFIED (browser, preview_eval; CRT screenshot times out): seed ch0 at threshold (talk done, kill
+  pending) → invasion fires (Debt Gnomes @ Starting Village) + dialog on TV; Escape → World Map +
+  invasion persists; re-enter town → dialog re-appears (locked); Fight → boss battle (Debt Gnomes 80HP,
+  origin invasion) → win → invasion cleared + worldState town + kill done + quest 'ready'. Regression:
+  normal town-origin win returns to town + ticks SIDE-quest kill (not main). Console clean.
+  tsc 0 / **217** tests / build green. 7 local commits (spec+plan+5 feature+1 fix). NO push.
+- **Next: Batch C = Phase 8 tutorial (item 3).** Note for Phase 8: the tutorial should walk up to the
+  invasion so the player sees the finance→game→boss connection; the guided quest's non-kill objectives
+  now trigger the invasion (kill only via the boss fight).
+
+---
+
 ## Phase 9 — Map & World interactions  ·  (future, user-directed 2026-07-09)
 **LOCKED:** keep the existing `world_map.png` — NO new map art. Only small changes
 on top of it.
