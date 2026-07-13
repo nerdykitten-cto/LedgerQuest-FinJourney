@@ -25,7 +25,7 @@ export const TownScene: React.FC<TownSceneProps> = ({
 }) => {
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [activeArea, setActiveArea] = useState<'center' | 'outskirts'>('center');
-  const [npcDialogue, setNpcDialogue] = useState<{ lines: string[]; idx: number } | null>(null);
+  const [npcDialogue, setNpcDialogue] = useState<{ name: string; lines: string[]; idx: number } | null>(null);
 
   const getTownNPCs = () => {
     switch (name) {
@@ -119,8 +119,21 @@ export const TownScene: React.FC<TownSceneProps> = ({
   ];
 
   const handleNPCInteraction = (npc: typeof NPCs[0]) => {
-    onTalk(npc.name, npc.lines[0]); // fire the quest/tutorial talk objective once
-    setNpcDialogue({ lines: npc.lines, idx: 0 });
+    // Open the dialogue; the quest/tutorial talk objective only fires once the
+    // player has read THROUGH it (see advanceNpcDialogue) so any follow-on event
+    // (e.g. a boss invasion) appears AFTER the conversation, not on the first click.
+    setNpcDialogue({ name: npc.name, lines: npc.lines, idx: 0 });
+  };
+
+  const advanceNpcDialogue = () => {
+    if (!npcDialogue) return;
+    if (npcDialogue.idx < npcDialogue.lines.length - 1) {
+      setNpcDialogue({ ...npcDialogue, idx: npcDialogue.idx + 1 });
+    } else {
+      // Last line dismissed = conversation fully read -> now tick the talk objective.
+      onTalk(npcDialogue.name, npcDialogue.lines[npcDialogue.lines.length - 1]);
+      setNpcDialogue(null);
+    }
   };
 
   return (
@@ -250,13 +263,7 @@ export const TownScene: React.FC<TownSceneProps> = ({
         <DialogueBox
           message={npcDialogue.lines[npcDialogue.idx]}
           isVisible={true}
-          onClose={() =>
-            setNpcDialogue(prev =>
-              prev && prev.idx < prev.lines.length - 1
-                ? { ...prev, idx: prev.idx + 1 }
-                : null
-            )
-          }
+          onClose={advanceNpcDialogue}
         />
       )}
 
