@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { PlayerStats } from '../../types/schemas';
 import { ItemIcon } from '../../assets/placeholders';
 import { GEAR_CATALOG } from '../../data/gear';
+import { DialogueBox } from './Shared/DialogueBox';
 
 interface TownSceneProps {
   name: string;
@@ -24,32 +25,56 @@ export const TownScene: React.FC<TownSceneProps> = ({
 }) => {
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [activeArea, setActiveArea] = useState<'center' | 'outskirts'>('center');
+  const [npcDialogue, setNpcDialogue] = useState<{ lines: string[]; idx: number } | null>(null);
 
   const getTownNPCs = () => {
     switch (name) {
       case 'Starting Village':
         return [
-          { id: 'n1', name: 'Chronicler Daniel', area: 'center', message: "Welcome, scribe. To clear the fog of debt, one must first document the flow. Log your expenses to earn Action Points.", icon: '🧙‍♂️' },
-          { id: 'n2', name: 'Stablemaster', area: 'center', message: "The road to Iron Citadel is long. Ensure your Action Reserve is full before departing.", icon: '🏇' }
+          { id: 'n1', name: 'Chronicler Daniel', area: 'center', icon: '🧙‍♂️', lines: [
+            "Welcome, scribe. To clear the fog of debt, one must first document the flow. Log your expenses to earn Action Points.",
+            "Every coin you record sharpens your focus — and focus is what fuels a hero.",
+          ] },
+          { id: 'n2', name: 'Stablemaster', area: 'center', icon: '🐇', lines: [
+            "The road to Iron Citadel is long. Ensure your Action Reserve is full before departing.",
+            "Rest your steed, mind your ledger. Both carry you further than gold alone.",
+          ] }
         ];
       case 'Copper Town':
         return [
-          { id: 'n3', name: 'Copper Smith', area: 'center', message: "Base metals for base needs. Efficiency is the key to profit.", icon: '⚒️' },
-          { id: 'n4', name: 'Market Overseer', area: 'center', message: "The ledger must balance, even here in the mud.", icon: '⚖️' }
+          { id: 'n3', name: 'Copper Smith', area: 'center', icon: '⚒️', lines: [
+            "Base metals for base needs. Efficiency is the key to profit.",
+            "Temper your spending like I temper steel — slow, deliberate, unbreakable.",
+          ] },
+          { id: 'n4', name: 'Market Overseer', area: 'center', icon: '⚖️', lines: [
+            "The ledger must balance, even here in the mud.",
+          ] }
         ];
       case 'Silver City':
         return [
-          { id: 'n5', name: 'High Banker', area: 'center', message: "Interest never sleeps, and neither should your focus on savings.", icon: '🏛️' },
-          { id: 'n6', name: 'Guild Master', area: 'center', message: "Join the elite scribes. Master your budget, master the realm.", icon: '🎭' }
+          { id: 'n5', name: 'High Banker', area: 'center', icon: '🏛️', lines: [
+            "Interest never sleeps, and neither should your focus on savings.",
+            "Compound your discipline daily and the spires of this city will feel small.",
+          ] },
+          { id: 'n6', name: 'Guild Master', area: 'center', icon: '🎭', lines: [
+            "Join the elite scribes. Master your budget, master the realm.",
+          ] }
         ];
       case 'Iron Citadel':
         return [
-          { id: 'n7', name: 'Commander Fortis', area: 'center', message: "The fortress of savings is impenetrable. Your discipline is your shield.", icon: '💂' },
-          { id: 'n8', name: 'Grand Archivist', area: 'center', message: "Every copper logged is a brick in the wall of your future.", icon: '📜' }
+          { id: 'n7', name: 'Commander Fortis', area: 'center', icon: '💂', lines: [
+            "The fortress of savings is impenetrable. Your discipline is your shield.",
+            "Debt lays siege to the careless. You will not be careless.",
+          ] },
+          { id: 'n8', name: 'Grand Archivist', area: 'center', icon: '📜', lines: [
+            "Every copper logged is a brick in the wall of your future.",
+          ] }
         ];
       default:
         return [
-          { id: 'n9', name: 'Traveler', area: 'center', message: "The map is vast, but the ledger is vaster.", icon: '🚶' }
+          { id: 'n9', name: 'Traveler', area: 'center', icon: '🚶', lines: [
+            "The map is vast, but the ledger is vaster.",
+          ] }
         ];
     }
   };
@@ -94,8 +119,8 @@ export const TownScene: React.FC<TownSceneProps> = ({
   ];
 
   const handleNPCInteraction = (npc: typeof NPCs[0]) => {
-    showDialogue(npc.message);
-    onTalk(npc.name, npc.message);
+    onTalk(npc.name, npc.lines[0]); // fire the quest/tutorial talk objective once
+    setNpcDialogue({ lines: npc.lines, idx: 0 });
   };
 
   return (
@@ -158,7 +183,7 @@ export const TownScene: React.FC<TownSceneProps> = ({
             {/* Arena — cosmetic hotspot (no mechanic yet) */}
             <div
               className="absolute left-[20%] top-[30%] -translate-x-1/2 flex flex-col items-center group cursor-pointer"
-              onClick={() => showDialogue('The Arena is being built — challenges are coming soon.')}
+              onClick={() => { setNpcDialogue(null); showDialogue('The Arena is being built — challenges are coming soon.'); }}
             >
               <div className="text-5xl mb-2 opacity-80 group-hover:scale-110 group-hover:-translate-y-2 transition-all">🏟️</div>
               <div className="bg-[#171f33]/90 border border-[#4c4634] px-3 py-1 rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -169,7 +194,7 @@ export const TownScene: React.FC<TownSceneProps> = ({
             {/* Inn — cosmetic hotspot (no heal mechanic yet) */}
             <div
               className="absolute left-[74%] md:left-[78%] top-[30%] -translate-x-1/2 flex flex-col items-center group cursor-pointer"
-              onClick={() => showDialogue('The Inn will offer rest and healing — coming soon.')}
+              onClick={() => { setNpcDialogue(null); showDialogue('The Inn will offer rest and healing — coming soon.'); }}
             >
               <div className="text-5xl mb-2 opacity-80 group-hover:scale-110 group-hover:-translate-y-2 transition-all">🛏️</div>
               <div className="bg-[#171f33]/90 border border-[#4c4634] px-3 py-1 rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -219,6 +244,21 @@ export const TownScene: React.FC<TownSceneProps> = ({
       >
         [ Back to Map ]
       </button>
+
+      {/* NPC dialogue — local, multi-line advance (dumb shared DialogueBox) */}
+      {npcDialogue && (
+        <DialogueBox
+          message={npcDialogue.lines[npcDialogue.idx]}
+          isVisible={true}
+          onClose={() =>
+            setNpcDialogue(prev =>
+              prev && prev.idx < prev.lines.length - 1
+                ? { ...prev, idx: prev.idx + 1 }
+                : null
+            )
+          }
+        />
+      )}
 
       {/* Shop Overlay */}
       {isShopOpen && (

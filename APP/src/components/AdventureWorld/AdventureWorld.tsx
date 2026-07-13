@@ -71,8 +71,9 @@ export const AdventureWorld: React.FC<AdventureWorldProps> = ({
     setDialogue(prev => ({ ...prev, isVisible: false }));
   };
 
+  // NPC lines are shown by TownScene's own DialogueBox (multi-line advance);
+  // here we only forward the talk event (quest/tutorial objective + invasion trigger).
   const handleNPCTalk = (npcName: string, message: string) => {
-    showDialogue(message);
     onTalk(npcName, message);
   };
 
