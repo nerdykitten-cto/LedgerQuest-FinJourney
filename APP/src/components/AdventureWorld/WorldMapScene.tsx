@@ -117,13 +117,39 @@ export const WorldMapScene: React.FC<WorldMapSceneProps> = ({
     }
   };
 
+  // Zoom-into-village: a fast pre-enter animation that scales the map INTO the
+  // tapped node before swapping to the town scene. Purely visual — does not touch
+  // worldState routing, so the Batch B invasion lockout is unaffected.
+  const [entering, setEntering] = useState<string | null>(null);
+  const enterTimer = useRef<number | null>(null);
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    !!window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const doEnter = (name: string) => {
+    if (enterTimer.current) { window.clearTimeout(enterTimer.current); enterTimer.current = null; }
+    setEntering(null);
+    onEnterTown(name);
+  };
+
+  const beginEnter = (name: string) => {
+    if (prefersReducedMotion) { doEnter(name); return; }
+    setEntering(name);
+    enterTimer.current = window.setTimeout(() => doEnter(name), 400);
+  };
+
+  useEffect(() => () => { if (enterTimer.current) window.clearTimeout(enterTimer.current); }, []);
+
   const handleLocationClick = (name: string) => {
     // A pan gesture ends with a click on whatever node was under the finger —
     // swallow it so dragging the map never travels to / enters a village.
     if (drag.current.moved) return;
 
     if (name === campaign.currentLocation) {
-      onEnterTown(name); // tap the village you are standing on to enter it
+      // tap the village you are standing on to enter it (with a zoom).
+      if (entering) { doEnter(name); return; } // second tap skips the animation
+      beginEnter(name);
       return;
     }
 
@@ -143,6 +169,7 @@ export const WorldMapScene: React.FC<WorldMapSceneProps> = ({
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
+      onClick={entering ? () => doEnter(entering) : undefined}
     >
       {/* Pannable map layer — image, paths, nodes and hero marker move together.
           On phones it is an oversized square positioned from the window centre;
@@ -150,14 +177,29 @@ export const WorldMapScene: React.FC<WorldMapSceneProps> = ({
       <div
         data-testid="map-layer"
         className={`absolute will-change-transform ${pannable ? '' : 'inset-0'}`}
-        style={pannable ? {
-          width: side,
-          height: side,
-          left: '50%',
-          top: '50%',
-          transform: `translate3d(calc(-50% + ${pan.x}px), calc(-50% + ${pan.y}px), 0)`,
-          transition: drag.current.down ? 'none' : 'transform 0.12s ease-out',
-        } : undefined}
+        style={(() => {
+          const enterLoc = entering ? LOCATIONS.find(l => l.name === entering) : null;
+          const baseTransform = pannable
+            ? `translate3d(calc(-50% + ${pan.x}px), calc(-50% + ${pan.y}px), 0)`
+            : '';
+          const st: React.CSSProperties = pannable
+            ? {
+                width: side,
+                height: side,
+                left: '50%',
+                top: '50%',
+                transform: baseTransform,
+                transition: drag.current.down ? 'none' : 'transform 0.12s ease-out',
+              }
+            : {};
+          if (enterLoc) {
+            st.transformOrigin = `${enterLoc.x}% ${enterLoc.y}%`;
+            st.transform = `${baseTransform} scale(2.2)`.trim();
+            st.opacity = 0;
+            st.transition = 'transform 0.4s ease-in, opacity 0.4s ease-in';
+          }
+          return st;
+        })()}
       >
         {/* World Map Image */}
         <img
