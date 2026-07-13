@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { PlayerStats, CampaignState } from '../../types/schemas';
-import { LOCATIONS } from '../../engine/world';
+import { LOCATIONS, LOCATION_ICON } from '../../engine/world';
 import { travelCost } from '../../engine/director';
 
 interface WorldMapSceneProps {
@@ -193,9 +193,15 @@ export const WorldMapScene: React.FC<WorldMapSceneProps> = ({
             {/* Glow Effect */}
             <div className={`absolute inset-0 -m-6 rounded-full bg-[#f4d03f]/20 blur-xl transition-all duration-500 ${selectedLocation === loc.name ? 'scale-150 opacity-40' : 'scale-100 opacity-20'}`} />
 
-            {/* Map Pin Icon */}
-            <div className={`w-4 h-4 md:w-6 md:h-6 rounded-full border-2 border-[#f4d03f] flex items-center justify-center transition-transform ${selectedLocation === loc.name ? 'scale-125' : 'scale-100'} ${campaign.currentLocation === loc.name ? 'bg-[#f4d03f]' : 'bg-[#171f33]'}`}>
-              {campaign.currentLocation === loc.name && <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white animate-pulse" />}
+            {/* Typed pointer: per-settlement emoji glyph over the gold-ring base.
+                Keeps the current-node highlight (filled ring + pulse) + selected scale. */}
+            <div className={`relative flex flex-col items-center transition-transform ${selectedLocation === loc.name ? 'scale-125' : 'scale-100'}`}>
+              <span className="text-2xl md:text-3xl leading-none drop-shadow-[0_2px_3px_rgba(0,0,0,0.7)] select-none" role="img" aria-label={loc.type}>
+                {LOCATION_ICON[loc.type]}
+              </span>
+              <div className={`mt-0.5 w-3 h-3 md:w-4 md:h-4 rounded-full border-2 border-[#f4d03f] flex items-center justify-center ${campaign.currentLocation === loc.name ? 'bg-[#f4d03f]' : 'bg-[#171f33]'}`}>
+                {campaign.currentLocation === loc.name && <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-white animate-pulse" />}
+              </div>
             </div>
 
             {/* Name Tag */}
