@@ -815,20 +815,41 @@ bullet from Phase 9 (below), pulled forward. Executed inline (TDD + per-task com
 
 ---
 
-## Phase 9 — Map & World interactions  ·  (future, user-directed 2026-07-09)
-**LOCKED:** keep the existing `world_map.png` — NO new map art. Only small changes
-on top of it.
-- [ ] **Typed location pointers:** reposition the 4 `LOCATIONS` nodes so each sits
-  on a matching-looking spot of the current map art, and give each a **typed
-  pointer icon** by settlement kind (village hut / town / city spires / citadel)
-  instead of the generic gold ring. (`engine/world.ts` — add a `type` per
-  location + corrected `x,y`; `WorldMapScene.tsx` — icon per type.)
-- [ ] **Zoom-into-village:** clicking a village pointer plays a **fade-in + scale
-  zoom** transition from the node into the village interior (replaces today's
-  instant town-enter). (`WorldMapScene.tsx` → `App.tsx` enter flow → `TownScene`.)
-- [ ] **Village interior hotspots:** the zoomed-in village view highlights its
-  **sub-locations** on different parts of the frame (clickable hotspots) rather
-  than the current row of centred NPC emoji. (`TownScene.tsx`.)
+## Phase 9 — Map & World interactions  ·  (user-directed 2026-07-09)  ·  ✅ DONE (2026-07-12)
+Spec `PLANS/specs/2026-07-12-phase9-map-world-interactions-design.md`, plan
+`PLANS/plans/2026-07-12-phase9-map-world-interactions.md`. Brainstormed forks (2026-07-12):
+interior = one reused stylized hotspot layout (no per-village art); hotspot set = real
+Quest-giver/Shop/Outskirts/Exit + **cosmetic** Arena & Inn ("coming soon", no mechanic);
+follow-on = **light multi-line NPC dialogue only** (branching + story arc DEFERRED);
+pointers = per-type emoji glyph. Executed inline (TDD + per-task local commits).
+**LOCKED (honored):** kept the existing `world_map.png` — NO new map art.
+- [x] **Typed location pointers:** `WorldLocation` gained `type`
+  ('village'|'town'|'city'|'citadel') + `LOCATION_ICON` (🛖/🏘️/🏙️/🏰) in `engine/world.ts`;
+  the 4 nodes repositioned onto matching terrain (Starting Village 26,40 cottages /
+  Copper Town 83,66 forge+docks / Silver City 60,12 blossom-shrine spire / Iron Citadel
+  58,62 stone tower). `WorldMapScene.tsx` renders the per-type emoji on the gold-ring
+  base (kept current-node highlight, selected scale, name tags, party arrow, polyline,
+  mobile drag-to-pan). `director.test.ts` travel-costs re-pinned to the new coords
+  (SV→Copper 9, Copper→Silver 8, Silver→Iron 7, SV→Iron 6, SV→Silver 6) — all 6–9 AP.
+- [x] **Zoom-into-village:** tapping the current node plays a fast (~400ms) scale+fade
+  zoom INTO the node (`transform-origin` at its x,y) then enters — skippable (second tap
+  / `prefers-reduced-motion`). `WorldMapScene.tsx` only; no `App`/`worldState` change, so
+  the invasion lockout is untouched.
+- [x] **Village interior hotspots:** `TownScene.tsx` center formalized into 6 spread
+  hotspots — real Quest-giver/NPCs, 🏪 Shop, Outskirts, Exit + cosmetic 🏟️ Arena & 🛏️ Inn
+  ("coming soon"). Plus **light multi-line NPC dialogue**: each NPC carries `lines[]`;
+  a local `DialogueBox` advances line-by-line (`AdventureWorld.handleNPCTalk` slimmed to
+  stop double-showing); `onTalk` still fires once → quest/tutorial talk objective +
+  invasion trigger unchanged.
+- VERIFIED (browser, preview_eval; screenshot times out on CRT): 4 typed emoji pointers
+  + party arrow; travel SV→Copper −9 AP (matches pin); tap current node → zoom → interior
+  (COPPER TOWN, map-layer gone); 6 hotspots present; NPC dialogue line0→line1→close; Inn
+  "coming soon"; **invasion NOT regressed** (seed invasion → zoom-enter invaded town →
+  InvasionDialog "Under Siege" lockout, worldState town, invasion persists); mobile
+  drag-to-pan layer intact (oversized square, touch-none, drag hint). tsc 0 / **232**
+  tests / build green. Local commits, NO push.
+
+### Original scope (delivered above)
 - Files: `engine/world.ts`, `AdventureWorld/WorldMapScene.tsx`, `TownScene.tsx`,
   `App.tsx` (enter/worldState), plus the follow-on cluster below.
 - **OPEN (resolve at phase start):** (a) interior = illustrated per-village vs a
