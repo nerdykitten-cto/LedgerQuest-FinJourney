@@ -4,19 +4,30 @@
  * from the coordinates.
  */
 
+export type LocationType = 'village' | 'town' | 'city' | 'citadel';
+
 export interface WorldLocation {
   name: string;
   x: number; // percentage coords on the world map
   y: number;
   description: string;
+  type: LocationType;
 }
 
 export const LOCATIONS: WorldLocation[] = [
-  { name: 'Starting Village', x: 22.5, y: 80, description: 'A humble beginning for a grand ledger.' },
-  { name: 'Copper Town', x: 72.5, y: 70, description: 'The hub of base metal trade.' },
-  { name: 'Silver City', x: 90, y: 36.6, description: 'Glistening spires of high-yield capital.' },
-  { name: 'Iron Citadel', x: 50, y: 20, description: 'The fortress of impenetrable savings.' },
+  { name: 'Starting Village', x: 26, y: 40, type: 'village', description: 'A humble beginning for a grand ledger.' },
+  { name: 'Copper Town', x: 83, y: 66, type: 'town', description: 'The hub of base metal trade.' },
+  { name: 'Silver City', x: 60, y: 12, type: 'city', description: 'Glistening spires of high-yield capital.' },
+  { name: 'Iron Citadel', x: 58, y: 62, type: 'citadel', description: 'The fortress of impenetrable savings.' },
 ];
+
+/** Per-settlement-type map pointer glyph (emoji placeholder — no new map art). */
+export const LOCATION_ICON: Record<LocationType, string> = {
+  village: '🛖',
+  town: '🏘️',
+  city: '🏙️',
+  citadel: '🏰',
+};
 
 export const TOWN_NPCS: Record<string, string[]> = {
   'Starting Village': ['Chronicler Daniel', 'Stablemaster'],

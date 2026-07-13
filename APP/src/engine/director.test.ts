@@ -33,13 +33,13 @@ const offerOf = (actions: DirectorAction[]) =>
 
 describe('travelCost', () => {
   it('derives cost from map distance (divisor 7), cheaper than the legacy flat 20', () => {
-    // Pinned economy (Phase 4): adjacent hops <= +8 AP from one expense.
-    expect(travelCost('Starting Village', 'Copper Town')).toBe(7);
-    expect(travelCost('Copper Town', 'Silver City')).toBe(5);
-    expect(travelCost('Silver City', 'Iron Citadel')).toBe(6);
-    // Full cross-map trips stay a real cost, but still under the legacy 20.
-    expect(travelCost('Starting Village', 'Iron Citadel')).toBe(9);
-    expect(travelCost('Starting Village', 'Silver City')).toBe(11);
+    // Pinned economy (Phase 9 re-position): hops land 6-9 AP, still <= the legacy 20
+    // and near the +8 AP from one logged expense.
+    expect(travelCost('Starting Village', 'Copper Town')).toBe(9);
+    expect(travelCost('Copper Town', 'Silver City')).toBe(8);
+    expect(travelCost('Silver City', 'Iron Citadel')).toBe(7);
+    expect(travelCost('Starting Village', 'Iron Citadel')).toBe(6);
+    expect(travelCost('Starting Village', 'Silver City')).toBe(6);
   });
 
   it('is symmetric and falls back to 20 for unknown places', () => {
