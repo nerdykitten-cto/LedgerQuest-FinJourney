@@ -205,7 +205,7 @@ function App() {
     const next = advanceTutorialStep(profile.tutorialStep, {
       hasBudget: (stats.monthlyBudget ?? 0) > 0,
       earnedAp: profile.onboardingComplete,
-      onMap: currentTab === 'quests',
+      onMap: currentTab === 'quests' && isPlayUnlocked(stats, profile),
       inTown: campaign.worldState === 'town',
       talkedToNpc: !!talk?.isCompleted,
       beatBoss: !!kill?.isCompleted,
@@ -646,7 +646,7 @@ function App() {
     showNotify('Monthly Budget calibrated.');
   };
 
-  const totalIncome = stats.monthlyBudget || 3000;
+  const totalIncome = stats.monthlyBudget ?? 0;
   const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
   const remainingBudget = totalIncome - totalExpenses;
 

@@ -23,8 +23,8 @@ const QuestList: React.FC<Props> = ({ quests, onStartQuest, onClaimReward }) => 
         </div>
       ) : (
         <div className="flex flex-col gap-6">
-          {quests.map((q) => (
-            <div key={q.id} className={`tape-accent doodle-border p-5 relative overflow-hidden group transition-all ${q.status === 'completed' ? 'opacity-60 bg-surface-container-low' : 'bg-surface-container shadow-lg hover:translate-y-[-2px]'}`}>
+          {quests.map((q, qi) => (
+            <div key={`${q.id}-${qi}`} className={`tape-accent doodle-border p-5 relative overflow-hidden group transition-all ${q.status === 'completed' ? 'opacity-60 bg-surface-container-low' : 'bg-surface-container shadow-lg hover:translate-y-[-2px]'}`}>
               {/* Type Icon Overlay */}
               <div className="absolute -top-2 -right-2 w-16 h-16 bg-tertiary/5 rounded-full flex items-center justify-center doodle-border border-dashed border-tertiary/20">
                  <span className="material-symbols-outlined text-tertiary/40 text-2xl">
@@ -56,8 +56,8 @@ const QuestList: React.FC<Props> = ({ quests, onStartQuest, onClaimReward }) => 
               {/* Objective Progress */}
               {(q.status === 'active' || q.status === 'ready') && q.objectives && (
                 <div className="mb-4 space-y-2 relative z-10">
-                   {q.objectives.map(obj => (
-                     <div key={obj.id} className="flex items-center gap-2">
+                   {q.objectives.map((obj, oi) => (
+                     <div key={`${obj.id}-${oi}`} className="flex items-center gap-2">
                         <span className={`material-symbols-outlined text-xs ${obj.isCompleted ? 'text-primary' : 'text-on-surface-variant opacity-30'}`}>
                            {obj.isCompleted ? 'check_circle' : 'radio_button_unchecked'}
                         </span>
