@@ -11,6 +11,7 @@ import type {
   SavingsGoal,
   InventoryItem
 } from './types/schemas';
+import { ensureCombatStats } from './engine/combat';
 import storyManifest from './data/storyManifest.json';
 import { PARTY_ART } from './assets/placeholders';
 import { GEAR_CATALOG } from './data/gear';
@@ -236,7 +237,9 @@ export const updateHabitDB = async (habitId: string, updates: Partial<Habit>) =>
 };
 
 export const subscribeParty = (callback: (members: PartyMember[]) => void) => {
-  const handler = () => callback(getLocal(PARTY_COL) as PartyMember[]);
+  // Normalize legacy members that predate the combat-stats feature (no base
+  // attack/defense) so combat never receives undefined -> NaN damage.
+  const handler = () => callback((getLocal(PARTY_COL) as PartyMember[]).map(ensureCombatStats));
   window.addEventListener('storage', handler);
   handler();
   return () => window.removeEventListener('storage', handler);
