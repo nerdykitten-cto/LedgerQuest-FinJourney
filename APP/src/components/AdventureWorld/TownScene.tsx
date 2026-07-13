@@ -134,7 +134,7 @@ export const TownScene: React.FC<TownSceneProps> = ({
               <div 
                 key={npc.id} 
                 className="absolute flex flex-col items-center group cursor-pointer"
-                style={{ left: `${20 + i * 30}%`, top: '60%' }}
+                style={{ left: `${18 + i * 26}%`, top: '62%' }}
                 onClick={() => handleNPCInteraction(npc)}
               >
                 <div className="text-5xl mb-2 group-hover:scale-110 group-hover:-translate-y-2 transition-all drop-shadow-lg">{npc.icon}</div>
@@ -146,12 +146,34 @@ export const TownScene: React.FC<TownSceneProps> = ({
 
             {/* Shop Gate */}
             <div 
-              className="absolute left-[72%] md:left-[80%] top-[55%] -translate-x-1/2 flex flex-col items-center group cursor-pointer"
+              className="absolute left-[72%] md:left-[76%] top-[58%] -translate-x-1/2 flex flex-col items-center group cursor-pointer"
               onClick={() => setIsShopOpen(true)}
             >
               <div className="text-6xl mb-2 group-hover:scale-110 group-hover:-translate-y-2 transition-all">🏪</div>
               <div className="bg-[#171f33]/90 border border-[#4c4634] px-3 py-1 rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                  <span className="font-label text-[10px] uppercase font-bold text-[#f4d03f]">General Store</span>
+              </div>
+            </div>
+
+            {/* Arena — cosmetic hotspot (no mechanic yet) */}
+            <div
+              className="absolute left-[20%] top-[30%] -translate-x-1/2 flex flex-col items-center group cursor-pointer"
+              onClick={() => showDialogue('The Arena is being built — challenges are coming soon.')}
+            >
+              <div className="text-5xl mb-2 opacity-80 group-hover:scale-110 group-hover:-translate-y-2 transition-all">🏟️</div>
+              <div className="bg-[#171f33]/90 border border-[#4c4634] px-3 py-1 rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                 <span className="font-label text-[10px] uppercase font-bold text-[#dbe2fd]">Arena &middot; Soon</span>
+              </div>
+            </div>
+
+            {/* Inn — cosmetic hotspot (no heal mechanic yet) */}
+            <div
+              className="absolute left-[74%] md:left-[78%] top-[30%] -translate-x-1/2 flex flex-col items-center group cursor-pointer"
+              onClick={() => showDialogue('The Inn will offer rest and healing — coming soon.')}
+            >
+              <div className="text-5xl mb-2 opacity-80 group-hover:scale-110 group-hover:-translate-y-2 transition-all">🛏️</div>
+              <div className="bg-[#171f33]/90 border border-[#4c4634] px-3 py-1 rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                 <span className="font-label text-[10px] uppercase font-bold text-[#dbe2fd]">Inn &middot; Soon</span>
               </div>
             </div>
 
