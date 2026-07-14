@@ -231,7 +231,7 @@ export const CombatScene: React.FC<CombatSceneProps> = ({
           const memberGear = inventory.filter(i => i.equippedTo === member.id && i.type === 'Equipment');
           const gearDefense = memberGear.reduce((sum, i) => sum + (i.statBonus?.defense || 0), 0);
           const totalDefense = member.defense + gearDefense;
-          const isTarget = damageNumber && damageNumber.type === 'player' && party.sort((a,b)=>a.hp-b.hp)[0]?.id === member.id;
+          const isTarget = damageNumber && damageNumber.type === 'player' && [...party].sort((a,b)=>a.hp-b.hp)[0]?.id === member.id;
           
           return (
             <div key={member.id} className={`flex flex-col items-center min-w-[104px] p-2 md:p-2.5 rounded-xl bg-[#0b1326]/80 border-2 transition-all duration-300 relative group
