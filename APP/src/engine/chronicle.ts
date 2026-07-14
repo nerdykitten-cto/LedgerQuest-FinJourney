@@ -27,6 +27,9 @@ const BOSS_BESTIARY: Record<string, string> = {
   'Debt Gnomes': 'debt-gnome',
   'Inflation Djinn': 'inflation-djinn',
   'Compound Golem': 'compound-golem',
+  'Interest Imp': 'interest-imp',
+  'Ledger Wraith': 'ledger-wraith',
+  'Overdraft Ogre': 'overdraft-ogre',
 };
 
 // Bosses referenced by the manifest but absent from the bestiary — synthesized bases.

@@ -157,6 +157,19 @@ describe('nextMainQuest', () => {
     expect(r.quest?.id).toBe('q1_main');
   });
 
+  it('surfaces the second town quest once the first is completed', () => {
+    const first: Quest = { ...(nextMainQuest(mkCampaign(), []).quest as Quest), status: 'completed' };
+    const r = nextMainQuest(mkCampaign(), [first]);
+    expect(r.quest?.id).toBe('q0_main_b');
+  });
+
+  it('goes quiet only when every quest in the town is completed', () => {
+    const a = { id: 'q0_main', status: 'completed' } as Quest;
+    const b = { id: 'q0_main_b', status: 'completed' } as Quest;
+    const r = nextMainQuest(mkCampaign(), [a, b]);
+    expect(r.quest).toBeNull();
+  });
+
   it('stays quiet when a quest is already active or available', () => {
     const active: Quest = { ...(nextMainQuest(mkCampaign(), []).quest as Quest), status: 'active' };
     const r = nextMainQuest(mkCampaign(), [active]);

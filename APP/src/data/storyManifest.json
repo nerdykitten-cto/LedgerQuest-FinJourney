@@ -16,6 +16,17 @@
             { "id": "obj0_1", "text": "Talk to Chronicler Daniel in Starting Village", "type": "talk", "target": "Chronicler Daniel", "isCompleted": false },
             { "id": "obj0_2", "text": "Defeat the Debt Gnomes in the Outskirts", "type": "kill", "target": "Debt Gnomes", "isCompleted": false }
           ]
+        },
+        {
+          "id": "q0_main_b",
+          "title": "Rats in the Granary",
+          "description": "The Stablemaster swears something is nibbling the village's recorded stores. Every missing sack is an unbalanced line.",
+          "difficulty": 2,
+          "reward": { "exp": 180, "gold": 110 },
+          "objectives": [
+            { "id": "obj0b_1", "text": "Ask the Stablemaster what has gone missing", "type": "talk", "target": "Stablemaster", "isCompleted": false },
+            { "id": "obj0b_2", "text": "Exterminate the Interest Imp in the Outskirts", "type": "kill", "target": "Interest Imp", "isCompleted": false }
+          ]
         }
       ],
       "sideQuests": []
@@ -35,6 +46,17 @@
           "objectives": [
             { "id": "obj1_1", "text": "Explore Copper Town Plaza", "type": "travel", "target": "Copper Town", "isCompleted": false },
             { "id": "obj1_2", "text": "Slay Gorgos the Swallower", "type": "kill", "target": "Gorgos", "isCompleted": false }
+          ]
+        },
+        {
+          "id": "q1_main_b",
+          "title": "The Copper Skimmer",
+          "description": "The Copper Smith's tallies keep coming up short. A wraith is skimming a coin from every transaction in the marshes.",
+          "difficulty": 3,
+          "reward": { "exp": 450, "gold": 280 },
+          "objectives": [
+            { "id": "obj1b_1", "text": "Compare ledgers with the Copper Smith", "type": "talk", "target": "Copper Smith", "isCompleted": false },
+            { "id": "obj1b_2", "text": "Destroy the Ledger Wraith haunting the marshes", "type": "kill", "target": "Ledger Wraith", "isCompleted": false }
           ]
         }
       ],
@@ -57,6 +79,18 @@
             { "id": "obj2_2", "text": "Consult the High Banker about the missing reserves", "type": "talk", "target": "High Banker", "isCompleted": false },
             { "id": "obj2_3", "text": "Banish the Inflation Djinn", "type": "kill", "target": "Inflation Djinn", "isCompleted": false }
           ]
+        },
+        {
+          "id": "q2_main_b",
+          "title": "The Vault of Whispers",
+          "description": "Silver City's lower vault hums with a debt no one will claim. Trace the whispers to their source before they become a roar.",
+          "difficulty": 5,
+          "reward": { "exp": 720, "gold": 430 },
+          "objectives": [
+            { "id": "obj2b_1", "text": "Question the Guild Master about the sealed accounts", "type": "talk", "target": "Guild Master", "isCompleted": false },
+            { "id": "obj2b_2", "text": "Have the High Banker unlock the ledger of debts", "type": "talk", "target": "High Banker", "isCompleted": false },
+            { "id": "obj2b_3", "text": "Slay the Overdraft Ogre guarding the vault", "type": "kill", "target": "Overdraft Ogre", "isCompleted": false }
+          ]
         }
       ],
       "sideQuests": []
@@ -77,6 +111,18 @@
             { "id": "obj3_1", "text": "March on the Iron Citadel", "type": "travel", "target": "Iron Citadel", "isCompleted": false },
             { "id": "obj3_2", "text": "Receive Commander Fortis's battle plan", "type": "talk", "target": "Commander Fortis", "isCompleted": false },
             { "id": "obj3_3", "text": "Shatter the Compound Golem", "type": "kill", "target": "Compound Golem", "isCompleted": false }
+          ]
+        },
+        {
+          "id": "q3_main_b",
+          "title": "The Ledger's Last Seal",
+          "description": "One page of the great ledger remains unwritten. The Iron Citadel's keepers guard the final seal — and something older guards them.",
+          "difficulty": 8,
+          "reward": { "exp": 1100, "gold": 650 },
+          "objectives": [
+            { "id": "obj3b_1", "text": "Retrieve the archive key from the Grand Archivist", "type": "talk", "target": "Grand Archivist", "isCompleted": false },
+            { "id": "obj3b_2", "text": "Get Commander Fortis to lower the iron gate", "type": "talk", "target": "Commander Fortis", "isCompleted": false },
+            { "id": "obj3b_3", "text": "Vanquish the Ledger Wraith of the last seal", "type": "kill", "target": "Ledger Wraith", "isCompleted": false }
           ]
         }
       ],

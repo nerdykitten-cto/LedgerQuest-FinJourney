@@ -183,10 +183,12 @@ export function nextMainQuest(
   const chapter =
     [...storyManifest.chapters].reverse().find(ch => campaign.progressPercentage >= ch.minProgress) ??
     storyManifest.chapters[0];
-  const mq = chapter.mainQuests[0];
-  if (!mq) return { quest: null, rationale: `No main quest defined for ${chapter.title}.` };
-
-  if (quests.some(q => q.id === mq.id && q.status === 'completed')) {
+  // Offer the first main quest in this chapter the player has not yet completed,
+  // so each town surfaces its quests in order (>=2 per town).
+  const mq = chapter.mainQuests.find(
+    m => !quests.some(q => q.id === m.id && q.status === 'completed')
+  );
+  if (!mq) {
     return { quest: null, rationale: `All primary objectives for ${chapter.title} completed.` };
   }
 

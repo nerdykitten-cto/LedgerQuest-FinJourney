@@ -651,7 +651,7 @@ function App() {
   const remainingBudget = totalIncome - totalExpenses;
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface paper-texture font-body">
+    <div className="min-h-screen flex flex-col bg-surface text-on-surface paper-texture font-body">
       {notification && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] doodle-border bg-surface-container-highest px-6 py-2 font-headline animate-bounce shadow-2xl border-primary/50 text-primary">
           {notification}
@@ -752,7 +752,7 @@ function App() {
 
       <TopAppBar onOpenSettings={() => setIsSettingsOpen(true)} currentTab={currentTab} onTabChange={setCurrentTab} ap={stats.ap} />
 
-      <main className="max-w-[1200px] mx-auto px-4 md:px-10 mt-6 md:mt-8 pb-32 md:pb-10">
+      <main className="w-full flex-1 max-w-[1200px] mx-auto px-4 md:px-10 mt-6 md:mt-8 pb-32 md:pb-10">
         {currentTab === 'ledger' && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
