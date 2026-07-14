@@ -45,10 +45,10 @@ const ExpenseForm: React.FC<Props> = ({ onAddExpense, currencySymbol = '$' }) =>
           <label className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant flex items-center gap-2">
              <img src="/assets/ui/Icon_Bag.png" alt="" className="w-4 h-4 object-contain opacity-60" /> Amount (Gold)
           </label>
-          <div className="relative">
-            <span className="absolute left-0 top-1 text-secondary font-bold text-2xl">{currencySymbol}</span>
+          <div className="flex items-baseline gap-1 pencil-line">
+            <span className="shrink-0 text-secondary font-bold text-2xl">{currencySymbol}</span>
             <input
-              className="w-full bg-transparent pencil-line pl-6 py-1 outline-none font-headline text-3xl text-secondary placeholder:text-secondary/10"
+              className="w-full min-w-0 bg-transparent py-1 outline-none font-headline text-3xl text-secondary placeholder:text-secondary/10"
               type="number"
               placeholder="0.00"
               value={amount}
