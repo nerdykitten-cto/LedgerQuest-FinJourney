@@ -4,9 +4,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 interface Props {
   onAddExpense: (expense: Expense) => void;
+  currencySymbol?: string;
 }
 
-const ExpenseForm: React.FC<Props> = ({ onAddExpense }) => {
+const ExpenseForm: React.FC<Props> = ({ onAddExpense, currencySymbol = '$' }) => {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Food');
   const [description, setDescription] = useState('');
@@ -45,7 +46,7 @@ const ExpenseForm: React.FC<Props> = ({ onAddExpense }) => {
              <img src="/assets/ui/Icon_Bag.png" alt="" className="w-4 h-4 object-contain opacity-60" /> Amount (Gold)
           </label>
           <div className="relative">
-            <span className="absolute left-0 top-1 text-secondary font-bold text-2xl">$</span>
+            <span className="absolute left-0 top-1 text-secondary font-bold text-2xl">{currencySymbol}</span>
             <input
               className="w-full bg-transparent pencil-line pl-6 py-1 outline-none font-headline text-3xl text-secondary placeholder:text-secondary/10"
               type="number"

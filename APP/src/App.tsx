@@ -19,7 +19,7 @@ import { adjustHabitReward } from './engine/difficultyEngine';
 import { taskReward, applyExp, applyWinRecovery, applyDefeatRecovery } from './engine/rewardEngine';
 import { planRevive, planEquip, planUnequip, planHeal } from './engine/equipment';
 import { GEAR_BY_NAME } from './data/gear';
-import { CURRENCIES, formatMoney } from './data/currencies';
+import { CURRENCIES, formatMoney, symbolOf } from './data/currencies';
 import { nonBossObjectivesComplete, bossObjective, resolveBoss } from './engine/chronicle';
 import { TUTORIAL_STEPS, advanceTutorialStep, tutorialActive } from './engine/tutorial';
 import TutorialGuide from './components/TutorialGuide';
@@ -722,7 +722,7 @@ function App() {
         <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-surface/90 backdrop-blur-md">
           <div className="w-full max-w-2xl relative animate-in zoom-in-95 duration-200">
             <button className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-surface-container-highest doodle-border z-10 flex items-center justify-center hover:scale-110 transition-transform" onClick={() => setIsScribeOpen(false)}><span className="material-symbols-outlined">close</span></button>
-            <div className="tape-accent doodle-border bg-surface-container p-5 md:p-8 shadow-2xl"><ExpenseForm onAddExpense={handleAddExpense} /></div>
+            <div className="tape-accent doodle-border bg-surface-container p-5 md:p-8 shadow-2xl"><ExpenseForm onAddExpense={handleAddExpense} currencySymbol={symbolOf(stats.currency)} /></div>
           </div>
         </div>
       )}
