@@ -9,9 +9,15 @@ exploring a world map, clearing towns, and winning turn-based battles.
 LedgerQuest is a fully **offline, single-player** web app: all state lives in your
 browser's `localStorage`. No account, no backend, no cloud calls. This build is a
 public **demo** of the concept — a *PixelOre* product, not a real financial tool
-(yet). It runs entirely inside a retro **CRT-TV frame**: the finance side (your
-ledger) and the game side (the adventure) are two halves of the same screen, and
-the whole point is that keeping your real budget is what powers the game.
+(yet).
+
+At its core it's a **personal finance tracker** — a ledger for your expenses,
+budget, and habits. The twist is the **game**: an RPG adventure — the world map,
+towns, and turn-based battles — that plays inside a retro **CRT-TV frame** on the
+Quests tab. The adventure is a layer of gamification sitting on top of everyday
+expense tracking; its job is to keep you coming back to **log your finances
+daily**. Your logged spending is what earns the Action Points that power the game,
+so staying on top of your real budget is what moves the story forward.
 
 ## First run
 
